@@ -1,7 +1,30 @@
-<h2>الكاشير</h2>
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>الكاشير</title>
+</head>
+<body>
+
+<h2>واجهة الكاشير</h2>
 
 <button onclick="openShift()">فتح شفت</button>
+
+<hr>
+
+<h3>المنتجات</h3>
+<div id="products"></div>
+
+<hr>
+
+<h3>السلة</h3>
+<div id="cart"></div>
+
+<button onclick="checkout()">دفع</button>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/cashier.js"></script>
+
+</body>
+</html>
