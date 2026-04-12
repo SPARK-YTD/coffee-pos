@@ -1,30 +1,43 @@
 async function saveProduct() {
   const name = document.getElementById("name").value;
   const file = document.getElementById("image").files[0];
-  const price = document.getElementById("price").value;
+  const price = parseFloat(document.getElementById("price").value);
+
+  if (!name) {
+    alert("اكتب اسم المنتج ❌");
+    return;
+  }
+
+  if (!file) {
+    alert("اختر صورة ❌");
+    return;
+  }
+
+  if (!price) {
+    alert("حط السعر ❌");
+    return;
+  }
 
   let imageUrl = "";
 
   // رفع الصورة
-  if (file) {
-    const fileName = Date.now() + "-" + file.name;
+  const fileName = `${Date.now()}-${Math.random()}-${file.name}`;
 
-    const { data, error } = await window.supabaseClient.storage
-      .from("products")
-      .upload(fileName, file);
+  const { error: uploadError } = await window.supabaseClient.storage
+    .from("products")
+    .upload(fileName, file);
 
-    if (error) {
-      alert("خطأ رفع الصورة ❌");
-      console.log(error);
-      return;
-    }
-
-    const { data: publicUrlData } = window.supabaseClient.storage
-  .from("products")
-  .getPublicUrl(fileName);
-
-imageUrl = publicUrlData.publicUrl;
+  if (uploadError) {
+    alert("خطأ رفع الصورة ❌");
+    console.log(uploadError);
+    return;
   }
+
+  const { data: publicUrlData } = window.supabaseClient.storage
+    .from("products")
+    .getPublicUrl(fileName);
+
+  imageUrl = publicUrlData.publicUrl;
 
   // حفظ المنتج
   const { data: product, error: productError } = await window.supabaseClient
