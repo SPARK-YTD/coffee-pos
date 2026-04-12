@@ -10,7 +10,7 @@ async function login() {
     .single();
 
   if (error || !data) {
-    alert("بيانات غلط");
+    alert("بيانات غلط ❌");
     return;
   }
 
