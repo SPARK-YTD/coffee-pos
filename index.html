@@ -1,19 +1,18 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>تسجيل الدخول</title>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
 
-<h2>تسجيل الدخول</h2>
+<h2>🔐 تسجيل الدخول</h2>
 
-<input id="employee_number" placeholder="رقم الموظف" />
-<input id="password" type="password" placeholder="كلمة المرور" />
+<input id="user" placeholder="رقم الموظف">
+<input id="pass" type="password" placeholder="كلمة المرور">
 
 <button onclick="login()">دخول</button>
 
-<!-- مهم جدًا الترتيب -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
 <script src="js/login.js"></script>
