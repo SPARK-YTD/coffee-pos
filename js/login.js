@@ -3,40 +3,36 @@ async function login() {
   const password = document.getElementById("password").value.trim();
 
   if (!number || !password) {
-    alert("حط الرقم والباسورد");
+    alert("حط البيانات");
     return;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from("employees")
-      .select("*");
+  const { data, error } = await window.supabaseClient
+    .from("employees")
+    .select("*");
 
-    if (error) {
-      alert("خطأ في الاتصال ❌");
-      console.error(error);
-      return;
-    }
+  if (error) {
+    alert("خطأ اتصال ❌");
+    console.log(error);
+    return;
+  }
 
-    const user = data.find(u =>
-      u.employee_number == number && u.password == password
-    );
+  const user = data.find(u =>
+    u.employee_number == number && u.password == password
+  );
 
-    if (!user) {
-      alert("بيانات غلط ❌");
-      return;
-    }
+  if (!user) {
+    alert("بيانات غلط ❌");
+    return;
+  }
 
-    localStorage.setItem("user", JSON.stringify(user));
+  alert("تم الدخول ✅");
 
-    if (user.role === "admin") {
-      window.location.href = "dashboard.html";
-    } else {
-      window.location.href = "cashier.html";
-    }
+  localStorage.setItem("user", JSON.stringify(user));
 
-  } catch (err) {
-    console.error(err);
-    alert("خطأ غير متوقع ❌");
+  if (user.role === "admin") {
+    window.location.href = "dashboard.html";
+  } else {
+    window.location.href = "cashier.html";
   }
 }
