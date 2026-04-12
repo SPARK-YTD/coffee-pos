@@ -1,13 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
-  <title>Dashboard</title>
+  <meta charset="UTF-8">
+  <title>لوحة التحكم</title>
 </head>
 <body>
 
-<h2>لوحة المدير</h2>
+<h2>إضافة منتج</h2>
 
-<p>تم تسجيل الدخول بنجاح 👌</p>
+<input id="name" placeholder="اسم المنتج"><br><br>
+<input id="image" placeholder="رابط الصورة"><br><br>
+<input id="price" placeholder="السعر الأساسي"><br><br>
+
+<h3>الأحجام</h3>
+<div id="sizes"></div>
+<button onclick="addSize()">+ إضافة حجم</button>
+
+<h3>الإضافات</h3>
+<div id="extras"></div>
+<button onclick="addExtra()">+ إضافة إضافة</button>
+
+<br><br>
+<button onclick="saveProduct()">💾 حفظ المنتج</button>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
