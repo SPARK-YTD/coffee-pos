@@ -1,98 +1,136 @@
 let cart = [];
+let currentCategory = "all";
 
-async function openShift() {
-  const user = JSON.parse(localStorage.getItem("user"));
+async function loadCategories() {
+  const { data } = await supabase.from("products").select("category");
 
-  const { error } = await supabase.from("shifts").insert([
-    {
-      employee_id: user.id
-    }
-  ]);
+  const unique = [...new Set(data.map(x => x.category))];
 
-  if (error) {
-    alert("خطأ في فتح الشفت");
-  } else {
-    alert("تم فتح الشفت ✅");
-  }
-}
+  const box = document.getElementById("categories");
+  box.innerHTML = `<button onclick="filter('all')">الكل</button>`;
 
-// تحميل المنتجات
-async function loadProducts() {
-  const { data } = await supabase.from("products").select("*");
-
-  const container = document.getElementById("products");
-  container.innerHTML = "";
-
-  data.forEach(p => {
-    const btn = document.createElement("button");
-    btn.innerText = p.name + " - " + p.base_price;
-    btn.onclick = () => addToCart(p);
-    container.appendChild(btn);
+  unique.forEach(c => {
+    box.innerHTML += `<button onclick="filter('${c}')">${c}</button>`;
   });
 }
 
-function addToCart(product) {
-  cart.push(product);
+function filter(cat) {
+  currentCategory = cat;
+  loadProducts();
+}
+
+async function loadProducts() {
+  let query = supabase.from("products").select("*").eq("active", true);
+
+  if (currentCategory !== "all") {
+    query = query.eq("category", currentCategory);
+  }
+
+  const { data } = await query;
+
+  const box = document.getElementById("products");
+  box.innerHTML = "";
+
+  for (let p of data) {
+    box.innerHTML += `
+      <div class="card">
+        <img src="${p.image_url || ""}">
+        <h3>${p.name}</h3>
+        <p>${p.base_price} د.ب</p>
+        <button onclick="selectProduct('${p.id}')">اختيار</button>
+      </div>
+    `;
+  }
+}
+
+async function selectProduct(id) {
+  const { data: product } = await supabase
+    .from("products").select("*").eq("id", id).single();
+
+  const { data: sizes } = await supabase
+    .from("product_sizes").select("*").eq("product_id", id);
+
+  const { data: extras } = await supabase
+    .from("product_extras").select("*").eq("product_id", id);
+
+  let size = sizes[0]?.name || "";
+  let price = product.base_price;
+
+  if (sizes.length) {
+    const chosen = prompt("اختر الحجم: " + sizes.map(s => s.name).join(", "));
+    const s = sizes.find(x => x.name === chosen);
+    if (s) {
+      size = s.name;
+      price += s.price;
+    }
+  }
+
+  let selectedExtras = [];
+
+  if (extras.length) {
+    const chosen = prompt("اختر إضافات (فصلها بفاصلة): " + extras.map(e => e.name).join(", "));
+    if (chosen) {
+      const arr = chosen.split(",");
+      arr.forEach(e => {
+        const ex = extras.find(x => x.name === e.trim());
+        if (ex) {
+          selectedExtras.push(ex.name);
+          price += ex.price;
+        }
+      });
+    }
+  }
+
+  cart.push({
+    id,
+    name: product.name,
+    size,
+    extras: selectedExtras,
+    price
+  });
+
   renderCart();
 }
 
 function renderCart() {
-  const container = document.getElementById("cart");
-  container.innerHTML = "";
+  const box = document.getElementById("cart");
+  box.innerHTML = "";
 
-  cart.forEach(item => {
-    const div = document.createElement("div");
-    div.innerText = item.name + " - " + item.base_price;
-    container.appendChild(div);
+  let total = 0;
+
+  cart.forEach(i => {
+    total += i.price;
+    box.innerHTML += `<div>${i.name} (${i.size}) - ${i.price}</div>`;
   });
+
+  document.getElementById("total").innerText = "المجموع: " + total + " د.ب";
 }
 
 async function checkout() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  if (!cart.length) return;
 
-  // نجيب يوم العمل
-  const { data: day } = await supabase
-    .from("business_days")
-    .select("*")
-    .eq("is_open", true)
+  const total = cart.reduce((a,b)=>a+b.price,0);
+
+  const { data: order } = await supabase
+    .from("orders")
+    .insert([{ total }])
+    .select()
     .single();
 
-  // نولد رقم الفاتورة
-  const { data: invoice_no } = await supabase
-    .rpc("generate_invoice_number", {
-      p_business_day_id: day.id
-    });
-
-  let total = cart.reduce((sum, item) => sum + Number(item.base_price), 0);
-
-  // إنشاء الطلب
-  const { data: order } = await supabase.from("orders").insert([
-    {
-      invoice_no,
-      business_day_id: day.id,
-      employee_id: user.id,
-      total,
-      payment_method: "cash"
-    }
-  ]).select().single();
-
-  // إضافة العناصر
-  for (let item of cart) {
-    await supabase.from("order_items").insert([
-      {
-        order_id: order.id,
-        product_id: item.id,
-        quantity: 1,
-        price: item.base_price
-      }
-    ]);
+  for (let i of cart) {
+    await supabase.from("order_items").insert([{
+      order_id: order.id,
+      product_id: i.id,
+      size: i.size,
+      extras: i.extras,
+      price: i.price
+    }]);
   }
 
-  alert("تم الدفع ✅ رقم الفاتورة: " + invoice_no);
-
+  alert("تم الطلب ✅");
   cart = [];
   renderCart();
 }
 
-// تشغيل تلقائي
+loadCategories();
 loadProducts();
