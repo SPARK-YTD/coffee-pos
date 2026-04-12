@@ -1,38 +1,19 @@
 async function login() {
-  const number = document.getElementById("employee_number").value.trim();
-  const password = document.getElementById("password").value.trim();
+  const user = document.getElementById("user").value;
+  const pass = document.getElementById("pass").value;
 
-  if (!number || !password) {
-    alert("حط البيانات");
-    return;
-  }
-
-  const { data, error } = await window.supabaseClient
+  const { data } = await supabase
     .from("employees")
-    .select("*");
+    .select("*")
+    .eq("employee_number", user)
+    .eq("password", pass)
+    .single();
 
-  if (error) {
-    alert("خطأ اتصال ❌");
-    console.log(error);
-    return;
-  }
+  if (!data) return alert("خطأ ❌");
 
-  const user = data.find(u =>
-    u.employee_number == number && u.password == password
-  );
-
-  if (!user) {
-    alert("بيانات غلط ❌");
-    return;
-  }
-
-  alert("تم الدخول ✅");
-
-  localStorage.setItem("user", JSON.stringify(user));
-
-  if (user.role === "admin") {
-    window.location.href = "dashboard.html";
+  if (data.role === "admin") {
+    location.href = "dashboard.html";
   } else {
-    window.location.href = "cashier.html";
+    location.href = "cashier.html";
   }
 }
