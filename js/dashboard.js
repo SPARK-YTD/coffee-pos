@@ -19,11 +19,11 @@ async function saveProduct() {
       return;
     }
 
-    const { data: urlData } = window.supabaseClient.storage
-      .from("products")
-      .getPublicUrl(fileName);
+    const { data: publicUrlData } = window.supabaseClient.storage
+  .from("products")
+  .getPublicUrl(fileName);
 
-    imageUrl = urlData.publicUrl;
+imageUrl = publicUrlData.publicUrl;
   }
 
   // حفظ المنتج
