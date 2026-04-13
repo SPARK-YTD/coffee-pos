@@ -153,7 +153,14 @@ async function checkout() {
     return;
   }
 
+  localStorage.setItem("receipt", JSON.stringify({
+  items: cart,
+  total: total
+}));
+
+window.open("receipt.html", "_blank");
   alert("تم حفظ الطلب ✅");
+  
 
   cart = [];
   currentOrderId = null;
