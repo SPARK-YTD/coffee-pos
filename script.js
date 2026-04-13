@@ -1,5 +1,8 @@
 let cart = [];
 
+// -------------------
+// إضافة منتجات
+// -------------------
 async function seedProducts() {
   const { data } = await supabaseClient.from("products").select("*");
 
@@ -24,6 +27,9 @@ async function seedProducts() {
   }
 }
 
+// -------------------
+// تحميل المنتجات
+// -------------------
 async function loadProducts() {
   const { data, error } = await supabaseClient
     .from("products")
@@ -40,18 +46,23 @@ async function loadProducts() {
   data.forEach(p => {
     const btn = document.createElement("button");
     btn.innerText = p.name + " - " + p.price;
-    
     btn.onclick = () => addToCart(p);
 
     container.appendChild(btn);
   });
 }
 
+// -------------------
+// إضافة للسلة
+// -------------------
 function addToCart(product) {
   cart.push(product);
   renderCart();
 }
 
+// -------------------
+// عرض السلة
+// -------------------
 function renderCart() {
   const cartEl = document.getElementById("cart");
   const totalEl = document.getElementById("total");
@@ -71,4 +82,51 @@ function renderCart() {
   totalEl.innerText = "المجموع: " + total + " BD";
 }
 
+// -------------------
+// إتمام الطلب
+// -------------------
+async function checkout() {
+  if (cart.length === 0) {
+    alert("السلة فاضية ❌");
+    return;
+  }
+
+  let total = 0;
+  cart.forEach(item => total += item.price);
+
+  const { data: order, error: orderError } = await supabaseClient
+    .from("orders")
+    .insert([{ total: total, status: "pending" }])
+    .select()
+    .single();
+
+  if (orderError) {
+    console.error(orderError);
+    return;
+  }
+
+  const items = cart.map(item => ({
+    order_id: order.id,
+    product_id: item.id,
+    qty: 1,
+    price: item.price,
+    item_name: item.name
+  }));
+
+  const { error: itemsError } = await supabaseClient
+    .from("order_items")
+    .insert(items);
+
+  if (itemsError) {
+    console.error(itemsError);
+    return;
+  }
+
+  alert("تم حفظ الطلب ✅");
+
+  cart = [];
+  renderCart();
+}
+
+// تشغيل أولي
 loadProducts();
