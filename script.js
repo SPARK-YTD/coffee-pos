@@ -2,40 +2,35 @@ async function seedProducts() {
   const products = [
     { name: "Latte", category: "Coffee", price: 1.5 },
     { name: "Cappuccino", category: "Coffee", price: 1.2 },
-    { name: "Espresso", category: "Coffee", price: 0.8 },
-    { name: "Iced Latte", category: "Iced", price: 1.7 }
+    { name: "Espresso", category: "Coffee", price: 0.8 }
   ];
 
-  const { error } = await supabase.from("products").insert(products);
+  const { error } = await supabaseClient.from("products").insert(products);
 
   if (error) {
-    console.error("❌ Seed Error:", error);
+    console.error("❌", error);
   } else {
-    console.log("✅ Products Added");
+    console.log("✅ added");
     loadProducts();
   }
 }
 
 async function loadProducts() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("products")
     .select("*");
 
   if (error) {
-    console.error("❌ Error:", error);
+    console.error("❌", error);
     return;
   }
 
   const container = document.getElementById("products");
   container.innerHTML = "";
 
-  data.forEach(product => {
+  data.forEach(p => {
     const btn = document.createElement("button");
-    btn.innerText = product.name + " - " + product.price + " BD";
-    btn.style.display = "block";
-    btn.style.margin = "10px";
-    btn.style.padding = "10px";
-
+    btn.innerText = p.name + " - " + p.price;
     container.appendChild(btn);
   });
 }
