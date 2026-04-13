@@ -31,7 +31,8 @@ async function loadReports() {
     startDate = new Date(startInput);
     endDate = new Date(endInput);
   }
-
+  endDate.setHours(23,59,59,999);
+  
   // الطلبات
 const { data: orders, error } = await supabaseClient
   .from("orders")
