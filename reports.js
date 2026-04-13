@@ -8,6 +8,8 @@ async function loadReports() {
 
   if (filter === "today") {
     startDate.setHours(0,0,0,0);
+    endDate.setHours(23,59,59,999);
+    
 
   } else if (filter === "week") {
     const day = startDate.getDay();
@@ -97,7 +99,7 @@ loadReports();
 
 function drawChart(orders, filter) {
 
-  const ctx = document.getElementById("salesChart");
+const ctx = document.getElementById("salesChart").getContext("2d");
 
   if (chart) {
     chart.destroy();
