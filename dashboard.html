@@ -14,6 +14,7 @@
   <div class="sidebar">
     <h2>☕ Coffee</h2>
     <button onclick="showProducts()">📦 المنتجات</button>
+    <button onclick="showOrders()">📊 الطلبات</button>
     <button onclick="logout()">🚪 خروج</button>
   </div>
 
@@ -25,8 +26,8 @@
       <button class="add-btn" onclick="openModal()">+ إضافة منتج</button>
     </div>
 
-    <!-- المنتجات -->
     <div id="productsGrid" class="grid"></div>
+    <div id="orders"></div>
 
   </div>
 
@@ -35,7 +36,6 @@
 <!-- Modal -->
 <div id="modal" class="modal">
   <div class="modal-content">
-
     <h2>إضافة منتج</h2>
 
     <input id="name" placeholder="اسم المنتج">
@@ -44,7 +44,6 @@
 
     <button onclick="saveProduct()">حفظ</button>
     <button onclick="closeModal()">إلغاء</button>
-
   </div>
 </div>
 
