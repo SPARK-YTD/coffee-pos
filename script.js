@@ -126,8 +126,37 @@ async function checkout() {
 
   cart = [];
   renderCart();
-  loadPendingOrders(); // 👈 هذا الجديد
+  loadPendingOrders();  }
+
+ async function loadPendingOrders() {
+  const { data, error } = await supabaseClient
+    .from("orders")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return;
   }
 
-// تشغيل أولي
+  const container = document.getElementById("pendingOrders");
+  container.innerHTML = "";
+
+  data.forEach(order => {
+    const div = document.createElement("div");
+    div.style.border = "1px solid black";
+    div.style.margin = "5px";
+    div.style.padding = "5px";
+
+    div.innerHTML = `
+      <strong>طلب #${order.id.slice(0,5)}</strong>
+      <p>المجموع: ${order.total} BD</p>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
 loadProducts();
+loadPendingOrders();
