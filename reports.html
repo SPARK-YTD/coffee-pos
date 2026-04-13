@@ -3,15 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <title>التقارير</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .card {
+      flex: 1;
+      background: #111;
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
+
 <body>
 
-<h1>📊 تقارير اليوم</h1>
-
-<h2>📈 المبيعات</h2>
-<canvas id="salesChart" width="300" height="150"></canvas>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<h1>📊 التقارير</h1>
 
 <h3>📅 الفلترة</h3>
 
@@ -26,13 +53,32 @@
 
 <input type="date" id="startDate">
 <input type="date" id="endDate">
-  
-<p>عدد الطلبات: <span id="ordersCount">0</span></p>
-<p>إجمالي المبيعات: <span id="totalSales">0</span> BD</p>
 
-<h2>☕ أفضل المنتجات</h2>
+<hr>
+
+<div class="cards">
+  <div class="card">
+    <h3>🧾 الطلبات</h3>
+    <p id="ordersCount">0</p>
+  </div>
+
+  <div class="card">
+    <h3>💰 المبيعات</h3>
+    <p id="totalSales">0 BD</p>
+  </div>
+</div>
+
+<hr>
+
+<h2>📈 المبيعات</h2>
+<canvas id="salesChart"></canvas>
+
+<hr>
+
+<h2>🏆 أفضل المنتجات</h2>
 <div id="topProducts"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
 <script src="reports.js"></script>
