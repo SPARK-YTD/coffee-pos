@@ -1,4 +1,3 @@
-<a href="reports.html">📊 التقارير</a>
 <!DOCTYPE html>
 <html lang="ar">
 <head>
@@ -6,14 +5,31 @@
   <title>كاشير القهوة</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user) {
+  window.location.href = "login.html";
+}
+
+if (user.role !== "cashier" && user.role !== "manager") {
+  alert("ما عندك صلاحية ❌");
+  window.location.href = "login.html";
+}
+</script>
+
 <h1>☕ كاشير المقهى</h1>
+
+<a href="reports.html">📊 التقارير</a>
 
 <button onclick="seedProducts()">Add Test Products</button>
 
 <!-- المنتجات -->
-<h2>☕ المنتجات</h2> <div id="products"></div>
+<h2>☕ المنتجات</h2>
+<div id="products"></div>
 
 <hr>
 
@@ -30,10 +46,10 @@
 <!-- الطلبات المعلقة -->
 <h2>📋 الطلبات المعلقة</h2>
 <div id="pendingOrders"></div>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="supabase.js"></script>
-  <script src="script.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="supabase.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
