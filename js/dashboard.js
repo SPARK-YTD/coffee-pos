@@ -1,86 +1,51 @@
 async function saveProduct() {
   const name = document.getElementById("name").value;
-  const file = document.getElementById("image").files[0];
   const price = parseFloat(document.getElementById("price").value);
-
-  if (!name) {
-    alert("اكتب اسم المنتج ❌");
-    return;
-  }
-
-  if (!file) {
-    alert("اختر صورة ❌");
-    return;
-  }
-
-  if (!price) {
-    alert("حط السعر ❌");
-    return;
-  }
+  const category = document.getElementById("category").value;
+  const file = document.getElementById("image").files[0];
 
   let imageUrl = "";
 
-  // رفع الصورة
-  const fileName = `${Date.now()}-${Math.random()}-${file.name}`;
+  if (file) {
+    const fileName = Date.now() + file.name;
 
-  const { error: uploadError } = await window.supabaseClient.storage
-    .from("products")
-    .upload(fileName, file);
+    await supabase.storage.from("products").upload(fileName, file);
 
-  if (uploadError) {
-    alert("خطأ رفع الصورة ❌");
-    console.log(uploadError);
-    return;
+    const { data } = supabase.storage
+      .from("products")
+      .getPublicUrl(fileName);
+
+    imageUrl = data.publicUrl;
   }
 
-  const { data: publicUrlData } = window.supabaseClient.storage
-    .from("products")
-    .getPublicUrl(fileName);
+  await supabase.from("products").insert([
+    { name, base_price: price, category, image_url: imageUrl }
+  ]);
 
-  imageUrl = publicUrlData.publicUrl;
-
-  // حفظ المنتج
-  const { data: product, error: productError } = await window.supabaseClient
-    .from("products")
-    .insert([{ name, image_url: imageUrl, base_price: price }])
-    .select()
-    .single();
-
-  if (productError) {
-    alert("خطأ ❌");
-    console.log(productError);
-    return;
-  }
-
-  const productId = product.id;
-
-  // الأحجام
-  const sizeInputs = document.getElementById("sizes").children;
-  for (let div of sizeInputs) {
-    const inputs = div.querySelectorAll("input");
-    const sizeName = inputs[0].value;
-    const sizePrice = inputs[1].value;
-
-    if (sizeName) {
-      await window.supabaseClient.from("product_sizes").insert([
-        { product_id: productId, name: sizeName, price: sizePrice }
-      ]);
-    }
-  }
-
-  // الإضافات
-  const extraInputs = document.getElementById("extras").children;
-  for (let div of extraInputs) {
-    const inputs = div.querySelectorAll("input");
-    const extraName = inputs[0].value;
-    const extraPrice = inputs[1].value;
-
-    if (extraName) {
-      await window.supabaseClient.from("product_extras").insert([
-        { product_id: productId, name: extraName, price: extraPrice }
-      ]);
-    }
-  }
-
-  alert("تم حفظ المنتج مع الصورة ✅");
+  alert("تم الحفظ");
+  loadProducts();
 }
+
+async function loadProducts() {
+  const { data } = await supabase.from("products").select("*");
+
+  const box = document.getElementById("products");
+  box.innerHTML = "";
+
+  data.forEach(p => {
+    box.innerHTML += `
+      <div class="card">
+        <h3>${p.name}</h3>
+        <p>${p.base_price}</p>
+        <button onclick="deleteProduct('${p.id}')">حذف</button>
+      </div>
+    `;
+  });
+}
+
+async function deleteProduct(id) {
+  await supabase.from("products").delete().eq("id", id);
+  loadProducts();
+}
+
+loadProducts();
