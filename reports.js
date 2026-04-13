@@ -31,12 +31,16 @@ async function loadReports() {
   }
 
   // الطلبات
-  const { data: orders } = await supabaseClient
-    .from("orders")
-    .select("*")
-    .gte("created_at", startDate.toISOString())
-    .lte("created_at", endDate.toISOString());
+const { data: orders, error } = await supabaseClient
+  .from("orders")
+  .select("*")
+  .gte("created_at", startDate.toISOString())
+  .lte("created_at", endDate.toISOString());
 
+if (error) {
+  console.error(error);
+  return;
+}
   const ordersCount = orders.length;
 
   let totalSales = 0;
