@@ -41,7 +41,8 @@
 <body onload="loadReceipt()">
 
   <h2>☕ Tranqila CAFE</h2>
-  <p id="date"></p>
+<p id="date"></p>
+<p>فاتورة رقم: <span id="invoice"></span></p>
 
   <hr>
 
@@ -70,6 +71,7 @@
       const now = new Date();
       document.getElementById("date").innerText =
         now.toLocaleString();
+      document.getElementById("invoice").innerText = order.invoice;
 
       // العناصر
       let html = "";
