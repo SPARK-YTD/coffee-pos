@@ -4,12 +4,13 @@ async function loadProducts() {
     .select("*");
 
   if (error) {
-    console.error("Error:", error);
+    console.error("❌ Error:", error);
     return;
   }
 
-  const container = document.getElementById("products");
+  console.log("✅ Products:", data);
 
+  const container = document.getElementById("products");
   container.innerHTML = "";
 
   data.forEach(product => {
