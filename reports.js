@@ -1,3 +1,4 @@
+let chart;
 async function loadReports() {
 
   const filter = document.getElementById("filter").value;
@@ -67,14 +68,6 @@ items.forEach(item => {
   map[item.item_name] += item.qty;
 });
 
-let html = "";
-
-Object.entries(map).forEach(([name, qty]) => {
-  html += `<p>${name} - ${qty}</p>`;
-});
-
-document.getElementById("topProducts").innerHTML = html;
-
   let html = "";
 
   Object.entries(map).forEach(([name, qty]) => {
@@ -82,6 +75,43 @@ document.getElementById("topProducts").innerHTML = html;
   });
 
   document.getElementById("topProducts").innerHTML = html;
+
+drawChart(orders);
 }
 
 loadReports();
+
+function drawChart(orders) {
+
+  const map = {};
+
+  orders.forEach(order => {
+    const date = new Date(order.created_at).toLocaleDateString();
+
+    if (!map[date]) {
+      map[date] = 0;
+    }
+
+    map[date] += order.total;
+  });
+
+  const labels = Object.keys(map);
+  const data = Object.values(map);
+
+  const ctx = document.getElementById("salesChart");
+
+  if (chart) {
+  chart.destroy();
+}
+
+chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "المبيعات",
+        data: data
+      }]
+    }
+  });
+}
