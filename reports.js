@@ -190,6 +190,7 @@ if (start && end) {
   const today = new Date().toLocaleDateString();
   dateText = `تاريخ التقرير: ${today}`;
 }
+  
   win.document.write(`
   <html>
   <head>
@@ -221,8 +222,10 @@ if (start && end) {
 
     <hr>
 
-    <p> tranqila </p>
+    <p>Tranqila Cafe ☕</p>
 
   </body>
   </html>
 `);
+
+win.print();
