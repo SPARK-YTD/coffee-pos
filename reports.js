@@ -103,9 +103,12 @@ function drawChart(orders) {
 
   // فلترة حسب الأسبوع الحالي فقط
   const now = new Date();
-  const startOfWeek = new Date();
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0,0,0,0);
+const startOfWeek = new Date();
+startOfWeek.setDate(now.getDate() - now.getDay());
+startOfWeek.setHours(0,0,0,0);
+
+orders.forEach(order => {
+  const date = new Date(order.created_at);
 
   if (date < startOfWeek) return;
 
