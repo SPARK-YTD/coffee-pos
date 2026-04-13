@@ -95,6 +95,25 @@ async function checkout() {
   let total = 0;
   cart.forEach(item => total += item.price);
 
+ // تاريخ اليوم
+const startOfDay = new Date();
+startOfDay.setHours(0,0,0,0);
+
+const { data: lastOrder } = await supabaseClient
+  .from("orders")
+  .select("invoice_number")
+  .gte("created_at", startOfDay.toISOString())
+  .order("invoice_number", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+  
+
+let invoiceNumber = 1;
+
+if (lastOrder && lastOrder.invoice_number) {
+  invoiceNumber = lastOrder.invoice_number + 1;
+}
+  
   let order;
 
   if (currentOrderId) {
@@ -123,7 +142,7 @@ async function checkout() {
     // ➕ إنشاء طلب جديد
     const { data, error } = await supabaseClient
       .from("orders")
-      .insert([{ total: total, status: "pending" }])
+      .insert([{   total: total,   status: "pending",   invoice_number: invoiceNumber }])
       .select()
       .single();
 
@@ -153,12 +172,12 @@ async function checkout() {
     return;
   }
 
-  localStorage.setItem("receipt", JSON.stringify({
+ localStorage.setItem("receipt", JSON.stringify({
   items: cart,
-  total: total
+  total: total,
+  invoice: order.invoice_number
 }));
 
-alert("تم حفظ الطلب ✅");
 
 window.open("receipt.html", "_blank");
   
