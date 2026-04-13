@@ -3,17 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <title>فاتورة</title>
-  <link rel="stylesheet" href="receipt.css">
 </head>
-<body onload="loadReceipt()">
+<body>
 
   <h2>☕ Coffee Receipt</h2>
 
-  <div id="receipt"></div>
+  <div id="receipt">جاري التحميل...</div>
 
   <button onclick="window.print()">🖨️ طباعة</button>
 
-  <script src="receipt.js"></script>
+  <script>
+    const order = JSON.parse(localStorage.getItem("receipt"));
+
+    const container = document.getElementById("receipt");
+
+    if (!order) {
+      container.innerHTML = "❌ ما فيه بيانات";
+    } else {
+      let html = "";
+
+      order.items.forEach(item => {
+        html += `<p>${item.name} - ${item.price} BD</p>`;
+      });
+
+      html += `<hr>`;
+      html += `<h3>المجموع: ${order.total} BD</h3>`;
+
+      container.innerHTML = html;
+    }
+  </script>
 
 </body>
 </html>
