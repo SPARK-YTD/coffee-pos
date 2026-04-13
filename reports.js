@@ -93,37 +93,47 @@ loadReports();
 
 function drawChart(orders) {
 
-  const map = {};
+  const todayMap = {};
+  const yesterdayMap = {};
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
 
   orders.forEach(order => {
-    const date = new Date(order.created_at).toLocaleDateString();
+    const date = new Date(order.created_at);
 
-    if (!map[date]) {
-      map[date] = 0;
+    // اليوم
+    if (date.toDateString() === today.toDateString()) {
+      if (!todayMap["today"]) todayMap["today"] = 0;
+      todayMap["today"] += order.total;
     }
 
-    map[date] += order.total;
+    // أمس
+    if (date.toDateString() === yesterday.toDateString()) {
+      if (!yesterdayMap["yesterday"]) yesterdayMap["yesterday"] = 0;
+      yesterdayMap["yesterday"] += order.total;
+    }
   });
 
-  const labels = Object.keys(map);
-  const data = Object.values(map);
+  const todayTotal = todayMap["today"] || 0;
+  const yesterdayTotal = yesterdayMap["yesterday"] || 0;
 
   const ctx = document.getElementById("salesChart");
 
   if (chart) {
-  chart.destroy();
-}
+    chart.destroy();
+  }
 
-chart = new Chart(ctx, {
-    type: "line",
+  chart = new Chart(ctx, {
+    type: "bar",
     data: {
-      labels: labels,
+      labels: ["اليوم", "أمس"],
       datasets: [{
-  label: "المبيعات",
-  data: data,
-  borderWidth: 3,
-  tension: 0.4
-}]
+        label: "المبيعات",
+        data: [todayTotal, yesterdayTotal],
+        borderWidth: 2
+      }]
     }
   });
 }
