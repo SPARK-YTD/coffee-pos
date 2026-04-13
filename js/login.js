@@ -1,24 +1,39 @@
 async function login() {
-  const user = document.getElementById("user").value;
-  const pass = document.getElementById("pass").value;
+  const user = document.getElementById("user").value.trim();
+  const pass = document.getElementById("pass").value.trim();
 
-  const { data, error } = await supabaseClient
+  if (!user || !pass) {
+    alert("اكتب البيانات ❌");
+    return;
+  }
+
+  const { data, error } = await window.supabaseClient
     .from("employees")
     .select("*")
     .eq("employee_number", user)
-    .eq("password", pass)
-    .single();
+    .eq("password", pass);
 
-  if (error || !data) {
+  console.log(data, error);
+
+  if (error) {
+    alert("خطأ في الاتصال ❌");
+    return;
+  }
+
+  if (!data || data.length === 0) {
     alert("بيانات غلط ❌");
     return;
   }
 
-  localStorage.setItem("user", JSON.stringify(data));
+  const employee = data[0];
 
-  if (data.role === "admin") {
-    location.href = "dashboard.html";
+  // حفظ المستخدم
+  localStorage.setItem("user", JSON.stringify(employee));
+
+  // تحويل حسب الدور
+  if (employee.role === "admin") {
+    window.location.href = "dashboard.html";
   } else {
-    location.href = "cashier.html";
+    window.location.href = "cashier.html";
   }
 }
