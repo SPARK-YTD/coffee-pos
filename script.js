@@ -1,6 +1,13 @@
 let cart = [];
 
 async function seedProducts() {
+  const { data } = await supabaseClient.from("products").select("*");
+
+  if (data.length > 0) {
+    alert("المنتجات موجودة مسبقًا ✅");
+    return;
+  }
+
   const products = [
     { name: "Latte", category: "Coffee", price: 1.5 },
     { name: "Cappuccino", category: "Coffee", price: 1.2 },
