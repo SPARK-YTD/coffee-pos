@@ -99,11 +99,19 @@ function drawChart(orders) {
   };
 
   orders.forEach(order => {
-    const date = new Date(order.created_at);
-    const day = date.getDay(); // 0 = الأحد
+  const date = new Date(order.created_at);
 
-    salesMap[day] += order.total;
-  });
+  // فلترة حسب الأسبوع الحالي فقط
+  const now = new Date();
+  const startOfWeek = new Date();
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0,0,0,0);
+
+  if (date < startOfWeek) return;
+
+  const day = date.getDay();
+  salesMap[day] += order.total;
+});
 
   const labels = days;
   const data = Object.values(salesMap);
