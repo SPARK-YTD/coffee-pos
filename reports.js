@@ -235,4 +235,6 @@ if (start && end) {
   </html>
 `);
 
+
 win.print();
+}
