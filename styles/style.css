@@ -5,7 +5,6 @@ body {
   color: white;
 }
 
-/* Layout */
 .layout {
   display: flex;
 }
@@ -18,7 +17,6 @@ body {
 }
 
 .sidebar button {
-  display: block;
   width: 100%;
   margin: 10px 0;
   padding: 10px;
@@ -33,27 +31,22 @@ body {
   padding: 20px;
 }
 
-/* Top */
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
 .add-btn {
   background: #22c55e;
   border: none;
-  padding: 10px 15px;
+  padding: 10px;
   color: white;
-  cursor: pointer;
 }
 
-/* Grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 200px);
   gap: 20px;
-  margin-top: 20px;
 }
 
 .card {
@@ -63,19 +56,30 @@ body {
   text-align: center;
 }
 
-.card img {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 10px;
+.products {
+  flex: 2;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 120px);
+  gap: 10px;
+  padding: 10px;
 }
 
-/* Modal */
+.product {
+  background: #1e293b;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.cart {
+  width: 250px;
+  background: #020617;
+  padding: 10px;
+}
+
 .modal {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.6);
