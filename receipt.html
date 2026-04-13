@@ -3,33 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <title>فاتورة</title>
+
+  <style>
+    body {
+      font-family: monospace;
+      width: 280px;
+      margin: auto;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 5px;
+    }
+
+    hr {
+      border: dashed 1px black;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+
+    .total {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 5px 10px;
+    }
+  </style>
 </head>
-<body>
 
-  <h2>☕ Coffee Receipt</h2>
+<body onload="loadReceipt()">
 
-  <div id="receipt">جاري التحميل...</div>
+  <h2>☕ IRIVANA CAFE</h2>
+  <p id="date"></p>
+
+  <hr>
+
+  <div id="items"></div>
+
+  <hr>
+
+  <div class="row total">
+    <span>المجموع</span>
+    <span id="total"></span>
+  </div>
+
+  <hr>
+
+  <p>شكراً لزيارتكم ❤️</p>
 
   <button onclick="window.print()">🖨️ طباعة</button>
 
   <script>
-    const order = JSON.parse(localStorage.getItem("receipt"));
+    function loadReceipt() {
+      const order = JSON.parse(localStorage.getItem("receipt"));
 
-    const container = document.getElementById("receipt");
+      if (!order) return;
 
-    if (!order) {
-      container.innerHTML = "❌ ما فيه بيانات";
-    } else {
+      // التاريخ
+      const now = new Date();
+      document.getElementById("date").innerText =
+        now.toLocaleString();
+
+      // العناصر
       let html = "";
 
       order.items.forEach(item => {
-        html += `<p>${item.name} - ${item.price} BD</p>`;
+        html += `
+          <div class="row">
+            <span>${item.name}</span>
+            <span>${item.price} BD</span>
+          </div>
+        `;
       });
 
-      html += `<hr>`;
-      html += `<h3>المجموع: ${order.total} BD</h3>`;
-
-      container.innerHTML = html;
+      document.getElementById("items").innerHTML = html;
+      document.getElementById("total").innerText =
+        order.total + " BD";
     }
   </script>
 
