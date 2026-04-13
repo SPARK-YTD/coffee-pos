@@ -45,18 +45,35 @@ async function loadReports() {
   document.getElementById("totalSales").innerText = totalSales;
 
   // المنتجات
-  const { data: items } = await supabaseClient
+const orderIds = orders.map(o => o.id);
+
+let items = [];
+
+if (orderIds.length > 0) {
+  const { data } = await supabaseClient
     .from("order_items")
-    .select("*");
+    .select("*")
+    .in("order_id", orderIds);
 
-  const map = {};
+  items = data;
+}
 
-  items.forEach(item => {
-    if (!map[item.item_name]) {
-      map[item.item_name] = 0;
-    }
-    map[item.item_name] += item.qty;
-  });
+const map = {};
+
+items.forEach(item => {
+  if (!map[item.item_name]) {
+    map[item.item_name] = 0;
+  }
+  map[item.item_name] += item.qty;
+});
+
+let html = "";
+
+Object.entries(map).forEach(([name, qty]) => {
+  html += `<p>${name} - ${qty}</p>`;
+});
+
+document.getElementById("topProducts").innerHTML = html;
 
   let html = "";
 
