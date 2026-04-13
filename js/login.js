@@ -1,7 +1,19 @@
-async function login() {
-  const user = document.getElementById("user").value;
-  const pass = document.getElementById("pass").value;
+function login() {
+  const userInput = document.getElementById("user");
+  const passInput = document.getElementById("pass");
 
+  if (!userInput || !passInput) {
+    console.error("❌ input مو موجود");
+    return alert("في مشكلة في الصفحة");
+  }
+
+  const user = userInput.value;
+  const pass = passInput.value;
+
+  doLogin(user, pass);
+}
+
+async function doLogin(user, pass) {
   const { data } = await supabase
     .from("employees")
     .select("*")
