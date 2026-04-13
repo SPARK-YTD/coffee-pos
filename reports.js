@@ -179,17 +179,50 @@ function printReport() {
 
   const win = window.open("", "", "width=400,height=600");
 
+  const start = document.getElementById("startDate").value;
+const end = document.getElementById("endDate").value;
+
+let dateText = "";
+
+if (start && end) {
+  dateText = `من ${start} إلى ${end}`;
+} else {
+  const today = new Date().toLocaleDateString();
+  dateText = `تاريخ التقرير: ${today}`;
+}
   win.document.write(`
+  <html>
+  <head>
+    <style>
+      body {
+        font-family: Arial;
+        text-align: center;
+      }
+      hr {
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+
     <h2>📊 تقرير المقهى</h2>
+
+    <p>${dateText}</p>
+
+    <hr>
+
     <p>عدد الطلبات: ${orders}</p>
     <p>إجمالي المبيعات: ${sales} BD</p>
+
+    <hr>
 
     <h3>أفضل المنتجات</h3>
     ${products}
 
     <hr>
-    <p> sales </p>
-  `);
 
-  win.print();
-}
+    <p> tranqila </p>
+
+  </body>
+  </html>
+`);
