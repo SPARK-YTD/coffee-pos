@@ -119,9 +119,11 @@ chart = new Chart(ctx, {
     data: {
       labels: labels,
       datasets: [{
-        label: "المبيعات",
-        data: data
-      }]
+  label: "المبيعات",
+  data: data,
+  borderWidth: 3,
+  tension: 0.4
+}]
     }
   });
 }
