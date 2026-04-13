@@ -93,31 +93,20 @@ loadReports();
 
 function drawChart(orders) {
 
-  const todayMap = {};
-  const yesterdayMap = {};
-
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+  const days = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+  const salesMap = {
+    0:0,1:0,2:0,3:0,4:0,5:0,6:0
+  };
 
   orders.forEach(order => {
     const date = new Date(order.created_at);
+    const day = date.getDay(); // 0 = الأحد
 
-    // اليوم
-    if (date.toDateString() === today.toDateString()) {
-      if (!todayMap["today"]) todayMap["today"] = 0;
-      todayMap["today"] += order.total;
-    }
-
-    // أمس
-    if (date.toDateString() === yesterday.toDateString()) {
-      if (!yesterdayMap["yesterday"]) yesterdayMap["yesterday"] = 0;
-      yesterdayMap["yesterday"] += order.total;
-    }
+    salesMap[day] += order.total;
   });
 
-  const todayTotal = todayMap["today"] || 0;
-  const yesterdayTotal = yesterdayMap["yesterday"] || 0;
+  const labels = days;
+  const data = Object.values(salesMap);
 
   const ctx = document.getElementById("salesChart");
 
@@ -128,10 +117,10 @@ function drawChart(orders) {
   chart = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: ["اليوم", "أمس"],
+      labels: labels,
       datasets: [{
-        label: "المبيعات",
-        data: [todayTotal, yesterdayTotal],
+        label: "المبيعات الأسبوعية",
+        data: data,
         borderWidth: 2
       }]
     }
