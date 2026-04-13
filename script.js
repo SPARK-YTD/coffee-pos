@@ -156,7 +156,10 @@ async function checkout() {
   alert("تم حفظ الطلب ✅");
 
   cart = [];
-  currentOrderId = null; // 🔥 مهم جدًا
+  currentOrderId = null;
+  
+  document.getElementById("mode").innerText = "طلب جديد";
+  
   renderCart();
   loadPendingOrders();
 }
@@ -194,7 +197,9 @@ async function checkout() {
 
 async function openOrder(orderId) {
   currentOrderId = orderId;
-
+  
+ document.getElementById("mode").innerText = "✏️ تعديل طلب";
+  
   const { data, error } = await supabaseClient
     .from("order_items")
     .select("*")
