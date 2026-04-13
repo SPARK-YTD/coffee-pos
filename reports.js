@@ -94,27 +94,23 @@ loadReports();
 function drawChart(orders) {
 
   const days = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-  const salesMap = {
-    0:0,1:0,2:0,3:0,4:0,5:0,6:0
-  };
+  const salesMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
 
-  orders.forEach(order => {
-  const date = new Date(order.created_at);
-
-  // فلترة حسب الأسبوع الحالي فقط
+  // 🔥 نحسب بداية الأسبوع مرة وحدة
   const now = new Date();
-const startOfWeek = new Date();
-startOfWeek.setDate(now.getDate() - now.getDay());
-startOfWeek.setHours(0,0,0,0);
+  const startOfWeek = new Date();
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0,0,0,0);
 
-orders.forEach(order => {
-  const date = new Date(order.created_at);
+  // 🔥 لفّة وحدة فقط
+  orders.forEach(order => {
+    const date = new Date(order.created_at);
 
-  if (date < startOfWeek) return;
+    if (date < startOfWeek) return;
 
-  const day = date.getDay();
-  salesMap[day] += order.total;
-});
+    const day = date.getDay();
+    salesMap[day] += order.total;
+  });
 
   const labels = days;
   const data = Object.values(salesMap);
