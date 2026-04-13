@@ -38,6 +38,15 @@
 
 <body>
 
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user || user.role !== "manager") {
+  alert("ممنوع ❌");
+  window.location.href = "login.html";
+}
+</script>
+
 <h1>📊 التقارير</h1>
 
 <h3>📅 الفلترة</h3>
@@ -77,6 +86,7 @@
 
 <h2>🏆 أفضل المنتجات</h2>
 <div id="topProducts"></div>
+
 <button onclick="printReport()">🖨️ طباعة التقرير</button>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
