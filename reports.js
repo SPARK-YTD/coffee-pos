@@ -1,13 +1,40 @@
 async function loadReports() {
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0,0,0,0);
+  const filter = document.getElementById("filter").value;
 
-  // 🧾 الطلبات
+  let startDate = new Date();
+  let endDate = new Date();
+
+  if (filter === "today") {
+    startDate.setHours(0,0,0,0);
+
+  } else if (filter === "week") {
+    const day = startDate.getDay();
+    startDate.setDate(startDate.getDate() - day);
+    startDate.setHours(0,0,0,0);
+
+  } else if (filter === "month") {
+    startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+  } else if (filter === "custom") {
+    const startInput = document.getElementById("startDate").value;
+    const endInput = document.getElementById("endDate").value;
+
+    if (!startInput || !endInput) {
+      alert("حدد التاريخ أول ❌");
+      return;
+    }
+
+    startDate = new Date(startInput);
+    endDate = new Date(endInput);
+  }
+
+  // الطلبات
   const { data: orders } = await supabaseClient
     .from("orders")
     .select("*")
-    .gte("created_at", startOfDay.toISOString());
+    .gte("created_at", startDate.toISOString())
+    .lte("created_at", endDate.toISOString());
 
   const ordersCount = orders.length;
 
@@ -17,7 +44,7 @@ async function loadReports() {
   document.getElementById("ordersCount").innerText = ordersCount;
   document.getElementById("totalSales").innerText = totalSales;
 
-  // ☕ المنتجات الأكثر مبيع
+  // المنتجات
   const { data: items } = await supabaseClient
     .from("order_items")
     .select("*");
