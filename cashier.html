@@ -4,20 +4,22 @@
 <meta charset="UTF-8">
 <link rel="stylesheet" href="styles/style.css">
 </head>
+
 <body>
 
-<h1>☕ الكاشير</h1>
+<div class="header">☕ Cashier</div>
 
 <div id="categories"></div>
-<div id="products"></div>
+<div class="grid" id="products"></div>
 
-<hr>
+<div class="cart">
+  <h3>🛒 السلة</h3>
+  <div id="cart"></div>
+  <h2 id="total"></h2>
 
-<h2>🛒 السلة</h2>
-<div id="cart"></div>
-<h3 id="total"></h3>
-
-<button onclick="checkout()">إتمام الطلب</button>
+  <button onclick="checkout('cash')">💵 كاش</button>
+  <button onclick="checkout('card')">💳 شبكة</button>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
