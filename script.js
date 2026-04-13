@@ -1,30 +1,43 @@
-let cart = [];
-let total = 0;
+async function seedProducts() {
+  const products = [
+    { name: "Latte", category: "Coffee", price: 1.5 },
+    { name: "Cappuccino", category: "Coffee", price: 1.2 },
+    { name: "Espresso", category: "Coffee", price: 0.8 },
+    { name: "Iced Latte", category: "Iced", price: 1.7 }
+  ];
 
-function addItem(name, price) {
-  cart.push({ name, price });
-  total += price;
+  const { error } = await supabase.from("products").insert(products);
 
-  updateCart();
+  if (error) {
+    console.error("❌ Seed Error:", error);
+  } else {
+    console.log("✅ Products Added");
+    loadProducts();
+  }
 }
 
-function updateCart() {
-  const cartList = document.getElementById("cart");
-  cartList.innerHTML = "";
+async function loadProducts() {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*");
 
-  cart.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = `${item.name} - ${item.price}`;
-    cartList.appendChild(li);
+  if (error) {
+    console.error("❌ Error:", error);
+    return;
+  }
+
+  const container = document.getElementById("products");
+  container.innerHTML = "";
+
+  data.forEach(product => {
+    const btn = document.createElement("button");
+    btn.innerText = product.name + " - " + product.price + " BD";
+    btn.style.display = "block";
+    btn.style.margin = "10px";
+    btn.style.padding = "10px";
+
+    container.appendChild(btn);
   });
-
-  document.getElementById("total").textContent = "المجموع: " + total.toFixed(2);
 }
 
-function checkout() {
-  alert("تم الطلب! 💸");
-
-  cart = [];
-  total = 0;
-  updateCart();
-}
+loadProducts();
