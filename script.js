@@ -158,8 +158,9 @@ async function checkout() {
   total: total
 }));
 
+alert("تم حفظ الطلب ✅");
+
 window.open("receipt.html", "_blank");
-  alert("تم حفظ الطلب ✅");
   
 
   cart = [];
