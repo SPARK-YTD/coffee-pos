@@ -2,23 +2,51 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<title>Admin Panel</title>
 <link rel="stylesheet" href="styles/style.css">
 </head>
 
 <body>
 
-<h1>📊 Admin Panel</h1>
+<div class="layout">
 
-<input id="name" placeholder="اسم المنتج">
-<input id="price" placeholder="السعر">
-<input id="category" placeholder="القسم">
-<input type="file" id="image">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>☕ Coffee</h2>
+    <button onclick="showProducts()">📦 المنتجات</button>
+    <button onclick="logout()">🚪 خروج</button>
+  </div>
 
-<button onclick="saveProduct()">إضافة</button>
+  <!-- Main -->
+  <div class="main">
 
-<hr>
+    <div class="topbar">
+      <h1>Admin Panel</h1>
+      <button class="add-btn" onclick="openModal()">+ إضافة منتج</button>
+    </div>
 
-<div id="list"></div>
+    <!-- المنتجات -->
+    <div id="productsGrid" class="grid"></div>
+
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+
+    <h2>إضافة منتج</h2>
+
+    <input id="name" placeholder="اسم المنتج">
+    <input id="price" placeholder="السعر">
+    <input id="image" type="file">
+
+    <button onclick="saveProduct()">حفظ</button>
+    <button onclick="closeModal()">إلغاء</button>
+
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
