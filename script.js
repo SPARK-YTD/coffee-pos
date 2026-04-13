@@ -1,4 +1,5 @@
 let cart = [];
+let currentOrderId = null;
 
 // -------------------
 // إضافة منتجات
@@ -94,17 +95,47 @@ async function checkout() {
   let total = 0;
   cart.forEach(item => total += item.price);
 
-  const { data: order, error: orderError } = await supabaseClient
-    .from("orders")
-    .insert([{ total: total, status: "pending" }])
-    .select()
-    .single();
+  let order;
 
-  if (orderError) {
-    console.error(orderError);
-    return;
+  if (currentOrderId) {
+    // ✏️ تحديث الطلب
+    const { data, error } = await supabaseClient
+      .from("orders")
+      .update({ total: total })
+      .eq("id", currentOrderId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    order = data;
+
+    // حذف العناصر القديمة
+    await supabaseClient
+      .from("order_items")
+      .delete()
+      .eq("order_id", currentOrderId);
+
+  } else {
+    // ➕ إنشاء طلب جديد
+    const { data, error } = await supabaseClient
+      .from("orders")
+      .insert([{ total: total, status: "pending" }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    order = data;
   }
 
+  // إضافة العناصر الجديدة
   const items = cart.map(item => ({
     order_id: order.id,
     product_id: item.id,
@@ -125,8 +156,10 @@ async function checkout() {
   alert("تم حفظ الطلب ✅");
 
   cart = [];
+  currentOrderId = null; // 🔥 مهم جدًا
   renderCart();
-  loadPendingOrders();  }
+  loadPendingOrders();
+}
 
  async function loadPendingOrders() {
   const { data, error } = await supabaseClient
@@ -145,6 +178,7 @@ async function checkout() {
 
   data.forEach(order => {
     const div = document.createElement("div");
+    div.onclick = () => openOrder(order.id);
     div.style.border = "1px solid black";
     div.style.margin = "5px";
     div.style.padding = "5px";
@@ -158,5 +192,28 @@ async function checkout() {
   });
 }
 
+async function openOrder(orderId) {
+  currentOrderId = orderId;
+
+  const { data, error } = await supabaseClient
+    .from("order_items")
+    .select("*")
+    .eq("order_id", orderId);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  cart = data.map(item => ({
+    id: item.product_id,
+    name: item.item_name,
+    price: item.price
+  }));
+
+  renderCart();
+
+  alert("تم فتح الطلب للتعديل ✏️");
+}
 loadProducts();
 loadPendingOrders();
