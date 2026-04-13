@@ -126,7 +126,8 @@ async function checkout() {
 
   cart = [];
   renderCart();
-}
+  loadPendingOrders(); // 👈 هذا الجديد
+  }
 
 // تشغيل أولي
 loadProducts();
