@@ -86,34 +86,12 @@ sorted.forEach(([name, qty], index) => {
 
   document.getElementById("topProducts").innerHTML = html;
 
-drawChart(orders);
+drawChart(orders, filter);
 }
 
 loadReports();
 
-function drawChart(orders) {
-
-  const days = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-  const salesMap = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-
-  // 🔥 نحسب بداية الأسبوع مرة وحدة
-  const now = new Date();
-  const startOfWeek = new Date();
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0,0,0,0);
-
-  // 🔥 لفّة وحدة فقط
-  orders.forEach(order => {
-    const date = new Date(order.created_at);
-
-    if (date < startOfWeek) return;
-
-    const day = date.getDay();
-    salesMap[day] += order.total;
-  });
-
-  const labels = days;
-  const data = Object.values(salesMap);
+function drawChart(orders, filter) {
 
   const ctx = document.getElementById("salesChart");
 
@@ -121,15 +99,75 @@ function drawChart(orders) {
     chart.destroy();
   }
 
-  chart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "المبيعات الأسبوعية",
-        data: data,
-        borderWidth: 2
-      }]
-    }
-  });
+  // 🟢 اليوم → بالساعات
+  if (filter === "today") {
+
+    const hoursMap = {};
+    for (let i = 0; i < 24; i++) hoursMap[i] = 0;
+
+    orders.forEach(order => {
+      const date = new Date(order.created_at);
+      const hour = date.getHours();
+      hoursMap[hour] += order.total;
+    });
+
+    chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: Object.keys(hoursMap),
+        datasets: [{
+          label: "المبيعات بالساعة",
+          data: Object.values(hoursMap)
+        }]
+      }
+    });
+  }
+
+  // 🟡 الأسبوع → بالأيام
+  else if (filter === "week") {
+
+    const days = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+    const map = {0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+
+    orders.forEach(order => {
+      const d = new Date(order.created_at).getDay();
+      map[d] += order.total;
+    });
+
+    chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: days,
+        datasets: [{
+          label: "المبيعات الأسبوعية",
+          data: Object.values(map)
+        }]
+      }
+    });
+  }
+
+  // 🔵 الشهر → بالأيام
+  else {
+
+    const map = {};
+
+    orders.forEach(order => {
+      const date = new Date(order.created_at).getDate();
+
+      if (!map[date]) map[date] = 0;
+      map[date] += order.total;
+    });
+
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: Object.keys(map),
+        datasets: [{
+          label: "المبيعات الشهرية",
+          data: Object.values(map),
+          tension: 0.4
+        }]
+      }
+    });
+  }
 }
