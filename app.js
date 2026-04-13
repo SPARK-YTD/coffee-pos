@@ -1,3 +1,21 @@
+async function seedProducts() {
+  const products = [
+    { name: "Latte", category: "Coffee", price: 1.5 },
+    { name: "Cappuccino", category: "Coffee", price: 1.2 },
+    { name: "Espresso", category: "Coffee", price: 0.8 },
+    { name: "Iced Latte", category: "Iced", price: 1.7 }
+  ];
+
+  const { error } = await supabase.from("products").insert(products);
+
+  if (error) {
+    console.error("❌ Seed Error:", error);
+  } else {
+    console.log("✅ Products Added");
+    loadProducts();
+  }
+}
+
 async function loadProducts() {
   const { data, error } = await supabase
     .from("products")
@@ -7,8 +25,6 @@ async function loadProducts() {
     console.error("❌ Error:", error);
     return;
   }
-
-  console.log("✅ Products:", data);
 
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -24,4 +40,5 @@ async function loadProducts() {
   });
 }
 
+// أول مرة يشغل
 loadProducts();
