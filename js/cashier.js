@@ -5,57 +5,51 @@ async function loadProducts() {
     .from("products")
     .select("*");
 
-  const container = document.getElementById("products");
-  container.innerHTML = "";
+  const box = document.getElementById("products");
+  box.innerHTML = "";
 
   data.forEach(p => {
-    container.innerHTML += `
-      <div class="product" onclick='addToCart(${JSON.stringify(p)})'>
-        <img src="${p.image_url}" width="100">
-        <p>${p.name}</p>
-        <p>${p.base_price} BD</p>
+    box.innerHTML += `
+      <div onclick='addToCart(${JSON.stringify(p)})'>
+        ${p.name} - ${p.base_price}
       </div>
     `;
   });
 }
 
-function addToCart(product) {
-  cart.push(product);
+function addToCart(p) {
+  cart.push(p);
   renderCart();
 }
 
 function renderCart() {
-  const el = document.getElementById("cartItems");
-  el.innerHTML = "";
-
+  const box = document.getElementById("cart");
   let total = 0;
+
+  box.innerHTML = "";
 
   cart.forEach(p => {
     total += Number(p.base_price);
-
-    el.innerHTML += `
-      <div>${p.name} - ${p.base_price}</div>
-    `;
+    box.innerHTML += `<div>${p.name}</div>`;
   });
 
-  document.getElementById("total").innerText = total + " BD";
+  document.getElementById("total").innerText = total;
 }
 
 async function checkout() {
-  if (cart.length === 0) return;
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const total = cart.reduce((sum, p) => sum + Number(p.base_price), 0);
+  const total = cart.reduce((s, p) => s + Number(p.base_price), 0);
 
-  const { error } = await supabaseClient.from("orders").insert([
-    { items: cart, total }
+  await supabaseClient.from("orders").insert([
+    {
+      items: cart,
+      total,
+      employee_id: user.id
+    }
   ]);
 
-  if (error) {
-    console.log(error);
-    return alert("خطأ ❌");
-  }
-
-  alert("تم الدفع ✅");
+  alert("تم الدفع");
   cart = [];
   renderCart();
 }
