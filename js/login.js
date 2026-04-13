@@ -1,28 +1,47 @@
-function login() {
+async function login() {
   const userInput = document.getElementById("user");
   const passInput = document.getElementById("pass");
 
+  // تحقق
   if (!userInput || !passInput) {
-    console.error("❌ input مو موجود");
-    return alert("في مشكلة في الصفحة");
+    alert("خطأ في الصفحة ❌");
+    console.error("Inputs not found");
+    return;
   }
 
-  const user = userInput.value;
-  const pass = passInput.value;
+  const user = userInput.value.trim();
+  const pass = passInput.value.trim();
 
-  doLogin(user, pass);
-}
+  if (!user || !pass) {
+    alert("اكتب البيانات ❌");
+    return;
+  }
 
-async function doLogin(user, pass) {
-  const { data } = await supabase
-    .from("employees")
-    .select("*")
-    .eq("employee_number", user)
-    .eq("password", pass)
-    .single();
+  try {
+    const { data, error } = await window.supabaseClient
+      .from("employees")
+      .select("*")
+      .eq("employee_number", user)
+      .eq("password", pass)
+      .single();
 
-  if (!data) return alert("خطأ");
+    if (error || !data) {
+      alert("بيانات غلط ❌");
+      console.log(error);
+      return;
+    }
 
-  if (data.role === "admin") location = "dashboard.html";
-  else location = "cashier.html";
+    // حفظ الجلسة
+    localStorage.setItem("user", JSON.stringify(data));
+
+    if (data.role === "admin") {
+      location.href = "dashboard.html";
+    } else {
+      location.href = "cashier.html";
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("خطأ غير متوقع ❌");
+  }
 }
