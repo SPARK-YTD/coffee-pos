@@ -1,51 +1,35 @@
 async function saveProduct() {
-  const name = document.getElementById("name").value;
-  const price = parseFloat(document.getElementById("price").value);
-  const category = document.getElementById("category").value;
-  const file = document.getElementById("image").files[0];
+  const name = nameInput.value;
+  const price = parseFloat(priceInput.value);
+  const category = categoryInput.value;
+  const file = image.files[0];
 
-  let imageUrl = "";
+  let url = "";
 
   if (file) {
     const fileName = Date.now() + file.name;
 
     await supabase.storage.from("products").upload(fileName, file);
 
-    const { data } = supabase.storage
-      .from("products")
-      .getPublicUrl(fileName);
-
-    imageUrl = data.publicUrl;
+    const { data } = supabase.storage.from("products").getPublicUrl(fileName);
+    url = data.publicUrl;
   }
 
   await supabase.from("products").insert([
-    { name, base_price: price, category, image_url: imageUrl }
+    { name, base_price: price, category, image_url: url }
   ]);
 
-  alert("تم الحفظ");
-  loadProducts();
+  load();
 }
 
-async function loadProducts() {
+async function load() {
   const { data } = await supabase.from("products").select("*");
 
-  const box = document.getElementById("products");
-  box.innerHTML = "";
+  list.innerHTML = "";
 
-  data.forEach(p => {
-    box.innerHTML += `
-      <div class="card">
-        <h3>${p.name}</h3>
-        <p>${p.base_price}</p>
-        <button onclick="deleteProduct('${p.id}')">حذف</button>
-      </div>
-    `;
+  data.forEach(p=>{
+    list.innerHTML += `<div>${p.name} - ${p.base_price}</div>`;
   });
 }
 
-async function deleteProduct(id) {
-  await supabase.from("products").delete().eq("id", id);
-  loadProducts();
-}
-
-loadProducts();
+load();
