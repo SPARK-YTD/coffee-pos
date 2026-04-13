@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>إدارة المنتجات</title>
+
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input { margin: 5px; padding: 5px; }
+    button { margin: 5px; padding: 5px 10px; }
+    .product { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+  </style>
+</head>
+
+<body>
+
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user || user.role !== "manager") {
+  alert("ممنوع ❌");
+  window.location.href = "login.html";
+}
+</script>
+
+<h1>🛠️ إدارة المنتجات</h1>
+
+<a href="index.html">⬅️ رجوع</a>
+
+<hr>
+
+<h3>➕ إضافة منتج</h3>
+
+<input id="name" placeholder="اسم المنتج">
+<input id="category" placeholder="التصنيف">
+<input id="price" type="number" placeholder="السعر">
+
+<button onclick="addProduct()">إضافة</button>
+
+<hr>
+
+<h3>📦 المنتجات</h3>
+
+<div id="products"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="supabase.js"></script>
+
+<script>
+async function loadProducts() {
+  const { data } = await supabaseClient
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const container = document.getElementById("products");
+  container.innerHTML = "";
+
+  data.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "product";
+
+    div.innerHTML = `
+      <b>${p.name}</b> (${p.category}) - ${p.price} BD
+      <br>
+      <button onclick="deleteProduct('${p.id}')">🗑️ حذف</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+async function addProduct() {
+  const name = document.getElementById("name").value;
+  const category = document.getElementById("category").value;
+  const price = document.getElementById("price").value;
+
+  if (!name || !price) {
+    alert("اكمل البيانات ❌");
+    return;
+  }
+
+  await supabaseClient.from("products").insert([
+    { name, category, price }
+  ]);
+
+  loadProducts();
+}
+
+async function deleteProduct(id) {
+  await supabaseClient
+    .from("products")
+    .delete()
+    .eq("id", id);
+
+  loadProducts();
+}
+
+loadProducts();
+</script>
+
+</body>
+</html>
