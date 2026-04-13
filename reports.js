@@ -68,11 +68,21 @@ items.forEach(item => {
   map[item.item_name] += item.qty;
 });
 
-  let html = "";
+  let sorted = Object.entries(map)
+  .sort((a, b) => b[1] - a[1]) // ترتيب تنازلي
+  .slice(0, 5); // أعلى 5
 
-  Object.entries(map).forEach(([name, qty]) => {
-    html += `<p>${name} - ${qty}</p>`;
-  });
+let html = "";
+
+sorted.forEach(([name, qty], index) => {
+  let medal = "";
+
+  if (index === 0) medal = "🥇";
+  else if (index === 1) medal = "🥈";
+  else if (index === 2) medal = "🥉";
+
+  html += `<p>${medal} ${name} (${qty})</p>`;
+});
 
   document.getElementById("topProducts").innerHTML = html;
 
