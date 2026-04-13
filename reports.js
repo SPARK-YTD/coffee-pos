@@ -171,3 +171,25 @@ function drawChart(orders, filter) {
     });
   }
 }
+function printReport() {
+
+  const orders = document.getElementById("ordersCount").innerText;
+  const sales = document.getElementById("totalSales").innerText;
+  const products = document.getElementById("topProducts").innerHTML;
+
+  const win = window.open("", "", "width=400,height=600");
+
+  win.document.write(`
+    <h2>📊 تقرير المقهى</h2>
+    <p>عدد الطلبات: ${orders}</p>
+    <p>إجمالي المبيعات: ${sales} BD</p>
+
+    <h3>أفضل المنتجات</h3>
+    ${products}
+
+    <hr>
+    <p> sales </p>
+  `);
+
+  win.print();
+}
