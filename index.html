@@ -7,19 +7,28 @@
 </head>
 <body>
 
-  <h1>☕ كاشير المقهى</h1>
-  
-  <button onclick="seedProducts()">Add Test Products</button>
+<h1>☕ كاشير المقهى</h1>
 
-  <div id="products"></div>
-  <h2>🛒 الطلب</h2>
-  <h3 id="mode">طلب جديد</h3>
-  <ul id="cart"></ul>
-  <h2>📋 الطلبات المعلقة</h2>
-  <div id="pendingOrders"></div>
+<button onclick="seedProducts()">Add Test Products</button>
 
-  <h3 id="total">المجموع: 0</h3>
-  <button onclick="checkout()">إتمام الطلب</button>
+<!-- المنتجات -->
+<h2>☕ المنتجات</h2> <div id="products"></div>
+
+<hr>
+
+<!-- السلة -->
+<h2>🛒 الطلب</h2>
+<h3 id="mode">طلب جديد</h3>
+<ul id="cart"></ul>
+<h3 id="total">المجموع: 0</h3>
+
+<button onclick="checkout()">إتمام الطلب</button>
+
+<hr>
+
+<!-- الطلبات المعلقة -->
+<h2>📋 الطلبات المعلقة</h2>
+<div id="pendingOrders"></div>
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="supabase.js"></script>
