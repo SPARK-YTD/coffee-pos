@@ -1,77 +1,63 @@
 let cart = [];
 
 async function loadProducts() {
-  const { data } = await supabase
+  const { data } = await supabaseClient
     .from("products")
-    .select("*")
-    .eq("active", true);
+    .select("*");
 
-  const box = document.getElementById("products");
-  box.innerHTML = "";
+  const container = document.getElementById("products");
+  container.innerHTML = "";
 
   data.forEach(p => {
-    box.innerHTML += `
-      <div class="card" onclick="add('${p.id}')">
-        <img src="${p.image_url || ''}">
-        <h4>${p.name}</h4>
-        <p>${p.base_price} د.ب</p>
+    container.innerHTML += `
+      <div class="product" onclick='addToCart(${JSON.stringify(p)})'>
+        <img src="${p.image_url}" width="100">
+        <p>${p.name}</p>
+        <p>${p.base_price} BD</p>
       </div>
     `;
   });
 }
 
-async function add(id) {
-  const { data } = await supabase.from("products").select("*").eq("id", id).single();
-
-  cart.push({
-    id,
-    name: data.name,
-    price: data.base_price
-  });
-
+function addToCart(product) {
+  cart.push(product);
   renderCart();
 }
 
 function renderCart() {
-  const box = document.getElementById("cart");
-  let total = 0;
-  box.innerHTML = "";
+  const el = document.getElementById("cartItems");
+  el.innerHTML = "";
 
-  cart.forEach(i => {
-    total += i.price;
-    box.innerHTML += `<div>${i.name} - ${i.price}</div>`;
+  let total = 0;
+
+  cart.forEach(p => {
+    total += Number(p.base_price);
+
+    el.innerHTML += `
+      <div>${p.name} - ${p.base_price}</div>
+    `;
   });
 
-  document.getElementById("total").innerText = total + " د.ب";
+  document.getElementById("total").innerText = total + " BD";
 }
 
-async function checkout(method) {
-  if (!cart.length) return;
+async function checkout() {
+  if (cart.length === 0) return;
 
-  const total = cart.reduce((a,b)=>a+b.price,0);
+  const total = cart.reduce((sum, p) => sum + Number(p.base_price), 0);
 
-  const { data: order } = await supabase
-    .from("orders")
-    .insert([{ total, payment_method: method, status: "new" }])
-    .select()
-    .single();
+  const { error } = await supabaseClient.from("orders").insert([
+    { items: cart, total }
+  ]);
 
-  for (let i of cart) {
-    await supabase.from("order_items").insert([
-      { order_id: order.id, product_id: i.id, price: i.price }
-    ]);
+  if (error) {
+    console.log(error);
+    return alert("خطأ ❌");
   }
 
-  print(order.id, total);
-
+  alert("تم الدفع ✅");
   cart = [];
   renderCart();
-}
-
-function print(id,total){
-  const w = window.open();
-  w.document.write(`<h2>Order #${id}</h2><h3>${total}</h3>`);
-  w.print();
 }
 
 loadProducts();
