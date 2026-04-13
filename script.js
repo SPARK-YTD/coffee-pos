@@ -181,15 +181,16 @@ async function checkout() {
 
   data.forEach(order => {
     const div = document.createElement("div");
-    div.onclick = () => openOrder(order.id);
+    div.onclick = (e) => {   if (!e.target.closest("button")) {     openOrder(order.id);   } };
     div.style.border = "1px solid black";
     div.style.margin = "5px";
     div.style.padding = "5px";
 
     div.innerHTML = `
-      <strong>طلب #${order.id.slice(0,5)}</strong>
-      <p>المجموع: ${order.total} BD</p>
-    `;
+  <strong>طلب #${order.id.slice(0,5)}</strong>
+  <p>المجموع: ${order.total} BD</p>
+  <button onclick="deleteOrder('${order.id}')">🗑️ حذف</button>
+`;
 
     container.appendChild(div);
   });
@@ -222,3 +223,22 @@ async function openOrder(orderId) {
 }
 loadProducts();
 loadPendingOrders();
+async function deleteOrder(orderId) {
+  const confirmDelete = confirm("متأكد تبغى تحذف الطلب؟");
+
+  if (!confirmDelete) return;
+
+  // حذف العناصر أول
+  await supabaseClient
+    .from("order_items")
+    .delete()
+    .eq("order_id", orderId);
+
+  // حذف الطلب
+  await supabaseClient
+    .from("orders")
+    .delete()
+    .eq("id", orderId);
+
+  loadPendingOrders();
+}
