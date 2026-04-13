@@ -9,11 +9,8 @@ async function login() {
     .eq("password", pass)
     .single();
 
-  if (!data) return alert("خطأ ❌");
+  if (!data) return alert("خطأ");
 
-  if (data.role === "admin") {
-    location.href = "dashboard.html";
-  } else {
-    location.href = "cashier.html";
-  }
+  if (data.role === "admin") location = "dashboard.html";
+  else location = "cashier.html";
 }
