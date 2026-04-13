@@ -13,10 +13,11 @@ async function login() {
     .eq("employee_number", user)
     .eq("password", pass);
 
-  console.log(data, error);
+  console.log("RESULT:", data, error);
 
   if (error) {
     alert("خطأ في الاتصال ❌");
+    console.log(error);
     return;
   }
 
@@ -30,7 +31,7 @@ async function login() {
   // حفظ المستخدم
   localStorage.setItem("user", JSON.stringify(employee));
 
-  // تحويل حسب الدور
+  // تحويل
   if (employee.role === "admin") {
     window.location.href = "dashboard.html";
   } else {
