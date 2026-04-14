@@ -257,3 +257,53 @@ window.filterCategory = function (category, btn) {
 
 /* =============================== */
 loadItems();
+window.completeOrder = async function () {
+
+  if (!cart.length) {
+    alert("السلة فاضية");
+    return;
+  }
+
+  const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
+
+  // 1️⃣ إنشاء الطلب
+  const { data: order, error } = await supabase
+    .from("orders")
+    .insert({
+      total: total,
+      status: "active"
+    })
+    .select()
+    .single();
+
+  if (error || !order) {
+    console.error(error);
+    alert("❌ فشل إنشاء الطلب");
+    return;
+  }
+
+  // 2️⃣ إضافة العناصر
+  const itemsToInsert = cart.map(i => ({
+    order_id: order.id,
+    product_id: i.id,
+    item_name: i.name,
+    qty: i.qty,
+    price: i.price
+  }));
+
+  const { error: itemsError } = await supabase
+    .from("order_items")
+    .insert(itemsToInsert);
+
+  if (itemsError) {
+    console.error(itemsError);
+    alert("❌ فشل حفظ العناصر");
+    return;
+  }
+
+  // 3️⃣ تنظيف
+  cart = [];
+  renderCart();
+
+  alert("✅ تم حفظ الطلب");
+};
