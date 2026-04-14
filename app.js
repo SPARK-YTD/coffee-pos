@@ -313,3 +313,52 @@ window.completeOrder = async function () {
 
   alert("✅ تم حفظ الطلب");
 };
+
+let activeOrders = [];
+
+async function loadActiveOrders() {
+
+  const { data } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+
+  activeOrders = data || [];
+  renderActiveOrders();
+}
+
+
+function renderActiveOrders() {
+
+  const box = document.getElementById("activeOrders");
+  box.innerHTML = "";
+
+  activeOrders.forEach(order => {
+
+    const div = document.createElement("div");
+    div.className = "order-box";
+
+    div.innerHTML = `
+      <strong>فاتورة رقم ${order.id.slice(0,6)}</strong><br>
+      ${order.total.toFixed(3)} د.ب<br>
+
+      <button onclick="markCompleted('${order.id}')">
+        ✅ مكتمل
+      </button>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+window.markCompleted = async function (id) {
+
+  await supabase
+    .from("orders")
+    .update({ status: "completed" })
+    .eq("id", id);
+
+  loadActiveOrders();
+};
+loadActiveOrders();
