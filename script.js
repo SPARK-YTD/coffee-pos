@@ -19,13 +19,75 @@ async function loadProducts() {
 
   data.forEach(p => {
     const btn = document.createElement("button");
-    btn.innerHTML = `   <img src="${p.image_url || 'https://via.placeholder.com/80'}" width="80"><br>   ${p.name} - ${p.price} BD `;
-    btn.onclick = () => addToCart(p);
+    btn.innerHTML = `   <img src="${p.image_url || 'no-image.png'}" width="80"><br>   ${p.name} - ${p.price} BD `;
+    btn.onclick = () => handleProductClick(p);
 
     container.appendChild(btn);
   });
 }
+async function handleProductClick(product) {
 
+  // 🟢 إذا المنتج عادي
+  if (!product.has_variants) {
+    addToCart(product);
+    return;
+  }
+
+  // 🟡 إذا فيه أحجام
+  const { data: variants, error } = await supabaseClient
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", product.id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  showVariants(product, variants);
+}
+
+function showVariants(product, variants) {
+
+  let html = `<h3>${product.name}</h3>`;
+
+  variants.forEach(v => {
+    html += `
+      <button onclick="selectVariant('${product.id}', '${product.name}', '${v.label}', ${v.price})">
+        ${v.label} - ${v.price} BD
+      </button><br><br>
+    `;
+  });
+
+  const div = document.createElement("div");
+  div.innerHTML = html;
+
+  div.style.position = "fixed";
+  div.style.top = "50%";
+  div.style.left = "50%";
+  div.style.transform = "translate(-50%, -50%)";
+  div.style.background = "white";
+  div.style.padding = "20px";
+  div.style.border = "1px solid black";
+
+  div.id = "variantPopup";
+
+  document.body.appendChild(div);
+}
+
+function selectVariant(productId, productName, label, price) {
+
+  const item = {
+    id: productId,
+    name: productName + " - " + label,
+    price: price
+  };
+
+  cart.push(item);
+  renderCart();
+
+  document.getElementById("variantPopup").remove();
+}
 // -------------------
 // إضافة للسلة
 // -------------------
