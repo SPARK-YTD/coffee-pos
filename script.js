@@ -19,7 +19,7 @@ async function loadProducts() {
 
   data.forEach(p => {
     const btn = document.createElement("button");
-    btn.innerHTML = `   <img src="${p.image_url || ''}" width="80"><br>   ${p.name} - ${p.price} BD `;
+    btn.innerHTML = `   <img src="${p.image_url || 'https://via.placeholder.com/80'}" width="80"><br>   ${p.name} - ${p.price} BD `;
     btn.onclick = () => addToCart(p);
 
     container.appendChild(btn);
