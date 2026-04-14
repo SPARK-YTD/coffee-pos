@@ -1,3 +1,147 @@
+/* ===== عام ===== */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+}
+
+/* ===== Top Bar ===== */
+.topbar {
+  background: linear-gradient(90deg, #0f172a, #1e293b);
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* ===== Layout ===== */
+.cashier-layout {
+  display: grid;
+  grid-template-columns: 2fr 1.3fr 1fr;
+  gap: 15px;
+  padding: 15px;
+}
+
+/* ===== Card ===== */
+.card {
+  background: white;
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* ===== Categories ===== */
+.categories {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cat {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: none;
+  background: #e5e7eb;
+  cursor: pointer;
+}
+
+.cat.active {
+  background: #facc15;
+  font-weight: bold;
+}
+
+/* ===== Products ===== */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 10px;
+}
+
+.item {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.item:hover {
+  transform: scale(1.03);
+}
+
+.cashier-item-img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 5px;
+}
+
+/* ===== Invoice ===== */
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 6px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.invoice-table button {
+  padding: 3px 6px;
+  border: none;
+  background: #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.total-box {
+  margin-top: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn.success {
+  background: #22c55e;
+  color: white;
+}
+
+.btn.secondary {
+  background: #1e293b;
+  color: white;
+}
+
+/* ===== Orders ===== */
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-box {
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 10px;
+  border-left: 5px solid #22c55e;
+}
+
+/* ===== Popup ===== */
 .popup-overlay {
   position: fixed;
   top: 0;
@@ -11,9 +155,9 @@
 }
 
 .popup-box {
-  background: #fff;
+  background: white;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 15px;
   width: 300px;
   text-align: center;
 }
@@ -24,7 +168,7 @@
   margin: 5px 0;
   background: #facc15;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: bold;
   cursor: pointer;
 }
@@ -34,5 +178,5 @@
   background: #eee;
   border: none;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
