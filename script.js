@@ -49,7 +49,7 @@ async function handleClick(item) {
   const { data, error } = await supabase
     .from("product_variants")
     .select("*")
-    .eq("product_id", item.id);
+    .eq("product_id", item.id.toString());
 
   if (error) {
     console.error("❌ VARIANTS ERROR:", error);
