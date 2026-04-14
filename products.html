@@ -60,14 +60,33 @@ async function loadProducts() {
     const div = document.createElement("div");
     div.className = "product";
 
-    div.innerHTML = `
-      <b>${p.name}</b> (${p.category}) - ${p.price} BD
-      <br>
-      <button onclick="deleteProduct('${p.id}')">🗑️ حذف</button>
-    `;
+   div.innerHTML = `
+  <input id="name-${p.id}" value="${p.name}">
+  <input id="cat-${p.id}" value="${p.category}">
+  <input id="price-${p.id}" type="number" value="${p.price}">
+
+  <br>
+
+  <button onclick="updateProduct('${p.id}')">💾 حفظ</button>
+  <button onclick="deleteProduct('${p.id}')">🗑️ حذف</button>
+`;
 
     container.appendChild(div);
   });
+}
+
+  async function updateProduct(id) {
+  const name = document.getElementById(`name-${id}`).value;
+  const category = document.getElementById(`cat-${id}`).value;
+  const price = document.getElementById(`price-${id}`).value;
+
+  await supabaseClient
+    .from("products")
+    .update({ name, category, price })
+    .eq("id", id);
+
+  alert("تم التعديل ✅");
+  loadProducts();
 }
 
 async function addProduct() {
@@ -83,6 +102,11 @@ async function addProduct() {
   await supabaseClient.from("products").insert([
     { name, category, price }
   ]);
+
+  // 🔥 تفريغ الحقول
+  document.getElementById("name").value = "";
+  document.getElementById("category").value = "";
+  document.getElementById("price").value = "";
 
   loadProducts();
 }
