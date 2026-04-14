@@ -20,11 +20,14 @@ async function loadItems(category = "food") {
   }
 
   items = data.map(p => ({
-    ...p,
-    extras: p.extras_text
-      ? p.extras_text.split("\n").map(e => e.trim()).filter(Boolean)
-      : []
-  }));
+  ...p,
+  extras: p.extras_text
+    ? p.extras_text
+        .split("\n")
+        .map(e => e.trim())
+        .filter(e => e !== "")
+    : []
+}));
 
   renderItems();
 }
@@ -70,8 +73,7 @@ async function handleItem(item) {
     return;
   }
 
-  if (item.extras.length > 0) {
-    showExtrasPopup(item);
+if (item.extras && item.extras.filter(e => e).length > 0) {    showExtrasPopup(item);
     return;
   }
 
