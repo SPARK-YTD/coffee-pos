@@ -126,10 +126,10 @@ window.selectVariant = function (id, name, label, price) {
     });
   } else {
     addToCart({
-      id,
-      name: `${name} (${label})`,
-      price
-    });
+  id: id, // 🔥 مهم
+  name: `${name} (${label})`,
+  price: price
+});
   }
 
   document.querySelector(".popup-overlay")?.remove();
@@ -178,9 +178,10 @@ function showExtrasPopup(item) {
     }
 
     addToCart({
-      ...item,
-      name
-    });
+  id: item.id,
+  name,
+  price: item.price
+});
 
     overlay.remove();
   };
@@ -191,13 +192,18 @@ function showExtrasPopup(item) {
 ================================ */
 function addToCart(item) {
 
-  const existing = cart.find(i => i.name === item.name);
+  const existing = cart.find(i =>
+    i.id === item.id &&
+    i.name === item.name
+  );
 
   if (existing) {
     existing.qty += 1;
   } else {
     cart.push({
-      ...item,
+      id: item.id || null, // 🔥 مهم
+      name: item.name,
+      price: item.price,
       qty: 1
     });
   }
