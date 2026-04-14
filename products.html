@@ -3,228 +3,157 @@
 <head>
   <meta charset="UTF-8">
   <title>إدارة المنتجات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: Arial; padding: 20px; }
-    input { margin: 5px; padding: 5px; }
-    button { margin: 5px; padding: 5px 10px; }
-    .product { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: black;
+      color: white;
+      padding: 15px;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .container {
+      padding: 15px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: black;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+
+    .sizes-box {
+      background: #fafafa;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .sizes-list div {
+      background: #eee;
+      padding: 6px;
+      margin: 5px 0;
+      border-radius: 6px;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 5px;
+    }
+
+    .product-card input {
+      font-size: 12px;
+    }
+
+    .actions button {
+      width: 100%;
+      margin-top: 5px;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .back-btn {
+      display: block;
+      margin-bottom: 10px;
+      text-decoration: none;
+      color: black;
+    }
   </style>
 </head>
 
 <body>
 
-<script>
-const user = JSON.parse(localStorage.getItem("user"));
+<header>⚙️ إدارة المنتجات</header>
 
-if (!user || user.role !== "manager") {
-  alert("ممنوع ❌");
-  window.location.href = "login.html";
-}
-</script>
+<div class="container">
 
-<h1>🛠️ إدارة المنتجات</h1>
+  <a href="index.html" class="back-btn">⬅️ رجوع للكاشير</a>
 
-<a href="index.html">⬅️ رجوع</a>
+  <!-- إضافة منتج -->
+  <div class="card">
+    <h3>➕ إضافة منتج</h3>
 
-<hr>
+    <input id="name" placeholder="اسم المنتج">
+    <input id="category" placeholder="التصنيف (coffee / drinks)">
+    <input id="price" type="number" placeholder="السعر (بدون أحجام)">
+    <input id="image" type="file">
 
-<h3>➕ إضافة منتج</h3>
+    <div class="sizes-box">
+      <h4>📏 الأحجام (اختياري)</h4>
 
-<input id="name" placeholder="اسم المنتج">
-<input id="category" placeholder="التصنيف">
-<input id="price" type="number" placeholder="السعر">
-<input id="image" type="file">
+      <input id="sizeName" placeholder="Small">
+      <input id="sizePrice" type="number" placeholder="السعر">
 
-<button onclick="addProduct()">إضافة</button>
-<h4>📏 الأحجام (اختياري)</h4>
+      <button onclick="addSize()">➕ إضافة حجم</button>
 
-<input id="sizeName" placeholder="Small">
-<input id="sizePrice" type="number" placeholder="السعر">
+      <div id="sizes" class="sizes-list"></div>
+    </div>
 
-<button onclick="addSize()">➕ إضافة حجم</button>
+    <button onclick="addProduct()">💾 حفظ المنتج</button>
+  </div>
 
-<div id="sizes"></div>
-  
-<hr>
+  <!-- المنتجات -->
+  <div class="card">
+    <h3>📦 المنتجات</h3>
 
-<h3>📦 المنتجات</h3>
+    <div id="products" class="products-grid"></div>
+  </div>
 
-<div id="products"></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
-
-<script>
-
-  let sizes = [];
-  
-  function addSize() {
-  const name = document.getElementById("sizeName").value;
-  const price = document.getElementById("sizePrice").value;
-
-  if (!name || !price) {
-    alert("اكتب الاسم والسعر ❌");
-    return;
-  }
-
-  // منع التكرار
-  const exists = sizes.find(s => s.name === name);
-  if (exists) {
-    alert("الحجم موجود ❌");
-    return;
-  }
-
-  sizes.push({ name, price });
-
-  renderSizes();
-
-  document.getElementById("sizeName").value = "";
-  document.getElementById("sizePrice").value = "";
-}
-
-function renderSizes() {
-  const div = document.getElementById("sizes");
-  div.innerHTML = "";
-
-  sizes.forEach((s, index) => {
-    div.innerHTML += `
-      <div style="border:1px solid #ccc; margin:5px; padding:5px;">
-        ${s.name} - ${s.price} BD
-        <button onclick="removeSize(${index})">❌</button>
-      </div>
-    `;
-  });
-}
-  
-  function removeSize(index) {
-  sizes.splice(index, 1);
-  renderSizes();
-}
-  
-async function loadProducts() {
-  const { data } = await supabaseClient
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  const container = document.getElementById("products");
-  container.innerHTML = "";
-
-  data.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "product";
-
-  div.innerHTML = `
-  <img src="${p.image_url || 'no-image.png'}">
-  <input id="name-${p.id}" value="${p.name}">
-  <input id="cat-${p.id}" value="${p.category}">
-  <input id="price-${p.id}" type="number" value="${p.price || ''}">
-
-  <br>
-
-  <button onclick="updateProduct('${p.id}')">💾 حفظ</button>
-  <button onclick="deleteProduct('${p.id}')">🗑️ حذف</button>
-`;
-
-    container.appendChild(div);
-  });
-}
-
-  async function updateProduct(id) {
-  const name = document.getElementById(`name-${id}`).value;
-  const category = document.getElementById(`cat-${id}`).value;
-  const price = document.getElementById(`price-${id}`).value;
-
-  const hasVariants = !price || price.trim() === "" || parseFloat(price) === 0;
-
-  await supabaseClient
-    .from("products")
-    .update({
-      name,
-      category,
-      price: hasVariants ? null : parseFloat(price),
-      has_variants: hasVariants
-    })
-    .eq("id", id);
-
-  alert("تم التعديل ✅");
-  loadProducts();
-}
-
-async function addProduct() {
-  const name = document.getElementById("name").value;
-  const category = document.getElementById("category").value;
-  const price = document.getElementById("price").value;
-  const file = document.getElementById("image").files[0];
-
-if (!name || (sizes.length === 0 && (!price || price.trim() === ""))) {
-  alert("اكمل البيانات ❌");
-  return;
-}
-
-if (sizes.length > 0 && price) {
-  alert("❌ لا تحط سعر مع الأحجام");
-  return;
-}
-
-  let imageUrl = "";
-
-  if (file) {
-    const fileName = Date.now() + "-" + file.name;
-
-    const { error: uploadError } = await supabaseClient
-      .storage
-      .from("products")
-      .upload(fileName, file);
-
-    if (uploadError) {
-      console.error(uploadError);
-      alert("خطأ في رفع الصورة ❌");
-      return;
-    }
-
-    const { data } = supabaseClient
-      .storage
-      .from("products")
-      .getPublicUrl(fileName);
-
-    imageUrl = data.publicUrl;
-  }
-
-  // ✅ إنشاء المنتج
-  const { data: product } = await supabaseClient
-    .from("products")
-    .insert([{    name,    category,    price: sizes.length > 0 ? null : parseFloat(price),   has_variants: sizes.length > 0,   image_url: imageUrl  }])
-    .select()
-    .single();
-
-  // ✅ هنا نحفظ الأحجام (داخل الدالة)
-  if (sizes.length > 0) {
-
-  const variantRows = sizes.map(s => ({
-  product_id: product.id,
-  label: s.name,
-  price: parseFloat(s.price),
-  active: true
-  }));
-
-  await supabaseClient.from("product_variants").insert(variantRows);
-    sizes = [];
-    renderSizes();
-  }
-
-  // تنظيف
-  document.getElementById("name").value = "";
-  document.getElementById("category").value = "";
-  document.getElementById("price").value = "";
-  document.getElementById("image").value = "";
-
-  loadProducts();
-}
-  
-loadProducts();
-</script>
+<script src="products.js"></script>
 
 </body>
 </html>
