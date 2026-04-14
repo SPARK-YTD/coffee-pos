@@ -136,7 +136,7 @@ async function loadProducts() {
   const category = document.getElementById(`cat-${id}`).value;
   const price = document.getElementById(`price-${id}`).value;
 
-  const hasVariants = !price;
+  const hasVariants = !price || price.trim() === "" || parseFloat(price) === 0;
 
   await supabaseClient
     .from("products")
@@ -158,7 +158,7 @@ async function addProduct() {
   const price = document.getElementById("price").value;
   const file = document.getElementById("image").files[0];
 
-if (!name || (sizes.length === 0 && !price)) {
+if (!name || (sizes.length === 0 && (!price || price.trim() === ""))) {
   alert("اكمل البيانات ❌");
   return;
 }
