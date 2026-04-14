@@ -6,52 +6,118 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: Arial; padding: 10px; }
+    body { font-family: Arial; margin: 0; background: #f5f5f5; }
 
-    .products {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+    .topbar {
+      background: #111;
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-weight: bold;
     }
 
-    .product {
-      border: 1px solid #ccc;
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
       padding: 10px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .categories {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .cat {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: #eee;
+      cursor: pointer;
+    }
+
+    .cat.active {
+      background: black;
+      color: white;
+    }
+
+    .items {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .item {
+      border: 1px solid #ddd;
+      padding: 8px;
       text-align: center;
       cursor: pointer;
     }
 
-    .cart {
-      margin-top: 20px;
+    .item img {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+    }
+
+    table {
+      width: 100%;
+      text-align: center;
     }
 
     button {
-      padding: 8px;
-      margin: 5px;
+      padding: 6px;
       cursor: pointer;
+    }
+
+    .total {
+      font-weight: bold;
+      margin-top: 10px;
     }
   </style>
 </head>
 
 <body>
 
-<h2>🛒 الكاشير</h2>
+<div class="topbar">🛒 الكاشير</div>
 
-<div id="products" class="products"></div>
+<div class="layout">
 
-<hr>
+  <!-- المنتجات -->
+  <div class="card">
+    <div class="categories">
+      <button class="cat active" onclick="filterCategory('food', this)">🍔</button>
+      <button class="cat" onclick="filterCategory('drinks', this)">🥤</button>
+      <button class="cat" onclick="filterCategory('sides', this)">🍟</button>
+    </div>
 
-<h3>📦 السلة</h3>
-<ul id="cart"></ul>
+    <div id="items" class="items"></div>
+  </div>
 
-<h3 id="total">المجموع: 0.000 BD</h3>
+  <!-- السلة -->
+  <div class="card">
+    <h3>📦 السلة</h3>
 
-<button onclick="checkout()">إتمام الطلب</button>
+    <table>
+      <tbody id="cart"></tbody>
+    </table>
+
+    <div id="total" class="total">0.000 BD</div>
+
+    <button onclick="checkout()">إتمام الطلب</button>
+  </div>
+
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
-
-<!-- مهم -->
 <script type="module" src="script.js"></script>
 
 </body>
