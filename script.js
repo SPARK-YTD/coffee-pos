@@ -19,7 +19,7 @@ async function loadProducts() {
 
   data.forEach(p => {
     const btn = document.createElement("button");
-    btn.innerText = p.name + " - " + p.price;
+    btn.innerHTML = `   <img src="${p.image_url || ''}" width="80"><br>   ${p.name} - ${p.price} BD `;
     btn.onclick = () => addToCart(p);
 
     container.appendChild(btn);
