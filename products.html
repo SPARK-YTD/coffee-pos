@@ -58,12 +58,22 @@ if (!user || user.role !== "manager") {
 <script>
 
   let sizes = [];
-
-function addSize() {
+  
+  function addSize() {
   const name = document.getElementById("sizeName").value;
   const price = document.getElementById("sizePrice").value;
 
-  if (!name || !price) return;
+  if (!name || !price) {
+    alert("اكتب الاسم والسعر ❌");
+    return;
+  }
+
+  // منع التكرار
+  const exists = sizes.find(s => s.name === name);
+  if (exists) {
+    alert("الحجم موجود ❌");
+    return;
+  }
 
   sizes.push({ name, price });
 
@@ -77,9 +87,19 @@ function renderSizes() {
   const div = document.getElementById("sizes");
   div.innerHTML = "";
 
-  sizes.forEach(s => {
-    div.innerHTML += `<p>${s.name} - ${s.price} BD</p>`;
+  sizes.forEach((s, index) => {
+    div.innerHTML += `
+      <div style="border:1px solid #ccc; margin:5px; padding:5px;">
+        ${s.name} - ${s.price} BD
+        <button onclick="removeSize(${index})">❌</button>
+      </div>
+    `;
   });
+}
+  
+  function removeSize(index) {
+  sizes.splice(index, 1);
+  renderSizes();
 }
   
 async function loadProducts() {
