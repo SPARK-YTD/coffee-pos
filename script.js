@@ -2,39 +2,12 @@ let cart = [];
 let currentOrderId = null;
 
 // -------------------
-// إضافة منتجات
-// -------------------
-async function seedProducts() {
-  const { data } = await supabaseClient.from("products").select("*");
-
-  if (data.length > 0) {
-    alert("المنتجات موجودة مسبقًا ✅");
-    return;
-  }
-
-  const products = [
-    { name: "Latte", category: "Coffee", price: 1.5 },
-    { name: "Cappuccino", category: "Coffee", price: 1.2 },
-    { name: "Espresso", category: "Coffee", price: 0.8 }
-  ];
-
-  const { error } = await supabaseClient.from("products").insert(products);
-
-  if (error) {
-    console.error("❌", error);
-  } else {
-    console.log("✅ added");
-    loadProducts();
-  }
-}
-
-// -------------------
 // تحميل المنتجات
 // -------------------
 async function loadProducts() {
   const { data, error } = await supabaseClient
     .from("products")
-    .select("*");
+    .select("*") .order("category", { ascending: true });
 
   if (error) {
     console.error("❌", error);
@@ -268,4 +241,5 @@ async function deleteOrder(orderId) {
     .eq("id", orderId);
 
   loadPendingOrders();
+  loadProducts();
 }
