@@ -9,18 +9,21 @@ let cart = [];
 async function loadItems() {
   const { data, error } = await supabase
     .from("products")
-    .select("*");
+    .select("*")
+    .eq("category", currentCategory)
+    .eq("active", true);
 
   if (error) {
     console.error(error);
     return;
   }
 
-  console.log("🔥 المنتجات:", data); // 👈 مهم
+  console.log("🔥 المنتجات:", data);
 
   items = data || [];
   renderItems();
 }
+
 
 // ========================
 // عرض المنتجات
@@ -234,5 +237,13 @@ window.checkout = async function() {
   renderCart();
 };
 
-// تشغيل
+window.filterCategory = function(cat, btn) {
+  currentCategory = cat;
+
+  document.querySelectorAll(".cat").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  loadItems();
+};
+
 loadItems();
