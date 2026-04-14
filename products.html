@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>إدارة المنتجات</title>
+  <title>⚙️ إدارة المنتجات</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -13,11 +13,12 @@
     }
 
     header {
-      background: black;
+      background: #111;
       color: white;
       padding: 15px;
-      font-size: 18px;
       text-align: center;
+      font-size: 20px;
+      font-weight: bold;
     }
 
     .container {
@@ -31,12 +32,13 @@
       border-radius: 12px;
       padding: 15px;
       margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
     input {
       width: 100%;
       padding: 10px;
-      margin: 5px 0;
+      margin: 6px 0;
       border-radius: 8px;
       border: 1px solid #ddd;
     }
@@ -45,13 +47,15 @@
       padding: 10px;
       border: none;
       border-radius: 8px;
-      background: black;
+      background: #111;
       color: white;
       cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
     }
 
     button:hover {
-      opacity: 0.8;
+      background: #333;
     }
 
     .sizes-box {
@@ -66,11 +70,13 @@
       padding: 6px;
       margin: 5px 0;
       border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
     }
 
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
       gap: 10px;
     }
 
@@ -79,23 +85,15 @@
       border-radius: 12px;
       padding: 10px;
       text-align: center;
+      border: 1px solid #eee;
     }
 
     .product-card img {
       width: 100%;
-      height: 120px;
+      height: 110px;
       object-fit: cover;
       border-radius: 8px;
       margin-bottom: 5px;
-    }
-
-    .product-card input {
-      font-size: 12px;
-    }
-
-    .actions button {
-      width: 100%;
-      margin-top: 5px;
     }
 
     .danger {
@@ -103,17 +101,18 @@
     }
 
     .back-btn {
-      display: block;
+      display: inline-block;
       margin-bottom: 10px;
       text-decoration: none;
-      color: black;
+      color: #111;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
 
-<header>⚙️ إدارة المنتجات</header>
+<header>⚙️ إدارة منتجات المقهى</header>
 
 <div class="container">
 
@@ -123,15 +122,17 @@
   <div class="card">
     <h3>➕ إضافة منتج</h3>
 
-    <input id="name" placeholder="اسم المنتج">
-    <input id="category" placeholder="التصنيف (coffee / drinks)">
+    <input id="name" placeholder="اسم المنتج (مثال: Latte)">
+    
+    <!-- ❌ حذفنا التصنيف نهائي -->
+    
     <input id="price" type="number" placeholder="السعر (بدون أحجام)">
     <input id="image" type="file">
 
     <div class="sizes-box">
       <h4>📏 الأحجام (اختياري)</h4>
 
-      <input id="sizeName" placeholder="Small">
+      <input id="sizeName" placeholder="Small / Medium / Large">
       <input id="sizePrice" type="number" placeholder="السعر">
 
       <button onclick="addSize()">➕ إضافة حجم</button>
@@ -144,8 +145,7 @@
 
   <!-- المنتجات -->
   <div class="card">
-    <h3>📦 المنتجات</h3>
-
+    <h3>📦 المنتجات الحالية</h3>
     <div id="products" class="products-grid"></div>
   </div>
 
