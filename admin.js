@@ -19,19 +19,47 @@ window.addProduct = async function () {
   }
 
   let product;
+   
+let imageUrl = null;
 
+const file = document.getElementById("image")?.files[0];
+
+if (file) {
+
+  const fileName = Date.now() + "-" + file.name;
+
+  const { error: uploadError } = await supabase
+    .storage
+    .from("products")
+    .upload(fileName, file);
+
+  if (uploadError) {
+    console.error(uploadError);
+    alert("❌ فشل رفع الصورة");
+    return;
+  }
+
+  const { data } = supabase
+    .storage
+    .from("products")
+    .getPublicUrl(fileName);
+
+  imageUrl = data.publicUrl;
+}
+   
   // ✏️ تعديل
   if (editingId) {
 
     const { data, error } = await supabase
       .from("products")
       .update({
-        name,
-        price: hasVariants ? null : basePrice,
-        has_variants: hasVariants,
-        category,
-        extras_text: extras
-      })
+  name,
+  price: hasVariants ? null : basePrice,
+  has_variants: hasVariants,
+  category,
+  extras_text: extras,
+  ...(imageUrl && { image_url: imageUrl })
+})
       .eq("id", editingId)
       .select()
       .single();
@@ -51,12 +79,13 @@ window.addProduct = async function () {
     const { data, error } = await supabase
       .from("products")
       .insert({
-        name,
-        price: hasVariants ? null : basePrice,
-        has_variants: hasVariants,
-        category,
-        extras_text: extras
-      })
+    name,
+    price: hasVariants ? null : basePrice,
+    has_variants: hasVariants,
+    category,
+    extras_text: extras,
+    image_url: imageUrl
+  })
       .select()
       .single();
 
