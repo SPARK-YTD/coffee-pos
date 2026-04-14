@@ -19,7 +19,7 @@ async function loadProducts() {
 
   data.forEach(p => {
     const btn = document.createElement("button");
-    btn.innerHTML = `   <img src="${p.image_url || 'no-image.png'}" width="80"><br>   ${p.name} - ${p.price} BD `;
+    btn.innerHTML = `   <img src="${p.image_url || 'no-image.png'}" width="80"><br>   ${p.name} - ${p.has_variants ? "اختر الحجم" : p.price + " BD"} `;
     btn.onclick = () => handleProductClick(p);
 
     container.appendChild(btn);
@@ -43,7 +43,10 @@ async function handleProductClick(product) {
     console.error(error);
     return;
   }
-
+   if (!variants || variants.length === 0) {
+  alert("ما فيه أحجام ❌");
+  return;
+}
   showVariants(product, variants);
 }
 
@@ -53,7 +56,7 @@ function showVariants(product, variants) {
 
   variants.forEach(v => {
     html += `
-      <button onclick="selectVariant('${product.id}', '${product.name}', '${v.label}', ${v.price})">
+      <button onclick="selectVariant('${product.id}', '${product.name}', '${v.id}', '${v.label}', ${v.price})">
         ${v.label} - ${v.price} BD
       </button><br><br>
     `;
@@ -88,15 +91,26 @@ overlay.appendChild(div);
 document.body.appendChild(overlay);
 }
 
-function selectVariant(productId, productName, label, price) {
+function selectVariant(productId, productName, variantId, label, price) {
 
   const item = {
-    id: productId,
-    name: productName + " - " + label,
-    price: price
-  };
+  id: productId,
+  name: productName + " - " + label,
+  price: price,
+  variant_id: variantId,
+  qty: 1
+};
 
+  const existing = cart.find(i =>
+  i.id === item.id &&
+  i.variant_id === item.variant_id
+);
+
+if (existing) {
+  existing.qty += 1;
+} else {
   cart.push(item);
+}
   renderCart();
 
   document.getElementById("variantOverlay").remove();
@@ -105,7 +119,23 @@ function selectVariant(productId, productName, label, price) {
 // إضافة للسلة
 // -------------------
 function addToCart(product) {
-  cart.push(product);
+  const existing = cart.find(i =>
+  i.id === product.id &&
+  i.variant_id === null
+);
+
+if (existing) {
+  existing.qty += 1;
+} else {
+  cart.push({
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    variant_id: null,
+    qty: 1
+  });
+}
+
   renderCart();
 }
 
@@ -122,13 +152,13 @@ function renderCart() {
 
   cart.forEach(item => {
     const li = document.createElement("li");
-    li.innerText = item.name + " - " + item.price;
+    li.innerText = `${item.name} × ${item.qty} - ${(item.price * item.qty).toFixed(3)} BD`;
     cartEl.appendChild(li);
 
-    total += item.price;
+    total += item.price * (item.qty || 1);
   });
 
-  totalEl.innerText = "المجموع: " + total + " BD";
+  totalEl.innerText = "المجموع: " + total.toFixed(3) + " BD";
 }
 
 // -------------------
@@ -141,7 +171,7 @@ async function checkout() {
   }
 
   let total = 0;
-  cart.forEach(item => total += item.price);
+  cart.forEach(item => total += item.price * (item.qty || 1));
 
  // تاريخ اليوم
 const startOfDay = new Date();
@@ -204,12 +234,13 @@ if (lastOrder && lastOrder.invoice_number) {
 
   // إضافة العناصر الجديدة
   const items = cart.map(item => ({
-    order_id: order.id,
-    product_id: item.id,
-    qty: 1,
-    price: item.price,
-    item_name: item.name
-  }));
+  order_id: order.id,
+  product_id: item.id,
+  variant_id: item.variant_id || null,
+  qty: item.qty || 1,
+  price: item.price,
+  item_name: item.name
+}));
 
   const { error: itemsError } = await supabaseClient
     .from("order_items")
@@ -287,10 +318,12 @@ async function openOrder(orderId) {
   }
 
   cart = data.map(item => ({
-    id: item.product_id,
-    name: item.item_name,
-    price: item.price
-  }));
+  id: item.product_id,
+  name: item.item_name,
+  price: item.price,
+  variant_id: item.variant_id || null,
+  qty: item.qty || 1
+}));
 
   renderCart();
 
