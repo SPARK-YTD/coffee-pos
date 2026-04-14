@@ -1,54 +1,58 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>كاشير القهوة</title>
-  <link rel="stylesheet" href="style.css">
+  <title>الكاشير</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body { font-family: Arial; padding: 10px; }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .product {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .cart {
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 8px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-<script>
-const user = JSON.parse(localStorage.getItem("user"));
+<h2>🛒 الكاشير</h2>
 
-if (!user) {
-  window.location.href = "login.html";
-}
-
-if (user.role !== "cashier" && user.role !== "manager") {
-  alert("ما عندك صلاحية ❌");
-  window.location.href = "login.html";
-}
-</script>
-
-<h1>☕ كاشير المقهى</h1>
-
-<a href="reports.html">📊 التقارير</a>
-
-
-<!-- المنتجات -->
-<h2>☕ المنتجات</h2>
-<div id="products"></div>
+<div id="products" class="products"></div>
 
 <hr>
 
-<!-- السلة -->
-<h2>🛒 الطلب</h2>
-<h3 id="mode">طلب جديد</h3>
+<h3>📦 السلة</h3>
 <ul id="cart"></ul>
-<h3 id="total">المجموع: 0</h3>
+
+<h3 id="total">المجموع: 0.000 BD</h3>
 
 <button onclick="checkout()">إتمام الطلب</button>
 
-<hr>
-
-<!-- الطلبات المعلقة -->
-<h2>📋 الطلبات المعلقة</h2>
-<div id="pendingOrders"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="supabase.js"></script>
-<script src="script.js"></script>
+
+<!-- مهم -->
+<script type="module" src="script.js"></script>
 
 </body>
 </html>
