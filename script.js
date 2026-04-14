@@ -59,20 +59,33 @@ function showVariants(product, variants) {
     `;
   });
 
-  const div = document.createElement("div");
-  div.innerHTML = html;
+const overlay = document.createElement("div");
+overlay.style.position = "fixed";
+overlay.style.top = "0";
+overlay.style.left = "0";
+overlay.style.width = "100%";
+overlay.style.height = "100%";
+overlay.style.background = "rgba(0,0,0,0.5)";
+overlay.id = "variantOverlay";
 
-  div.style.position = "fixed";
-  div.style.top = "50%";
-  div.style.left = "50%";
-  div.style.transform = "translate(-50%, -50%)";
-  div.style.background = "white";
-  div.style.padding = "20px";
-  div.style.border = "1px solid black";
+// لو ضغط برا يقفل
+overlay.onclick = () => overlay.remove();
 
-  div.id = "variantPopup";
+const div = document.createElement("div");
+div.innerHTML = html;
 
-  document.body.appendChild(div);
+div.style.position = "absolute";
+div.style.top = "50%";
+div.style.left = "50%";
+div.style.transform = "translate(-50%, -50%)";
+div.style.background = "white";
+div.style.padding = "20px";
+
+// يمنع الإغلاق لما تضغط داخل البوكس
+div.onclick = (e) => e.stopPropagation();
+
+overlay.appendChild(div);
+document.body.appendChild(overlay);
 }
 
 function selectVariant(productId, productName, label, price) {
@@ -86,7 +99,7 @@ function selectVariant(productId, productName, label, price) {
   cart.push(item);
   renderCart();
 
-  document.getElementById("variantPopup").remove();
+  document.getElementById("variantOverlay").remove();
 }
 // -------------------
 // إضافة للسلة
