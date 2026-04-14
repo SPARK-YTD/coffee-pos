@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>إدارة المنتجات</title>
+</head>
+<body>
+
+<h2>إضافة منتج</h2>
+
+<input id="name" placeholder="اسم المنتج"><br><br>
+<input id="price" type="number" step="0.001" placeholder="السعر"><br><br>
+
+<label>
+  <input type="checkbox" id="hasVariants"> فيه أحجام؟
+</label><br><br>
+
+<textarea id="extras" placeholder="الإضافات (كل سطر = خيار)"></textarea><br><br>
+
+<button onclick="addProduct()">➕ إضافة</button>
+
+<script type="module" src="admin.js"></script>
+
+</body>
+</html>
