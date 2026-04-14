@@ -9,6 +9,8 @@ async function loadItems() {
   const { data } = await supabase
     .from("products")
     .select("*")
+    .eq("active", true)
+    .eq("category", currentCategory)
 
 
   items = data || [];
@@ -44,17 +46,30 @@ async function handleClick(item) {
     return;
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("product_variants")
     .select("*")
     .eq("product_id", item.id);
 
+  if (error) {
+    console.error("❌ VARIANTS ERROR:", error);
+    alert("خطأ في تحميل الأحجام");
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    alert("ما فيه أحجام ❌");
+    return;
+  }
+
   let html = `<h3>${item.name}</h3>`;
 
   data.forEach(v => {
-    html += `<button onclick="selectVariant('${item.id}','${item.name}','${v.id}','${v.label}',${v.price})">
-      ${v.label} - ${v.price} BD
-    </button><br>`;
+    html += `
+      <button onclick="selectVariant('${item.id}','${item.name}','${v.id}','${v.label}',${v.price})">
+        ${v.label} - ${v.price} BD
+      </button><br>
+    `;
   });
 
   showPopup(html);
