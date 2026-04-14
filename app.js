@@ -26,10 +26,10 @@ function renderItems() {
 
   items.forEach(item => {
     const div = document.createElement("div");
+    div.className = "item";
     div.innerHTML = `
-      <button>
-        ${item.name}
-      </button>
+      <strong>${item.name}</strong><br>
+      ${item.has_variants ? "اختر الحجم" : item.price + " د.ب"}
     `;
     div.onclick = () => handleItem(item);
     box.appendChild(div);
@@ -40,34 +40,61 @@ function renderItems() {
 async function handleItem(item) {
 
   if (item.has_variants) {
-
     const { data: variants } = await supabase
       .from("product_variants")
       .select("*")
       .eq("product_id", item.id);
 
-    let choice = prompt(
-      variants.map(v => `${v.label} - ${v.price}`).join("\n")
-    );
-
-    const selected = variants.find(v =>
-      v.label.toLowerCase() === choice?.toLowerCase()
-    );
-
-    if (!selected) return;
-
-    addToCart({
-      name: `${item.name} (${selected.label})`,
-      price: selected.price
-    });
-
-  } else {
-    addToCart({
-      name: item.name,
-      price: item.price
-    });
+    showVariantsPopup(item, variants);
+    return;
   }
+
+  addToCart({
+    name: item.name,
+    price: item.price
+  });
 }
+
+// popup الأحجام
+function showVariantsPopup(item, variants) {
+
+  const overlay = document.createElement("div");
+  overlay.className = "popup-overlay";
+
+  overlay.innerHTML = `
+    <div class="popup-box">
+      <h3>${item.name}</h3>
+
+      ${variants.map(v => `
+        <button class="variant-btn"
+          onclick="selectVariant('${item.name}', '${v.label}', ${v.price})">
+          ${v.label} — ${v.price.toFixed(3)} د.ب
+        </button>
+      `).join("")}
+
+      <button class="cancel-btn">إلغاء</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
+
+  overlay.onclick = (e) => {
+    if (e.target === overlay) overlay.remove();
+  };
+}
+
+// اختيار الحجم
+window.selectVariant = function(name, label, price) {
+
+  addToCart({
+    name: `${name} (${label})`,
+    price: price
+  });
+
+  document.querySelector(".popup-overlay")?.remove();
+};
 
 // إضافة للسلة
 function addToCart(item) {
@@ -93,15 +120,20 @@ function renderCart() {
 
   let total = 0;
 
-  cart.forEach(item => {
+  cart.forEach((item, i) => {
     const sum = item.qty * item.price;
     total += sum;
 
     tbody.innerHTML += `
       <tr>
         <td>${item.name}</td>
-        <td>${item.qty}</td>
+        <td>
+          <button onclick="changeQty(${i},-1)">-</button>
+          ${item.qty}
+          <button onclick="changeQty(${i},1)">+</button>
+        </td>
         <td>${sum.toFixed(3)}</td>
+        <td><button onclick="removeItem(${i})">🗑</button></td>
       </tr>
     `;
   });
@@ -109,5 +141,18 @@ function renderCart() {
   document.getElementById("total").textContent =
     total.toFixed(3) + " د.ب";
 }
+
+// تعديل الكمية
+window.changeQty = (i, d) => {
+  cart[i].qty += d;
+  if (cart[i].qty <= 0) cart.splice(i, 1);
+  renderCart();
+};
+
+// حذف
+window.removeItem = (i) => {
+  cart.splice(i, 1);
+  renderCart();
+};
 
 loadItems();
