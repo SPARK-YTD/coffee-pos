@@ -10,7 +10,7 @@ async function loadItems() {
     .from("products")
     .select("*")
     .eq("active", true)
-    .eq("category", currentCategory)
+
 
 
   items = data || [];
