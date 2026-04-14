@@ -9,7 +9,7 @@ async function loadItems() {
   const { data } = await supabase
     .from("products")
     .select("*")
-    .eq("category", currentCategory);
+
 
   items = data || [];
   renderItems();
