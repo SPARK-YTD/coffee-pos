@@ -2,100 +2,140 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>الكاشير</title>
+  <title>☕ كاشير المقهى</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: Arial; margin: 0; background: #f5f5f5; }
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #f5f5f5;
+    }
 
     .topbar {
       background: #111;
       color: white;
-      padding: 12px;
+      padding: 15px;
       text-align: center;
+      font-size: 20px;
       font-weight: bold;
     }
 
     .layout {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      gap: 10px;
-      padding: 10px;
+      gap: 12px;
+      padding: 12px;
     }
 
     .card {
       background: white;
-      border-radius: 10px;
-      padding: 10px;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
+    /* التصنيفات */
     .categories {
       display: flex;
-      gap: 5px;
-      margin-bottom: 10px;
+      gap: 6px;
+      margin-bottom: 12px;
     }
 
     .cat {
       flex: 1;
-      padding: 8px;
+      padding: 10px;
       border: none;
       background: #eee;
       cursor: pointer;
+      border-radius: 8px;
+      font-weight: bold;
     }
 
     .cat.active {
-      background: black;
+      background: #111;
       color: white;
     }
 
+    /* المنتجات */
     .items {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 10px;
     }
 
     .item {
       border: 1px solid #ddd;
-      padding: 8px;
+      padding: 10px;
       text-align: center;
       cursor: pointer;
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+
+    .item:hover {
+      transform: scale(1.05);
+      background: #fafafa;
     }
 
     .item img {
       width: 70px;
       height: 70px;
       object-fit: cover;
+      margin-bottom: 5px;
     }
 
+    /* السلة */
     table {
       width: 100%;
       text-align: center;
+      margin-top: 10px;
     }
 
-    button {
+    td {
       padding: 6px;
-      cursor: pointer;
     }
 
     .total {
+      font-size: 18px;
       font-weight: bold;
+      margin-top: 12px;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      padding: 10px;
       margin-top: 10px;
+      background: #111;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .checkout-btn:hover {
+      background: #333;
+    }
+
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<div class="topbar">🛒 الكاشير</div>
+<div class="topbar">☕ كاشير المقهى</div>
 
 <div class="layout">
 
   <!-- المنتجات -->
   <div class="card">
     <div class="categories">
-      <button class="cat active" onclick="filterCategory('food', this)">🍔</button>
-      <button class="cat" onclick="filterCategory('drinks', this)">🥤</button>
-      <button class="cat" onclick="filterCategory('sides', this)">🍟</button>
+      <button class="cat active" onclick="filterCategory('Coffee', this)">☕</button>
     </div>
 
     <div id="items" class="items"></div>
@@ -111,14 +151,17 @@
 
     <div id="total" class="total">0.000 BD</div>
 
-    <button onclick="checkout()">إتمام الطلب</button>
+    <button class="checkout-btn" onclick="checkout()">
+      إتمام الطلب
+    </button>
   </div>
 
 </div>
 
+<!-- ✅ مهم جداً -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script type="module" src="supabase.js"></script>
-<script type="module" src="script.js"></script>
+<script src="supabase.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
