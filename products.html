@@ -119,7 +119,7 @@ async function loadProducts() {
   <img src="${p.image_url || 'no-image.png'}">
   <input id="name-${p.id}" value="${p.name}">
   <input id="cat-${p.id}" value="${p.category}">
-  <input id="price-${p.id}" type="number" value="${p.price}">
+  <input id="price-${p.id}" type="number" value="${p.price || ''}">
 
   <br>
 
@@ -136,9 +136,16 @@ async function loadProducts() {
   const category = document.getElementById(`cat-${id}`).value;
   const price = document.getElementById(`price-${id}`).value;
 
+  const hasVariants = !price;
+
   await supabaseClient
     .from("products")
-    .update({ name, category, price })
+    .update({
+      name,
+      category,
+      price: hasVariants ? null : parseFloat(price),
+      has_variants: hasVariants
+    })
     .eq("id", id);
 
   alert("تم التعديل ✅");
@@ -153,6 +160,11 @@ async function addProduct() {
 
 if (!name || (sizes.length === 0 && !price)) {
   alert("اكمل البيانات ❌");
+  return;
+}
+
+if (sizes.length > 0 && price) {
+  alert("❌ لا تحط سعر مع الأحجام");
   return;
 }
 
