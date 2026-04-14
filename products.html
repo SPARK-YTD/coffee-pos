@@ -152,10 +152,10 @@ async function addProduct() {
   const price = document.getElementById("price").value;
   const file = document.getElementById("image").files[0];
 
-  if (!name || !price) {
-    alert("اكمل البيانات ❌");
-    return;
-  }
+if (!name || (sizes.length === 0 && !price)) {
+  alert("اكمل البيانات ❌");
+  return;
+}
 
   let imageUrl = "";
 
