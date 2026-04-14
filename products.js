@@ -1,8 +1,6 @@
 let sizes = [];
 
-// -------------------
 // إضافة حجم
-// -------------------
 function addSize() {
   const name = document.getElementById("sizeName").value;
   const price = document.getElementById("sizePrice").value;
@@ -25,9 +23,7 @@ function addSize() {
   document.getElementById("sizePrice").value = "";
 }
 
-// -------------------
 // عرض الأحجام
-// -------------------
 function renderSizes() {
   const div = document.getElementById("sizes");
   div.innerHTML = "";
@@ -47,19 +43,12 @@ function removeSize(index) {
   renderSizes();
 }
 
-// -------------------
 // تحميل المنتجات
-// -------------------
 async function loadProducts() {
-  const { data, error } = await supabaseClient
+  const { data } = await supabaseClient
     .from("products")
     .select("*")
     .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
 
   const container = document.getElementById("products");
   container.innerHTML = "";
@@ -70,29 +59,23 @@ async function loadProducts() {
 
     div.innerHTML = `
       <img src="${p.image_url || 'no-image.png'}">
-
       <strong>${p.name}</strong>
-
-      <input id="name-${p.id}" value="${p.name}">
-      <input id="cat-${p.id}" value="${p.category}">
-      <input id="price-${p.id}" type="number" value="${p.price || ''}" placeholder="السعر">
-
-      <div class="actions">
-        <button onclick="updateProduct('${p.id}')">💾 حفظ</button>
-        <button class="danger" onclick="deleteProduct('${p.id}')">🗑️ حذف</button>
+      <div>
+        ${p.has_variants ? "📏 متعدد الأحجام" : (p.price ? p.price + " BD" : "-")}
       </div>
+
+      <button onclick="deleteProduct('${p.id}')" style="background:#dc2626;color:white">
+        🗑 حذف
+      </button>
     `;
 
     container.appendChild(div);
   });
 }
 
-// -------------------
 // إضافة منتج
-// -------------------
 async function addProduct() {
-  const name = document.getElementById("name").value;
-  const category = document.getElementById("category").value;
+  const name = document.getElementById("name").value.trim();
   const price = document.getElementById("price").value;
   const file = document.getElementById("image").files[0];
 
@@ -108,17 +91,15 @@ async function addProduct() {
 
   let imageUrl = "";
 
-  // رفع الصورة
   if (file) {
     const fileName = Date.now() + "-" + file.name;
 
-    const { error: uploadError } = await supabaseClient
+    const { error } = await supabaseClient
       .storage
       .from("products")
       .upload(fileName, file);
 
-    if (uploadError) {
-      console.error(uploadError);
+    if (error) {
       alert("خطأ في رفع الصورة ❌");
       return;
     }
@@ -131,31 +112,23 @@ async function addProduct() {
     imageUrl = data.publicUrl;
   }
 
-  // إنشاء المنتج
-  const { data: product, error } = await supabaseClient
+  const { data: product } = await supabaseClient
     .from("products")
-    .insert([{
+    .insert({
       name,
-      category,
       price: sizes.length > 0 ? null : parseFloat(price),
       has_variants: sizes.length > 0,
-      image_url: imageUrl
-    }])
+      image_url: imageUrl,
+      active: true
+    })
     .select()
     .single();
 
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  // إضافة الأحجام
   if (sizes.length > 0) {
     const variantRows = sizes.map(s => ({
       product_id: product.id,
       label: s.name,
-      price: parseFloat(s.price),
-      active: true
+      price: parseFloat(s.price)
     }));
 
     await supabaseClient.from("product_variants").insert(variantRows);
@@ -164,46 +137,17 @@ async function addProduct() {
     renderSizes();
   }
 
-  // تنظيف
   document.getElementById("name").value = "";
-  document.getElementById("category").value = "";
   document.getElementById("price").value = "";
   document.getElementById("image").value = "";
 
+  alert("تمت الإضافة ✅");
   loadProducts();
 }
 
-// -------------------
-// تعديل منتج
-// -------------------
-async function updateProduct(id) {
-  const name = document.getElementById(`name-${id}`).value;
-  const category = document.getElementById(`cat-${id}`).value;
-  const price = document.getElementById(`price-${id}`).value;
-
-  const hasVariants = !price;
-
-  await supabaseClient
-    .from("products")
-    .update({
-      name,
-      category,
-      price: hasVariants ? null : parseFloat(price),
-      has_variants: hasVariants
-    })
-    .eq("id", id);
-
-  alert("تم التعديل ✅");
-  loadProducts();
-}
-
-// -------------------
-// حذف منتج
-// -------------------
+// حذف
 async function deleteProduct(id) {
-  const confirmDelete = confirm("متأكد تبغى تحذف؟");
-
-  if (!confirmDelete) return;
+  if (!confirm("متأكد؟")) return;
 
   await supabaseClient
     .from("product_variants")
@@ -218,5 +162,5 @@ async function deleteProduct(id) {
   loadProducts();
 }
 
-// -------------------
+// تشغيل
 loadProducts();
