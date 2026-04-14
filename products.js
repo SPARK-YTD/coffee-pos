@@ -116,7 +116,7 @@ async function addProduct() {
     .from("products")
     .insert({
   name,
-  category: "coffee", // 👈 أضف هذا السطر
+  category: "Coffee"
   price: sizes.length > 0 ? null : parseFloat(price),
   has_variants: sizes.length > 0,
   image_url: imageUrl,
