@@ -8,13 +8,15 @@ let cart = [];
 // ========================
 async function loadItems() {
   const { data, error } = await supabase
-  .from("products")
-  .select("*");
+    .from("products")
+    .select("*");
 
   if (error) {
     console.error(error);
     return;
   }
+
+  console.log("🔥 المنتجات:", data); // 👈 مهم
 
   items = data || [];
   renderItems();
