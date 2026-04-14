@@ -94,33 +94,48 @@ async function addProduct() {
   const name = document.getElementById("name").value;
   const category = document.getElementById("category").value;
   const price = document.getElementById("price").value;
+  const file = document.getElementById("image").files[0];
 
   if (!name || !price) {
     alert("اكمل البيانات ❌");
     return;
   }
 
+  let imageUrl = "";
+
+  if (file) {
+    const fileName = Date.now() + "-" + file.name;
+
+    const { error: uploadError } = await supabaseClient
+      .storage
+      .from("products")
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error(uploadError);
+      alert("خطأ في رفع الصورة ❌");
+      return;
+    }
+
+    const { data } = supabaseClient
+      .storage
+      .from("products")
+      .getPublicUrl(fileName);
+
+    imageUrl = data.publicUrl;
+  }
+
   await supabaseClient.from("products").insert([
-    { name, category, price }
+    { name, category, price, image_url: imageUrl }
   ]);
 
-  // 🔥 تفريغ الحقول
   document.getElementById("name").value = "";
   document.getElementById("category").value = "";
   document.getElementById("price").value = "";
+  document.getElementById("image").value = "";
 
   loadProducts();
 }
-
-async function deleteProduct(id) {
-  await supabaseClient
-    .from("products")
-    .delete()
-    .eq("id", id);
-
-  loadProducts();
-}
-
 loadProducts();
 </script>
 
