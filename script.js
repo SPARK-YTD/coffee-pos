@@ -8,9 +8,8 @@ let cart = [];
 // ========================
 async function loadItems() {
   const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("active", true);
+  .from("products")
+  .select("*");
 
   if (error) {
     console.error(error);
