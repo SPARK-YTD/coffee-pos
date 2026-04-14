@@ -310,6 +310,7 @@ window.completeOrder = async function () {
   // 3️⃣ تنظيف
   cart = [];
   renderCart();
+   loadActiveOrders();
 
   alert("✅ تم حفظ الطلب");
 };
