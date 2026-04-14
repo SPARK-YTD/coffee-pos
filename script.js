@@ -1,5 +1,5 @@
 const supabase = window.supabaseClient;
-
+let currentCategory = "Coffee";
 let items = [];
 let cart = [];
 
