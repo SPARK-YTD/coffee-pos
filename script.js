@@ -1,101 +1,83 @@
 import { supabase } from "./supabase.js";
 
+let items = [];
 let cart = [];
+let currentCategory = "food";
 
-// =================
 // تحميل المنتجات
-// =================
-async function loadProducts() {
-  const { data, error } = await supabase
+async function loadItems() {
+  const { data } = await supabase
     .from("products")
     .select("*")
-    .eq("active", true);
+    .eq("category", currentCategory);
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+  items = data || [];
+  renderItems();
+}
 
-  const container = document.getElementById("products");
-  container.innerHTML = "";
+// عرض المنتجات
+function renderItems() {
+  const box = document.getElementById("items");
+  box.innerHTML = "";
 
-  data.forEach(p => {
+  items.forEach(item => {
     const div = document.createElement("div");
-    div.className = "product";
+    div.className = "item";
 
     div.innerHTML = `
-      <img src="${p.image_url || ""}" width="80"><br>
-      ${p.name}<br>
-      ${p.has_variants ? "اختر الحجم" : p.price + " BD"}
+      <img src="${item.image_url || ""}">
+      <div>${item.name}</div>
+      <small>${item.has_variants ? "اختر الحجم" : item.price + " BD"}</small>
     `;
 
-    div.onclick = () => handleClick(p);
+    div.onclick = () => handleClick(item);
 
-    container.appendChild(div);
+    box.appendChild(div);
   });
 }
 
-// =================
 // الضغط على المنتج
-// =================
-async function handleClick(product) {
+async function handleClick(item) {
 
-  if (!product.has_variants) {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price
-    });
+  if (!item.has_variants) {
+    addToCart(item.name, item.price, item.id, null);
     return;
   }
 
-  const { data: variants } = await supabase
+  const { data } = await supabase
     .from("product_variants")
     .select("*")
-    .eq("product_id", product.id);
+    .eq("product_id", item.id);
 
-  if (!variants || variants.length === 0) {
-    alert("ما فيه أحجام");
-    return;
-  }
+  let html = `<h3>${item.name}</h3>`;
 
-  showVariants(product, variants);
-}
-
-// =================
-// عرض الأحجام
-// =================
-function showVariants(product, variants) {
-
-  let html = `<h3>${product.name}</h3>`;
-
-  variants.forEach(v => {
-    html += `
-      <button onclick="selectVariant('${product.id}','${product.name}','${v.id}','${v.label}',${v.price})">
-        ${v.label} - ${v.price} BD
-      </button><br><br>
-    `;
+  data.forEach(v => {
+    html += `<button onclick="selectVariant('${item.id}','${item.name}','${v.id}','${v.label}',${v.price})">
+      ${v.label} - ${v.price} BD
+    </button><br>`;
   });
 
+  showPopup(html);
+}
+
+// popup
+function showPopup(html) {
   const overlay = document.createElement("div");
-  overlay.style.position = "fixed";
-  overlay.style.top = 0;
-  overlay.style.left = 0;
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.background = "rgba(0,0,0,0.5)";
-  overlay.id = "variantOverlay";
+
+  overlay.style = `
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.5);
+  `;
 
   overlay.onclick = () => overlay.remove();
 
   const box = document.createElement("div");
   box.innerHTML = html;
-  box.style.background = "white";
-  box.style.padding = "20px";
-  box.style.position = "absolute";
-  box.style.top = "50%";
-  box.style.left = "50%";
-  box.style.transform = "translate(-50%, -50%)";
+  box.style = `
+    background:white;padding:20px;
+    position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+  `;
 
   box.onclick = e => e.stopPropagation();
 
@@ -103,118 +85,96 @@ function showVariants(product, variants) {
   document.body.appendChild(overlay);
 }
 
-// =================
 // اختيار الحجم
-// =================
 window.selectVariant = function(id, name, variantId, label, price) {
-
-  addToCart({
-    id,
-    name: name + " - " + label,
-    price,
-    variant_id: variantId
-  });
-
-  document.getElementById("variantOverlay").remove();
+  addToCart(name + " - " + label, price, id, variantId);
+  document.body.lastChild.remove();
 };
 
-// =================
 // إضافة للسلة
-// =================
-function addToCart(item) {
+function addToCart(name, price, id, variant_id) {
 
   const existing = cart.find(i =>
-    i.id === item.id &&
-    i.variant_id === item.variant_id
+    i.id === id && i.variant_id === variant_id
   );
 
   if (existing) {
-    existing.qty += 1;
+    existing.qty++;
   } else {
-    cart.push({
-      ...item,
-      qty: 1
-    });
+    cart.push({ name, price, id, variant_id, qty: 1 });
   }
 
   renderCart();
 }
 
-// =================
 // عرض السلة
-// =================
 function renderCart() {
-
   const cartEl = document.getElementById("cart");
   const totalEl = document.getElementById("total");
 
   cartEl.innerHTML = "";
-
   let total = 0;
 
-  cart.forEach((item, i) => {
-
-    const li = document.createElement("li");
-
-    li.innerHTML = `
-      ${item.name} × ${item.qty}
-      - ${(item.price * item.qty).toFixed(3)} BD
-      <button onclick="removeItem(${i})">❌</button>
+  cart.forEach((i, index) => {
+    cartEl.innerHTML += `
+      <tr>
+        <td>${i.name}</td>
+        <td>${i.qty}</td>
+        <td>${(i.price * i.qty).toFixed(3)}</td>
+        <td><button onclick="removeItem(${index})">❌</button></td>
+      </tr>
     `;
 
-    cartEl.appendChild(li);
-
-    total += item.price * item.qty;
+    total += i.price * i.qty;
   });
 
-  totalEl.innerText = "المجموع: " + total.toFixed(3) + " BD";
+  totalEl.innerText = total.toFixed(3) + " BD";
 }
 
-// =================
-// حذف عنصر
-// =================
+// حذف
 window.removeItem = function(i) {
   cart.splice(i, 1);
   renderCart();
 };
 
-// =================
+// تغيير التصنيف
+window.filterCategory = function(cat, btn) {
+  currentCategory = cat;
+
+  document.querySelectorAll(".cat").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  loadItems();
+};
+
 // إتمام الطلب
-// =================
 window.checkout = async function() {
 
-  if (cart.length === 0) {
-    alert("السلة فاضية");
-    return;
-  }
+  if (!cart.length) return alert("السلة فاضية");
 
-  let total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
   const { data: order } = await supabase
     .from("orders")
-    .insert({
-      total,
-      status: "pending"
-    })
+    .insert({ total, status: "pending" })
     .select()
     .single();
 
-  const items = cart.map(i => ({
-    order_id: order.id,
-    product_id: i.id,
-    variant_id: i.variant_id || null,
-    qty: i.qty,
-    price: i.price,
-    item_name: i.name
-  }));
-
-  await supabase.from("order_items").insert(items);
+  await supabase.from("order_items").insert(
+    cart.map(i => ({
+      order_id: order.id,
+      product_id: i.id,
+      variant_id: i.variant_id,
+      qty: i.qty,
+      price: i.price,
+      item_name: i.name
+    }))
+  );
 
   alert("تم الطلب ✅");
-
   cart = [];
   renderCart();
 };
 
 // تشغيل
-loadProducts();
+loadItems();
