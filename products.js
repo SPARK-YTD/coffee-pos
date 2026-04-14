@@ -115,12 +115,14 @@ async function addProduct() {
   const { data: product } = await supabaseClient
     .from("products")
     .insert({
-      name,
-      price: sizes.length > 0 ? null : parseFloat(price),
-      has_variants: sizes.length > 0,
-      image_url: imageUrl,
-      active: true
-    })
+  name,
+  category: "coffee", // 👈 أضف هذا السطر
+  price: sizes.length > 0 ? null : parseFloat(price),
+  has_variants: sizes.length > 0,
+  image_url: imageUrl,
+  active: true
+  })
+
     .select()
     .single();
 
