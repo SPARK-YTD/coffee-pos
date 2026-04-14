@@ -3,11 +3,15 @@ import { supabase } from "./supabase.js";
 let items = [];
 let cart = [];
 
-// تحميل المنتجات
-async function loadItems() {
+/* ===============================
+   تحميل المنتجات
+================================ */
+async function loadItems(category = "food") {
+
   const { data, error } = await supabase
     .from("products")
     .select("*")
+    .eq("category", category)
     .eq("active", true);
 
   if (error) {
@@ -15,11 +19,19 @@ async function loadItems() {
     return;
   }
 
-  items = data;
+  items = data.map(p => ({
+    ...p,
+    extras: p.extras_text
+      ? p.extras_text.split("\n").map(e => e.trim()).filter(Boolean)
+      : []
+  }));
+
   renderItems();
 }
 
-// عرض المنتجات
+/* ===============================
+   عرض المنتجات
+================================ */
 function renderItems() {
   const box = document.getElementById("items");
   box.innerHTML = "";
@@ -27,19 +39,28 @@ function renderItems() {
   items.forEach(item => {
     const div = document.createElement("div");
     div.className = "item";
+
     div.innerHTML = `
-      <strong>${item.name}</strong><br>
-      ${item.has_variants ? "اختر الحجم" : item.price + " د.ب"}
+      ${item.image_url ? `<img src="${item.image_url}" class="cashier-item-img">` : ""}
+      <strong>${item.name}</strong>
+      <span>${item.has_variants ? "اختر الحجم" : item.price.toFixed(3) + " د.ب"}</span>
     `;
+
     div.onclick = () => handleItem(item);
+
     box.appendChild(div);
   });
 }
 
-// الضغط على المنتج
+/* ===============================
+   الضغط على المنتج
+================================ */
 async function handleItem(item) {
 
+  if (document.querySelector(".popup-overlay")) return;
+
   if (item.has_variants) {
+
     const { data: variants } = await supabase
       .from("product_variants")
       .select("*")
@@ -49,13 +70,17 @@ async function handleItem(item) {
     return;
   }
 
-  addToCart({
-    name: item.name,
-    price: item.price
-  });
+  if (item.extras.length > 0) {
+    showExtrasPopup(item);
+    return;
+  }
+
+  addToCart(item);
 }
 
-// popup الأحجام
+/* ===============================
+   Popup السايز
+================================ */
 function showVariantsPopup(item, variants) {
 
   const overlay = document.createElement("div");
@@ -67,7 +92,12 @@ function showVariantsPopup(item, variants) {
 
       ${variants.map(v => `
         <button class="variant-btn"
-          onclick="selectVariant('${item.name}', '${v.label}', ${v.price})">
+          onclick="selectVariant(
+            '${item.id}',
+            '${item.name}',
+            '${v.label}',
+            ${v.price}
+          )">
           ${v.label} — ${v.price.toFixed(3)} د.ب
         </button>
       `).join("")}
@@ -79,24 +109,86 @@ function showVariantsPopup(item, variants) {
   document.body.appendChild(overlay);
 
   overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
-
-  overlay.onclick = (e) => {
+  overlay.onclick = e => {
     if (e.target === overlay) overlay.remove();
   };
 }
 
-// اختيار الحجم
-window.selectVariant = function(name, label, price) {
+window.selectVariant = function (id, name, label, price) {
 
-  addToCart({
-    name: `${name} (${label})`,
-    price: price
-  });
+  const baseItem = items.find(i => i.id === id);
+
+  if (baseItem.extras.length > 0) {
+    showExtrasPopup({
+      ...baseItem,
+      name: `${name} (${label})`,
+      price
+    });
+  } else {
+    addToCart({
+      id,
+      name: `${name} (${label})`,
+      price
+    });
+  }
 
   document.querySelector(".popup-overlay")?.remove();
 };
 
-// إضافة للسلة
+/* ===============================
+   Popup الإضافات
+================================ */
+function showExtrasPopup(item) {
+
+  const overlay = document.createElement("div");
+  overlay.className = "popup-overlay";
+
+  overlay.innerHTML = `
+    <div class="popup-box">
+      <h3>${item.name}</h3>
+
+      <div>
+        ${item.extras.map(extra => `
+          <label>
+            <input type="checkbox" value="${extra}" checked>
+            ${extra}
+          </label>
+        `).join("")}
+      </div>
+
+      <button id="confirmExtras">إضافة</button>
+      <button class="cancel-btn">إلغاء</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
+
+  overlay.querySelector("#confirmExtras").onclick = () => {
+
+    const removed = [...overlay.querySelectorAll("input")]
+      .filter(cb => !cb.checked)
+      .map(cb => cb.value);
+
+    let name = item.name;
+
+    if (removed.length > 0) {
+      name += ` (بدون: ${removed.join(", ")})`;
+    }
+
+    addToCart({
+      ...item,
+      name
+    });
+
+    overlay.remove();
+  };
+}
+
+/* ===============================
+   السلة
+================================ */
 function addToCart(item) {
 
   const existing = cart.find(i => i.name === item.name);
@@ -113,14 +205,15 @@ function addToCart(item) {
   renderCart();
 }
 
-// عرض السلة
 function renderCart() {
+
   const tbody = document.getElementById("cart");
   tbody.innerHTML = "";
 
   let total = 0;
 
   cart.forEach((item, i) => {
+
     const sum = item.qty * item.price;
     total += sum;
 
@@ -142,17 +235,25 @@ function renderCart() {
     total.toFixed(3) + " د.ب";
 }
 
-// تعديل الكمية
 window.changeQty = (i, d) => {
   cart[i].qty += d;
   if (cart[i].qty <= 0) cart.splice(i, 1);
   renderCart();
 };
 
-// حذف
-window.removeItem = (i) => {
+window.removeItem = i => {
   cart.splice(i, 1);
   renderCart();
 };
 
+/* ===============================
+   تصنيف
+================================ */
+window.filterCategory = function (category, btn) {
+  document.querySelectorAll(".cat").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  loadItems(category);
+};
+
+/* =============================== */
 loadItems();
