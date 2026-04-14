@@ -3,36 +3,55 @@ import { supabase } from "./supabase.js";
 window.addProduct = async function () {
 
   const name = document.getElementById("name").value.trim();
-  const price = parseFloat(document.getElementById("price").value);
+  const basePrice = parseFloat(document.getElementById("price").value);
+  const category = document.getElementById("category").value;
   const hasVariants = document.getElementById("hasVariants").checked;
   const extras = document.getElementById("extras").value;
 
-  if (!name || isNaN(price)) {
-    alert("اكتب الاسم والسعر");
+  if (!name) {
+    alert("اكتب اسم المنتج");
     return;
   }
 
-  const { error } = await supabase
+  // 1️⃣ إنشاء المنتج
+  const { data: product, error } = await supabase
     .from("products")
     .insert({
-      name: name,
-      price: price,
+      name,
+      price: hasVariants ? null : basePrice,
       has_variants: hasVariants,
-      extras_text: extras,
-      category: "drinks" // مؤقت
-    });
+      category,
+      extras_text: extras
+    })
+    .select()
+    .single();
 
   if (error) {
-    alert("❌ خطأ");
     console.error(error);
+    alert("❌ خطأ في إضافة المنتج");
     return;
+  }
+
+  // 2️⃣ إضافة الأحجام (إذا موجودة)
+  if (hasVariants) {
+
+    const variants = [
+      { label: "Small", price: parseFloat(document.getElementById("smallPrice").value) },
+      { label: "Medium", price: parseFloat(document.getElementById("mediumPrice").value) },
+      { label: "Large", price: parseFloat(document.getElementById("largePrice").value) }
+    ].filter(v => !isNaN(v.price));
+
+    if (variants.length > 0) {
+      await supabase.from("product_variants").insert(
+        variants.map(v => ({
+          product_id: product.id,
+          label: v.label,
+          price: v.price
+        }))
+      );
+    }
   }
 
   alert("✅ تم إضافة المنتج");
 
-  // تفريغ الحقول
-  document.getElementById("name").value = "";
-  document.getElementById("price").value = "";
-  document.getElementById("extras").value = "";
-  document.getElementById("hasVariants").checked = false;
 };
