@@ -180,3 +180,67 @@ body {
   padding: 8px;
   border-radius: 8px;
 }
+/* ===== الصفحة ===== */
+body {
+  font-family: Arial;
+  background: #f3f4f6;
+  padding: 20px;
+}
+
+/* ===== العنوان ===== */
+h2 {
+  margin-bottom: 15px;
+}
+
+/* ===== الفورم ===== */
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+/* ===== زر ===== */
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #22c55e;
+  color: white;
+  font-weight: bold;
+}
+
+/* ===== جدول ===== */
+table {
+  width: 100%;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+td, th {
+  padding: 10px;
+  text-align: center;
+}
+
+tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+/* ===== أزرار الجدول ===== */
+td button {
+  margin: 0 3px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+
+td button:first-child {
+  background: #facc15;
+}
+
+td button:last-child {
+  background: #dc2626;
+}
