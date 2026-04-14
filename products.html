@@ -116,8 +116,7 @@ async function loadProducts() {
     div.className = "product";
 
   div.innerHTML = `
-  <img src="${p.image_url || 'https://via.placeholder.com/80'}" width="80"><br>
-
+  <img src="${p.image_url || 'no-image.png'}">
   <input id="name-${p.id}" value="${p.name}">
   <input id="cat-${p.id}" value="${p.category}">
   <input id="price-${p.id}" type="number" value="${p.price}">
