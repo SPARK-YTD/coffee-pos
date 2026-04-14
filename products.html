@@ -184,20 +184,21 @@ async function addProduct() {
   // ✅ إنشاء المنتج
   const { data: product } = await supabaseClient
     .from("products")
-    .insert([{ name, category, price, image_url: imageUrl }])
+    .insert([{    name,    category,    price: sizes.length > 0 ? null : parseFloat(price),   has_variants: sizes.length > 0,   image_url: imageUrl  }])
     .select()
     .single();
 
   // ✅ هنا نحفظ الأحجام (داخل الدالة)
   if (sizes.length > 0) {
-    const sizeRows = sizes.map(s => ({
-      product_id: product.id,
-      name: s.name,
-      price: s.price
-    }));
 
-    await supabaseClient.from("product_sizes").insert(sizeRows);
+  const variantRows = sizes.map(s => ({
+  product_id: product.id,
+  label: s.name,
+  price: parseFloat(s.price),
+  active: true
+  }));
 
+  await supabaseClient.from("product_variants").insert(variantRows);
     sizes = [];
     renderSizes();
   }
