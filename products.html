@@ -37,7 +37,15 @@ if (!user || user.role !== "manager") {
 <input id="image" type="file">
 
 <button onclick="addProduct()">إضافة</button>
+<h4>📏 الأحجام (اختياري)</h4>
 
+<input id="sizeName" placeholder="Small">
+<input id="sizePrice" type="number" placeholder="السعر">
+
+<button onclick="addSize()">➕ إضافة حجم</button>
+
+<div id="sizes"></div>
+  
 <hr>
 
 <h3>📦 المنتجات</h3>
@@ -48,6 +56,32 @@ if (!user || user.role !== "manager") {
 <script src="supabase.js"></script>
 
 <script>
+
+  let sizes = [];
+
+function addSize() {
+  const name = document.getElementById("sizeName").value;
+  const price = document.getElementById("sizePrice").value;
+
+  if (!name || !price) return;
+
+  sizes.push({ name, price });
+
+  renderSizes();
+
+  document.getElementById("sizeName").value = "";
+  document.getElementById("sizePrice").value = "";
+}
+
+function renderSizes() {
+  const div = document.getElementById("sizes");
+  div.innerHTML = "";
+
+  sizes.forEach(s => {
+    div.innerHTML += `<p>${s.name} - ${s.price} BD</p>`;
+  });
+}
+  
 async function loadProducts() {
   const { data } = await supabaseClient
     .from("products")
@@ -127,10 +161,28 @@ async function addProduct() {
     imageUrl = data.publicUrl;
   }
 
-  await supabaseClient.from("products").insert([
-    { name, category, price, image_url: imageUrl }
-  ]);
+  // ✅ إنشاء المنتج
+  const { data: product } = await supabaseClient
+    .from("products")
+    .insert([{ name, category, price, image_url: imageUrl }])
+    .select()
+    .single();
 
+  // ✅ هنا نحفظ الأحجام (داخل الدالة)
+  if (sizes.length > 0) {
+    const sizeRows = sizes.map(s => ({
+      product_id: product.id,
+      name: s.name,
+      price: s.price
+    }));
+
+    await supabaseClient.from("product_sizes").insert(sizeRows);
+
+    sizes = [];
+    renderSizes();
+  }
+
+  // تنظيف
   document.getElementById("name").value = "";
   document.getElementById("category").value = "";
   document.getElementById("price").value = "";
@@ -138,6 +190,7 @@ async function addProduct() {
 
   loadProducts();
 }
+  
 loadProducts();
 </script>
 
