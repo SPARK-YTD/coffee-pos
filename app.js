@@ -53,7 +53,7 @@ function renderItems() {
   <div class="item-price">
     ${item.has_variants
       ? "اختر الحجم"
-      : item.price.toFixed(3) + " د.ب"}
+      : item.price.toFixed(3) + " ر.س"}
   </div>
 `;
 
@@ -111,7 +111,7 @@ function showVariantsPopup(item, variants) {
             '${v.label}',
             ${v.price}
           )">
-          ${v.label} — ${v.price.toFixed(3)} د.ب
+          ${v.label} — ${v.price.toFixed(3)} ر.س
         </button>
       `).join("")}
 
@@ -251,7 +251,7 @@ function renderCart() {
   });
 
   document.getElementById("total").textContent =
-    total.toFixed(3) + " د.ب";
+    total.toFixed(3) + " ر.س";
 }
 
 window.changeQty = (i, d) => {
@@ -276,7 +276,7 @@ window.filterCategory = function (category, btn) {
 
 /* =============================== */
 loadItems("drinks");
-window.completeOrder = async function () {
+window.completeOrder = function () {
 
   if (!cart.length) {
     alert("السلة فاضية");
@@ -285,67 +285,10 @@ window.completeOrder = async function () {
 
   const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
-  // 1️⃣ إنشاء الطلب
-  let order;
-
-if (editingOrderId) {
-
-  // تحديث الطلب
-  await supabase
-    .from("orders")
-    .update({ total })
-    .eq("id", editingOrderId);
-
-  // حذف العناصر القديمة
-  await supabase
-    .from("order_items")
-    .delete()
-    .eq("order_id", editingOrderId);
-
-  order = { id: editingOrderId };
-
-  editingOrderId = null;
-
-} else {
-
-  const { data } = await supabase
-    .from("orders")
-    .insert({
-      total,
-      status: "active"
-    })
-    .select()
-    .single();
-
-  order = data;
-}
-
-  // 2️⃣ إضافة العناصر
-  const itemsToInsert = cart.map(i => ({
-    order_id: order.id,
-    product_id: i.id,
-    item_name: i.name,
-    qty: i.qty,
-    price: i.price
-  }));
-
-  const { error: itemsError } = await supabase
-    .from("order_items")
-    .insert(itemsToInsert);
-
-  if (itemsError) {
-    console.error(itemsError);
-    alert("❌ فشل حفظ العناصر");
-    return;
-  }
-
-  // 3️⃣ تنظيف
-  cart = [];
-  renderCart();
-   loadActiveOrders();
-
-  alert("✅ تم حفظ الطلب");
+  openPaymentAndSave(total);
 };
+
+
 
 let activeOrders = [];
 
@@ -361,6 +304,111 @@ async function loadActiveOrders() {
   renderActiveOrders();
 }
 
+function openPaymentAndSave(total) {
+
+  const overlay = document.createElement("div");
+  overlay.className = "popup-overlay";
+
+  overlay.innerHTML = `
+    <div class="popup-box">
+      <h3>💰 الدفع</h3>
+
+      <div>الإجمالي: ${total.toFixed(3)} ر.س</div>
+
+      <label>💵 كاش:</label>
+      <input type="number" id="cashInput" value="0">
+
+      <label>💳 بطاقة:</label>
+      <input type="number" id="cardInput" value="0">
+
+      <button id="confirmPay">تأكيد</button>
+      <button class="cancel-btn">إلغاء</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
+
+  overlay.querySelector("#confirmPay").onclick = async () => {
+
+    const cash = parseFloat(document.getElementById("cashInput").value) || 0;
+    const card = parseFloat(document.getElementById("cardInput").value) || 0;
+
+    if ((cash + card).toFixed(3) != total.toFixed(3)) {
+      alert("❌ المبلغ غير صحيح");
+      return;
+    }
+
+    let method =
+      cash > 0 && card > 0 ? "mixed" :
+      cash > 0 ? "cash" : "card";
+
+    // 🔥 إنشاء الطلب
+    let order;
+
+if (editingOrderId) {
+
+  // 🔄 تحديث الطلب
+  await supabase
+    .from("orders")
+    .update({
+      total,
+      is_paid: true,
+      cash_amount: cash,
+      card_amount: card,
+      payment_method: method
+    })
+    .eq("id", editingOrderId);
+
+  // 🧹 حذف العناصر القديمة
+  await supabase
+    .from("order_items")
+    .delete()
+    .eq("order_id", editingOrderId);
+
+  order = { id: editingOrderId };
+
+  editingOrderId = null;
+
+} else {
+
+  // ➕ طلب جديد
+  const { data } = await supabase
+    .from("orders")
+    .insert({
+      total,
+      status: "active",
+      is_paid: true,
+      cash_amount: cash,
+      card_amount: card,
+      payment_method: method
+    })
+    .select()
+    .single();
+
+  order = data;
+}
+
+    // 🔥 العناصر
+    const itemsToInsert = cart.map(i => ({
+      order_id: order.id,
+      product_id: i.id,
+      item_name: i.name,
+      qty: i.qty,
+      price: i.price
+    }));
+
+    await supabase.from("order_items").insert(itemsToInsert);
+
+    cart = [];
+    renderCart();
+    loadActiveOrders();
+
+    overlay.remove();
+    alert("✅ تم الدفع والحفظ");
+  };
+}
 
 function renderActiveOrders() {
 
@@ -374,7 +422,7 @@ function renderActiveOrders() {
 
     div.innerHTML = `
   <strong>فاتورة رقم ${order.id.slice(0,6)}</strong><br>
-  💰 ${order.total.toFixed(3)} د.ب<br><br>
+  💰 ${order.total.toFixed(3)} ر.س<br> ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br><br>
 
   <button onclick="viewOrder('${order.id}')">👁 عرض</button>
   <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
