@@ -298,3 +298,42 @@ td button:last-child {
   background: #22c55e;
   border-radius: 10px;
 }
+.print-area {
+  display: none;
+}
+
+@media print {
+
+  body * {
+    display: none;
+  }
+
+  .print-area, .print-area * {
+    display: block;
+  }
+
+  .print-area {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .receipt {
+    width: 250px;
+    margin: auto;
+    font-size: 14px;
+  }
+
+  .title {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .total {
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+}
