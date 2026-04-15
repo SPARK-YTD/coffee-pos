@@ -437,7 +437,7 @@ if (editingOrderId) {
     loadActiveOrders();
 
     overlay.remove();
-    alert("✅ تم الدفع والحفظ");
+    window.print();
   };
 }
 
