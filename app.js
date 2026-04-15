@@ -60,7 +60,10 @@ function renderItems() {
 ================================ */
 async function handleItem(item) {
 
-  if (document.querySelector(".popup-overlay")) return;
+  const existingPopup = document.querySelector(".popup-overlay");
+if (existingPopup) {
+  existingPopup.remove(); // 🔥 يحذف أي popup عالق
+}
 
   if (item.has_variants) {
 
