@@ -432,11 +432,13 @@ if (editingOrderId) {
 
     await supabase.from("order_items").insert(itemsToInsert);
 
+    prepareReceipt(order, cart, cash, card, method);
     cart = [];
     renderCart();
     loadActiveOrders();
 
     overlay.remove();
+
     window.print();
   };
 }
@@ -536,5 +538,33 @@ window.editOrder = async function(orderId) {
 
   renderCart();
 };
+
+function prepareReceipt(order, cart, cash, card, method) {
+
+  document.getElementById("printOrderId").textContent =
+    order.id.slice(0,6);
+
+  document.getElementById("printDate").textContent =
+    new Date().toLocaleString();
+
+  document.getElementById("printTotal").textContent =
+    order.total.toFixed(3) + " ر.س";
+
+  document.getElementById("printItems").innerHTML =
+    cart.map(i => `
+      <div style="display:flex;justify-content:space-between">
+        <span>${i.name} x${i.qty}</span>
+        <span>${(i.price * i.qty).toFixed(3)}</span>
+      </div>
+    `).join("");
+
+  let paymentText =
+    method === "cash" ? "💵 كاش" :
+    method === "card" ? "💳 بطاقة" :
+    "💰 مختلط";
+
+  document.getElementById("printPayment").textContent =
+    `طريقة الدفع: ${paymentText}`;
+}
 
 loadActiveOrders();
