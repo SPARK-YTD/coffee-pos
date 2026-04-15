@@ -283,3 +283,18 @@ td button:last-child {
   color: #16a34a;
   font-weight: bold;
 }
+.orders-list {
+  max-height: 500px;   /* ارتفاع ثابت */
+  overflow-y: auto;    /* سكروول */
+  padding-right: 5px;
+}
+
+/* شكل السكروول 🔥 */
+.orders-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.orders-list::-webkit-scrollbar-thumb {
+  background: #22c55e;
+  border-radius: 10px;
+}
