@@ -321,6 +321,8 @@ function openPaymentAndSave(total) {
       <label>💳 بطاقة:</label>
       <input type="number" id="cardInput" value="0">
 
+      <div id="remainBox" style="margin:10px 0;font-weight:bold"></div>
+
       <button id="confirmPay">تأكيد</button>
       <button class="cancel-btn">إلغاء</button>
     </div>
@@ -328,12 +330,41 @@ function openPaymentAndSave(total) {
 
   document.body.appendChild(overlay);
 
+   const cashInput = overlay.querySelector("#cashInput");
+const cardInput = overlay.querySelector("#cardInput");
+const remainBox = overlay.querySelector("#remainBox");
+
+function updateRemain() {
+
+  const cash = parseFloat(cashInput.value) || 0;
+  const card = parseFloat(cardInput.value) || 0;
+
+  const paid = cash + card;
+  const diff = paid - total;
+
+  if (diff > 0) {
+    remainBox.textContent = `💰 الباقي للزبون: ${diff.toFixed(3)} ر.س`;
+    remainBox.style.color = "green";
+  } else if (diff < 0) {
+    remainBox.textContent = `❌ المتبقي: ${Math.abs(diff).toFixed(3)} ر.س`;
+    remainBox.style.color = "red";
+  } else {
+    remainBox.textContent = "✅ المبلغ مكتمل";
+    remainBox.style.color = "green";
+  }
+}
+
+cashInput.oninput = updateRemain;
+cardInput.oninput = updateRemain;
+
+updateRemain();
+
   overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
 
   overlay.querySelector("#confirmPay").onclick = async () => {
 
-    const cash = parseFloat(document.getElementById("cashInput").value) || 0;
-    const card = parseFloat(document.getElementById("cardInput").value) || 0;
+    const cash = parseFloat(cashInput.value) || 0;
+    const card = parseFloat(cardInput.value) || 0;
 
     if ((cash + card).toFixed(3) != total.toFixed(3)) {
       alert("❌ المبلغ غير صحيح");
