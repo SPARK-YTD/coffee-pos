@@ -445,6 +445,8 @@ if (editingOrderId) {
     cart = [];
     renderCart();
     loadActiveOrders();
+    
+    
 
     overlay.remove();
 
@@ -577,3 +579,43 @@ function prepareReceipt(order, cart, cash, card, method) {
 }
 
 loadActiveOrders();
+// 🔥 دوال الدفع الذكية
+
+window.setCash = function(amount) {
+  const cashInput = document.getElementById("cashInput");
+  const cardInput = document.getElementById("cardInput");
+
+  if (!cashInput || !cardInput) return;
+
+  cashInput.value = amount;
+  cardInput.value = 0;
+
+  cashInput.dispatchEvent(new Event("input"));
+};
+
+window.setCard = function(amount) {
+  const cashInput = document.getElementById("cashInput");
+  const cardInput = document.getElementById("cardInput");
+
+  if (!cashInput || !cardInput) return;
+
+  cardInput.value = amount;
+  cashInput.value = 0;
+
+  cardInput.dispatchEvent(new Event("input"));
+};
+
+window.completeWithCard = function(total) {
+  const cashInput = document.getElementById("cashInput");
+  const cardInput = document.getElementById("cardInput");
+
+  if (!cashInput || !cardInput) return;
+
+  const cash = parseFloat(cashInput.value) || 0;
+  const remaining = total - cash;
+
+  if (remaining > 0) {
+    cardInput.value = remaining;
+    cardInput.dispatchEvent(new Event("input"));
+  }
+};
