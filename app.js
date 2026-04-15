@@ -44,10 +44,18 @@ function renderItems() {
     div.className = "item";
 
     div.innerHTML = `
-      ${item.image_url ? `<img src="${item.image_url}" class="cashier-item-img">` : ""}
-      <strong>${item.name}</strong>
-      <span>${item.has_variants ? "اختر الحجم" : item.price.toFixed(3) + " د.ب"}</span>
-    `;
+  ${item.image_url ? `
+    <img src="${item.image_url}" class="item-img">
+  ` : ""}
+
+  <div class="item-name">${item.name}</div>
+
+  <div class="item-price">
+    ${item.has_variants
+      ? "اختر الحجم"
+      : item.price.toFixed(3) + " د.ب"}
+  </div>
+`;
 
     div.onclick = () => handleItem(item);
 
