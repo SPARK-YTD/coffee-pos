@@ -311,7 +311,12 @@ function openPaymentAndSave(total) {
 
   overlay.innerHTML = `
     <div class="popup-box">
-      <h3>💰 الدفع</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+  <h3>💰 الدفع</h3>
+  <button onclick="resetPayment()" style="background:#ef4444;padding:5px 10px;border-radius:8px">
+    🗑
+  </button>
+</div>
 
       <div>الإجمالي: ${total.toFixed(3)} ر.س</div>
 
@@ -342,7 +347,7 @@ function openPaymentAndSave(total) {
    const cashInput = overlay.querySelector("#cashInput");
 const cardInput = overlay.querySelector("#cardInput");
 const remainBox = overlay.querySelector("#remainBox");
-// 🔥 مسح تلقائي عند الضغط
+
 cashInput.onfocus = () => {
   if (cashInput.value === "0") cashInput.value = "";
 };
@@ -380,13 +385,22 @@ updateRemain();
 
   overlay.querySelector("#confirmPay").onclick = async () => {
 
-    const cash = parseFloat(cashInput.value) || 0;
-    const card = parseFloat(cardInput.value) || 0;
+    const cash = parseFloat(cashInput.value || "0");
+    const card = parseFloat(cardInput.value || "0");
 
-    if ((cash + card).toFixed(3) != total.toFixed(3)) {
-      alert("❌ المبلغ غير صحيح");
-      return;
-    }
+    const paid = cash + card;
+
+if (Math.abs(paid - total) > 0.001 && paid < total) {
+  alert("❌ المبلغ ناقص");
+  return;
+}
+
+// 🔥 إذا زاد المبلغ نحسب الباقي
+const change = paid - total;
+
+if (change > 0) {
+alert(`💰 الباقي: ${change.toFixed(3)} ر.س`);
+}
 
     let method =
       cash > 0 && card > 0 ? "mixed" :
@@ -584,35 +598,37 @@ function prepareReceipt(order, cart, cash, card, method) {
 
   document.getElementById("printPayment").textContent =
     `طريقة الدفع: ${paymentText}`;
+
+  if ((cash + card) > order.total) {
+    const change = (cash + card) - order.total;
+
+    document.getElementById("printPayment").innerHTML +=
+      `<br>💰 الباقي: ${change.toFixed(3)} ر.س`;
+  }
 }
-
 loadActiveOrders();
-// 🔥 دوال الدفع الذكية
 
+// 🔥 كاش (ما يمس البطاقة)
 window.setCash = function(amount) {
   const cashInput = document.getElementById("cashInput");
-  const cardInput = document.getElementById("cardInput");
 
-  if (!cashInput || !cardInput) return;
+  if (!cashInput) return;
 
-  cashInput.value = amount;
-  cardInput.value = 0;
-
+  cashInput.value = amount.toFixed(3);
   cashInput.dispatchEvent(new Event("input"));
 };
 
+// 🔥 بطاقة (ما تمس الكاش)
 window.setCard = function(amount) {
-  const cashInput = document.getElementById("cashInput");
   const cardInput = document.getElementById("cardInput");
 
-  if (!cashInput || !cardInput) return;
+  if (!cardInput) return;
 
-  cardInput.value = amount;
-  cashInput.value = 0;
-
+  cardInput.value = amount.toFixed(3);
   cardInput.dispatchEvent(new Event("input"));
 };
 
+// 🔥 أكمل الباقي
 window.completeWithCard = function(total) {
 
   const cashInput = document.getElementById("cashInput");
@@ -621,13 +637,26 @@ window.completeWithCard = function(total) {
   if (!cashInput || !cardInput) return;
 
   const cash = parseFloat(cashInput.value) || 0;
-
-  // 🔥 لا نلمس الكاش
   const remaining = total - cash;
 
   if (remaining > 0) {
     cardInput.value = remaining.toFixed(3);
+    cardInput.focus(); // 🔥 حركة حلوة
   }
 
+  cardInput.dispatchEvent(new Event("input"));
+};
+
+window.resetPayment = function() {
+
+  const cashInput = document.getElementById("cashInput");
+  const cardInput = document.getElementById("cardInput");
+
+  if (!cashInput || !cardInput) return;
+
+  cashInput.value = "";
+  cardInput.value = "";
+
+  cashInput.dispatchEvent(new Event("input"));
   cardInput.dispatchEvent(new Event("input"));
 };
