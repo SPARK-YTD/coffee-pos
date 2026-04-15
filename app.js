@@ -6,7 +6,7 @@ let cart = [];
 /* ===============================
    تحميل المنتجات
 ================================ */
-async function loadItems(category = "food") {
+async function loadItems(category = "drinks") {
 
   const { data, error } = await supabase
     .from("products")
@@ -275,7 +275,7 @@ window.filterCategory = function (category, btn) {
 };
 
 /* =============================== */
-loadItems();
+loadItems("drinks");
 window.completeOrder = async function () {
 
   if (!cart.length) {
