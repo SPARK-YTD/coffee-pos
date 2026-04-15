@@ -316,10 +316,19 @@ function openPaymentAndSave(total) {
       <div>الإجمالي: ${total.toFixed(3)} ر.س</div>
 
       <label>💵 كاش:</label>
-      <input type="number" id="cashInput" value="0">
+<input type="number" id="cashInput" value="0">
 
-      <label>💳 بطاقة:</label>
-      <input type="number" id="cardInput" value="0">
+<div style="margin:5px 0">
+  <button onclick="setCash(${total})">💵 كاش كامل</button>
+</div>
+
+<label>💳 بطاقة:</label>
+<input type="number" id="cardInput" value="0">
+
+<div style="margin:5px 0">
+  <button onclick="setCard(${total})">💳 بطاقة كاملة</button>
+  <button onclick="completeWithCard(${total})">💳 أكمل الباقي</button>
+</div>
 
       <div id="remainBox" style="margin:10px 0;font-weight:bold"></div>
 
