@@ -316,19 +316,19 @@ function openPaymentAndSave(total) {
       <div>الإجمالي: ${total.toFixed(3)} ر.س</div>
 
       <label>💵 كاش:</label>
-<input type="number" id="cashInput" value="0">
+  <input type="number" id="cashInput" placeholder="0">
 
-<div style="margin:5px 0">
+  <div style="margin:5px 0">
   <button onclick="setCash(${total})">💵 كاش كامل</button>
-</div>
+  </div>
 
-<label>💳 بطاقة:</label>
-<input type="number" id="cardInput" value="0">
+  <label>💳 بطاقة:</label>
+  <input type="number" id="cardInput" placeholder="0">
 
-<div style="margin:5px 0">
+  <div style="margin:5px 0">
   <button onclick="setCard(${total})">💳 بطاقة كاملة</button>
   <button onclick="completeWithCard(${total})">💳 أكمل الباقي</button>
-</div>
+  </div>
 
       <div id="remainBox" style="margin:10px 0;font-weight:bold"></div>
 
@@ -342,11 +342,19 @@ function openPaymentAndSave(total) {
    const cashInput = overlay.querySelector("#cashInput");
 const cardInput = overlay.querySelector("#cardInput");
 const remainBox = overlay.querySelector("#remainBox");
+// 🔥 مسح تلقائي عند الضغط
+cashInput.onfocus = () => {
+  if (cashInput.value === "0") cashInput.value = "";
+};
+
+cardInput.onfocus = () => {
+  if (cardInput.value === "0") cardInput.value = "";
+};
 
 function updateRemain() {
 
-  const cash = parseFloat(cashInput.value) || 0;
-  const card = parseFloat(cardInput.value) || 0;
+  const cash = parseFloat(cashInput.value || "0");
+  const card = parseFloat(cardInput.value || "0");
 
   const paid = cash + card;
   const diff = paid - total;
@@ -606,16 +614,20 @@ window.setCard = function(amount) {
 };
 
 window.completeWithCard = function(total) {
+
   const cashInput = document.getElementById("cashInput");
   const cardInput = document.getElementById("cardInput");
 
   if (!cashInput || !cardInput) return;
 
   const cash = parseFloat(cashInput.value) || 0;
+
+  // 🔥 لا نلمس الكاش
   const remaining = total - cash;
 
   if (remaining > 0) {
-    cardInput.value = remaining;
-    cardInput.dispatchEvent(new Event("input"));
+    cardInput.value = remaining.toFixed(3);
   }
+
+  cardInput.dispatchEvent(new Event("input"));
 };
