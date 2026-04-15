@@ -286,20 +286,39 @@ window.completeOrder = async function () {
   const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
   // 1️⃣ إنشاء الطلب
-  const { data: order, error } = await supabase
+  let order;
+
+if (editingOrderId) {
+
+  // تحديث الطلب
+  await supabase
+    .from("orders")
+    .update({ total })
+    .eq("id", editingOrderId);
+
+  // حذف العناصر القديمة
+  await supabase
+    .from("order_items")
+    .delete()
+    .eq("order_id", editingOrderId);
+
+  order = { id: editingOrderId };
+
+  editingOrderId = null;
+
+} else {
+
+  const { data } = await supabase
     .from("orders")
     .insert({
-      total: total,
+      total,
       status: "active"
     })
     .select()
     .single();
 
-  if (error || !order) {
-    console.error(error);
-    alert("❌ فشل إنشاء الطلب");
-    return;
-  }
+  order = data;
+}
 
   // 2️⃣ إضافة العناصر
   const itemsToInsert = cart.map(i => ({
@@ -354,13 +373,14 @@ function renderActiveOrders() {
     div.className = "order-box";
 
     div.innerHTML = `
-      <strong>فاتورة رقم ${order.id.slice(0,6)}</strong><br>
-      ${order.total.toFixed(3)} د.ب<br>
+  <strong>فاتورة رقم ${order.id.slice(0,6)}</strong><br>
+  💰 ${order.total.toFixed(3)} د.ب<br><br>
 
-      <button onclick="markCompleted('${order.id}')">
-        ✅ مكتمل
-      </button>
-    `;
+  <button onclick="viewOrder('${order.id}')">👁 عرض</button>
+  <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
+  <button onclick="deleteOrder('${order.id}')">🗑 حذف</button>
+  <button onclick="markCompleted('${order.id}')">✅ مكتمل</button>
+`;
 
     box.appendChild(div);
   });
@@ -375,4 +395,67 @@ window.markCompleted = async function (id) {
 
   loadActiveOrders();
 };
+
+window.deleteOrder = async function(id) {
+
+  if (!confirm("حذف الطلب نهائيًا؟")) return;
+
+  // حذف العناصر أول
+  await supabase
+    .from("order_items")
+    .delete()
+    .eq("order_id", id);
+
+  // حذف الطلب نفسه
+  await supabase
+    .from("orders")
+    .delete()
+    .eq("id", id);
+
+  loadActiveOrders();
+};
+
+let editingOrderId = null;
+
+/* ===============================
+   عرض الطلب 👁
+================================ */
+window.viewOrder = async function(orderId) {
+
+  const { data } = await supabase
+    .from("order_items")
+    .select("*")
+    .eq("order_id", orderId);
+
+  if (!data) return;
+
+  alert(
+    data.map(i => `${i.item_name} × ${i.qty}`).join("\n")
+  );
+};
+
+/* ===============================
+   تعديل الطلب ✏️
+================================ */
+window.editOrder = async function(orderId) {
+
+  const { data } = await supabase
+    .from("order_items")
+    .select("*")
+    .eq("order_id", orderId);
+
+  if (!data) return;
+
+  cart = data.map(i => ({
+    id: i.product_id,
+    name: i.item_name,
+    price: i.price,
+    qty: i.qty
+  }));
+
+  editingOrderId = orderId;
+
+  renderCart();
+};
+
 loadActiveOrders();
