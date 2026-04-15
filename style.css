@@ -1,18 +1,18 @@
-/* ===== عام ===== */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f3f4f6;
+  font-family: "Segoe UI", Arial;
+  background: #f5efe6; /* كريمي */
 }
 
 /* ===== Top Bar ===== */
 .topbar {
-  background: linear-gradient(90deg, #0f172a, #1e293b);
-  color: white;
-  padding: 15px;
+  background: linear-gradient(90deg, #3e2723, #5d4037);
+  color: #fff;
+  padding: 18px;
   text-align: center;
+  font-size: 20px;
   font-weight: bold;
-  font-size: 18px;
+  letter-spacing: 1px;
 }
 
 /* ===== Layout ===== */
@@ -25,58 +25,70 @@ body {
 
 /* ===== Card ===== */
 .card {
-  background: white;
-  border-radius: 15px;
+  background: #fffaf3;
+  border-radius: 18px;
   padding: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 }
 
 /* ===== Categories ===== */
 .categories {
   display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .cat {
-  padding: 6px 10px;
-  border-radius: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
   border: none;
-  background: #e5e7eb;
+  background: #e7d7c9;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .cat.active {
-  background: #facc15;
-  font-weight: bold;
+  background: #6d4c41;
+  color: white;
 }
 
 /* ===== Products ===== */
 .items-grid {
   display: grid;
   grid-template-columns: repeat(2,1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .item {
-  background: #fafafa;
-  border-radius: 12px;
+  background: #fff;
+  border-radius: 15px;
   padding: 10px;
   text-align: center;
   cursor: pointer;
-  transition: 0.2s;
+  transition: 0.25s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .item:hover {
-  transform: scale(1.03);
+  transform: translateY(-6px);
 }
 
-.cashier-item-img {
+.item-img {
   width: 100%;
-  height: 90px;
+  height: 100px;
   object-fit: cover;
   border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.item-name {
+  font-weight: bold;
   margin-bottom: 5px;
+}
+
+.item-price {
+  color: #6d4c41;
+  font-weight: bold;
 }
 
 /* ===== Invoice ===== */
@@ -85,60 +97,64 @@ body {
   border-collapse: collapse;
 }
 
-.invoice-table th,
 .invoice-table td {
-  padding: 6px;
+  padding: 8px;
   font-size: 14px;
-  text-align: center;
 }
 
 .invoice-table button {
-  padding: 3px 6px;
+  background: #d7ccc8;
   border: none;
-  background: #ddd;
-  border-radius: 5px;
-  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 8px;
 }
 
 .total-box {
   margin-top: 10px;
   font-weight: bold;
   text-align: center;
+  font-size: 18px;
+  color: #3e2723;
 }
 
 /* ===== Buttons ===== */
 .btn {
   width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 12px;
   font-weight: bold;
+  border: none;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .btn.success {
-  background: #22c55e;
+  background: #4caf50;
   color: white;
 }
 
+.btn.success:hover {
+  transform: scale(1.03);
+}
+
 .btn.secondary {
-  background: #1e293b;
+  background: #5d4037;
   color: white;
 }
 
 /* ===== Orders ===== */
 .orders-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  max-height: 500px;
+  overflow-y: auto;
 }
 
 .order-box {
-  background: #f9fafb;
-  padding: 10px;
-  border-radius: 10px;
-  border-left: 5px solid #22c55e;
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  border-left: 6px solid #6d4c41;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 /* ===== Popup ===== */
@@ -152,171 +168,73 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 9999;
 }
 
 .popup-box {
-  background: white;
+  background: #fffaf3;
   padding: 20px;
-  border-radius: 15px;
-  width: 300px;
+  border-radius: 20px;
+  width: 320px;
   text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
-.variant-btn {
+.popup-box h3 {
+  color: #3e2723;
+}
+
+.popup-box input {
   width: 100%;
   padding: 10px;
-  margin: 5px 0;
-  background: #facc15;
-  border: none;
   border-radius: 10px;
-  font-weight: bold;
+  border: 1px solid #ddd;
+  margin-top: 5px;
+}
+
+/* ===== Popup Buttons ===== */
+.popup-box button {
+  background: #6d4c41;
+  color: white;
+  border: none;
+  padding: 10px;
+  margin: 5px;
+  border-radius: 10px;
   cursor: pointer;
+  font-weight: bold;
+}
+
+.popup-box button:hover {
+  opacity: 0.9;
 }
 
 .cancel-btn {
-  margin-top: 10px;
-  background: #eee;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-}
-/* ===== الصفحة ===== */
-body {
-  font-family: Arial;
-  background: #f3f4f6;
-  padding: 20px;
+  background: #ddd !important;
+  color: #000 !important;
 }
 
-/* ===== العنوان ===== */
-h2 {
-  margin-bottom: 15px;
-}
-
-/* ===== الفورم ===== */
-input, select, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-}
-
-/* ===== زر ===== */
-button {
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  background: #22c55e;
-  color: white;
-  font-weight: bold;
-}
-
-/* ===== جدول ===== */
-table {
-  width: 100%;
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-  margin-top: 20px;
-}
-
-td, th {
-  padding: 10px;
-  text-align: center;
-}
-
-tr:nth-child(even) {
-  background: #f9fafb;
-}
-
-/* ===== أزرار الجدول ===== */
-td button {
-  margin: 0 3px;
-  padding: 5px 8px;
-  border-radius: 6px;
-}
-
-td button:first-child {
-  background: #facc15;
-}
-
-td button:last-child {
-  background: #dc2626;
-}
-.btn {
-  position: relative;
-  z-index: 10;
-}
-/* ===== كروت المنتجات ===== */
-.item {
-  background: white;
-  border-radius: 15px;
-  padding: 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: 0.2s;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-
-.item:hover {
-  transform: translateY(-5px);
-}
-
-/* ===== الصورة ===== */
-.item-img {
-  width: 100%;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-bottom: 8px;
-}
-
-/* ===== الاسم ===== */
-.item-name {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-/* ===== السعر ===== */
-.item-price {
-  color: #16a34a;
-  font-weight: bold;
-}
-.orders-list {
-  max-height: 500px;   /* ارتفاع ثابت */
-  overflow-y: auto;    /* سكروول */
-  padding-right: 5px;
-}
-
-/* شكل السكروول 🔥 */
+/* ===== Scrollbar ===== */
 .orders-list::-webkit-scrollbar {
   width: 6px;
 }
 
 .orders-list::-webkit-scrollbar-thumb {
-  background: #22c55e;
+  background: #6d4c41;
   border-radius: 10px;
 }
+
+/* ===== Print ===== */
 .print-area {
   display: none;
 }
 
 @media print {
-
   body * {
     display: none;
   }
 
   .print-area, .print-area * {
     display: block;
-  }
-
-  .print-area {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    text-align: center;
   }
 
   .receipt {
@@ -328,46 +246,5 @@ td button:last-child {
   .title {
     font-weight: bold;
     font-size: 18px;
-    margin-bottom: 10px;
   }
-
-  .total {
-    font-weight: bold;
-    margin-top: 10px;
-  }
-
-}
-.print-area {
-  display: none;
-}
-
-@media print {
-
-  body * {
-    display: none;
-  }
-
-  .print-area, .print-area * {
-    display: block;
-  }
-
-  .print-area {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    text-align: center;
-  }
-
-  .receipt {
-    width: 250px;
-    margin: auto;
-    font-size: 14px;
-  }
-
-  .title {
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-
 }
