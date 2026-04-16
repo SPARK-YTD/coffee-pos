@@ -18,10 +18,15 @@ body {
 /* ===== Layout ===== */
 .cashier-layout {
   display: grid;
-  grid-template-columns: 2fr 1.5fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: 400px 1fr; /* 🔥 ثابت */
   gap: 15px;
   padding: 15px;
+  max-width: 1200px; /* 🔥 يمنع التمدد */
+  margin: auto; /* 🔥 توسيط */
+}
+
+.products-card {
+  max-width: 500px; /* 🔥 يمنع الانفجار */
 }
 
 /* الفاتورة */
@@ -73,9 +78,9 @@ body {
 /* ===== Products ===== */
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(90px, 100px)); /* 🔥 الحد الأعلى */
   gap: 8px;
-  align-items: start; /* 🔥 مهم */
+  justify-content: start; /* 🔥 مهم */
 }
 
 .item {
