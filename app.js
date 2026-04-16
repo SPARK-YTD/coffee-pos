@@ -337,6 +337,7 @@ function openPaymentAndSave(total) {
   <div style="margin:5px 0">
   <button onclick="setCard(${total})">💳 بطاقة كاملة</button>
   <button onclick="completeWithCard(${total})">💳 أكمل الباقي</button>
+  <button onclick="completeWithCash(${total})">💵 أكمل الباقي</button>
   </div>
 
       <div id="remainBox" style="margin:10px 0;font-weight:bold"></div>
@@ -369,13 +370,24 @@ function updateRemain() {
   const diff = paid - total;
 
   if (diff > 0) {
-    remainBox.textContent = `💰 الباقي للزبون: ${formatMoney(diff)}`;
+    remainBox.innerHTML = `
+      💰 الباقي: ${formatMoney(diff)}<br>
+      💵 كاش: ${formatMoney(cash)} | 💳 بطاقة: ${formatMoney(card)}
+    `;
     remainBox.style.color = "green";
+
   } else if (diff < 0) {
-    remainBox.textContent = `❌ المتبقي: ${formatMoney(Math.abs(diff))}`;
+    remainBox.innerHTML = `
+      ❌ المتبقي: ${formatMoney(Math.abs(diff))}<br>
+      💵 كاش: ${formatMoney(cash)} | 💳 بطاقة: ${formatMoney(card)}
+    `;
     remainBox.style.color = "red";
+
   } else {
-    remainBox.textContent = "✅ المبلغ مكتمل";
+    remainBox.innerHTML = `
+      ✅ مكتمل<br>
+      💵 كاش: ${formatMoney(cash)} | 💳 بطاقة: ${formatMoney(card)}
+    `;
     remainBox.style.color = "green";
   }
 }
@@ -656,12 +668,33 @@ window.resetPayment = function() {
 
   const cashInput = document.getElementById("cashInput");
   const cardInput = document.getElementById("cardInput");
+  const remainBox = document.getElementById("remainBox");
 
   if (!cashInput || !cardInput) return;
 
   cashInput.value = "";
   cardInput.value = "";
 
+  remainBox.textContent = "";
+
   cashInput.dispatchEvent(new Event("input"));
   cardInput.dispatchEvent(new Event("input"));
+};
+
+window.completeWithCash = function(total) {
+
+  const cashInput = document.getElementById("cashInput");
+  const cardInput = document.getElementById("cardInput");
+
+  if (!cashInput || !cardInput) return;
+
+  const card = parseFloat(cardInput.value) || 0;
+  const remaining = total - card;
+
+  if (remaining > 0) {
+    cashInput.value = remaining.toFixed(2);
+    cashInput.focus();
+  }
+
+  cashInput.dispatchEvent(new Event("input"));
 };
