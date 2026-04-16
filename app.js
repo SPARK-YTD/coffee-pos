@@ -489,15 +489,22 @@ if (editingOrderId) {
 
     overlay.remove();
 
-// 🔥 نخلي الفاتورة تظهر لحظة قبل الطباعة
-document.getElementById("printArea").style.display = "block";
+// 🔥 نخلي الفاتورة تظهر لحظة قبل const printArea = document.getElementById("printArea");
+
+printArea.style.display = "block";
+
+
+printArea.offsetHeight;
 
 setTimeout(() => {
   window.print();
 
-  // 🔥 نرجع نخفيها بعد الطباعة
-  document.getElementById("printArea").style.display = "none";
-}, 300);
+
+  setTimeout(() => {
+    printArea.style.display = "none";
+  }, 300);
+
+}, 600);
   };
 }
 
@@ -612,7 +619,7 @@ function prepareReceipt(order, cart, cash, card, method) {
     cart.map(i => `
       <div style="display:flex;justify-content:space-between">
         <span>${i.name} x${i.qty}</span>
-        <span>${formatMoney(i.price * i.qty)}</span>
+        <span>${(i.price * i.qty).toFixed(2)}</span>
       </div>
     `).join("");
 
