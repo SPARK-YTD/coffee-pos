@@ -1,3 +1,7 @@
+function formatMoney(amount) {
+  return `${Number(amount).toFixed(2)} ﷼`;
+}
+
 import { supabase } from "./supabase.js";
 
 let items = [];
@@ -53,7 +57,7 @@ function renderItems() {
   <div class="item-price">
     ${item.has_variants
       ? "اختر الحجم"
-      : item.price.toFixed(3) + " ر.س"}
+      : formatMoney(item.price)}
   </div>
 `;
 
@@ -111,7 +115,7 @@ function showVariantsPopup(item, variants) {
             '${v.label}',
             ${v.price}
           )">
-          ${v.label} — ${v.price.toFixed(3)} ر.س
+          ${v.label} — ${formatMoney(v.price)}
         </button>
       `).join("")}
 
@@ -244,14 +248,14 @@ function renderCart() {
           ${item.qty}
           <button onclick="changeQty(${i},1)">+</button>
         </td>
-        <td>${sum.toFixed(3)}</td>
+        <td>${formatMoney(sum)}</td>
         <td><button onclick="removeItem(${i})">🗑</button></td>
       </tr>
     `;
   });
 
   document.getElementById("total").textContent =
-    total.toFixed(3) + " ر.س";
+  formatMoney(total);
 }
 
 window.changeQty = (i, d) => {
@@ -318,7 +322,7 @@ function openPaymentAndSave(total) {
   </button>
 </div>
 
-      <div>الإجمالي: ${total.toFixed(3)} ر.س</div>
+      <div>الإجمالي: ${formatMoney(total)}</div>
 
       <label>💵 كاش:</label>
   <input type="number" id="cashInput" placeholder="0">
@@ -365,10 +369,10 @@ function updateRemain() {
   const diff = paid - total;
 
   if (diff > 0) {
-    remainBox.textContent = `💰 الباقي للزبون: ${diff.toFixed(3)} ر.س`;
+    remainBox.textContent = `💰 الباقي للزبون: ${formatMoney(diff)}`;
     remainBox.style.color = "green";
   } else if (diff < 0) {
-    remainBox.textContent = `❌ المتبقي: ${Math.abs(diff).toFixed(3)} ر.س`;
+    remainBox.textContent = `❌ المتبقي: ${formatMoney(Math.abs(diff))}`;
     remainBox.style.color = "red";
   } else {
     remainBox.textContent = "✅ المبلغ مكتمل";
@@ -390,7 +394,7 @@ updateRemain();
 
     const paid = cash + card;
 
-if (Math.abs(paid - total) > 0.001 && paid < total) {
+if (paid < total) {
   alert("❌ المبلغ ناقص");
   return;
 }
@@ -399,7 +403,8 @@ if (Math.abs(paid - total) > 0.001 && paid < total) {
 const change = paid - total;
 
 if (change > 0) {
-alert(`💰 الباقي: ${change.toFixed(3)} ر.س`);
+remainBox.textContent = `💰 الباقي : ${formatMoney(change)}`;
+remainBox.style.color = "green";
 }
 
     let method =
@@ -488,7 +493,7 @@ function renderActiveOrders() {
 
     div.innerHTML = `
   <strong>فاتورة رقم ${order.id.slice(0,6)}</strong><br>
-  💰 ${order.total.toFixed(3)} ر.س<br> ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br><br>
+  💰 ${formatMoney(order.total)}<br> ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br><br>
 
   <button onclick="viewOrder('${order.id}')">👁 عرض</button>
   <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
@@ -581,13 +586,13 @@ function prepareReceipt(order, cart, cash, card, method) {
     new Date().toLocaleString();
 
   document.getElementById("printTotal").textContent =
-    order.total.toFixed(3) + " ر.س";
+    formatMoney(order.total);
 
   document.getElementById("printItems").innerHTML =
     cart.map(i => `
       <div style="display:flex;justify-content:space-between">
         <span>${i.name} x${i.qty}</span>
-        <span>${(i.price * i.qty).toFixed(3)}</span>
+        <span>${formatMoney(i.price * i.qty)}</span>
       </div>
     `).join("");
 
@@ -603,7 +608,7 @@ function prepareReceipt(order, cart, cash, card, method) {
     const change = (cash + card) - order.total;
 
     document.getElementById("printPayment").innerHTML +=
-      `<br>💰 الباقي: ${change.toFixed(3)} ر.س`;
+      `<br>💰 الباقي: ${formatMoney(change)}`;
   }
 }
 loadActiveOrders();
@@ -614,7 +619,7 @@ window.setCash = function(amount) {
 
   if (!cashInput) return;
 
-  cashInput.value = amount.toFixed(3);
+  cashInput.value = amount.toFixed(2);
   cashInput.dispatchEvent(new Event("input"));
 };
 
@@ -624,7 +629,7 @@ window.setCard = function(amount) {
 
   if (!cardInput) return;
 
-  cardInput.value = amount.toFixed(3);
+  cardInput.value = amount.toFixed(2);
   cardInput.dispatchEvent(new Event("input"));
 };
 
@@ -640,7 +645,7 @@ window.completeWithCard = function(total) {
   const remaining = total - cash;
 
   if (remaining > 0) {
-    cardInput.value = remaining.toFixed(3);
+    cardInput.value = remaining.toFixed(2);
     cardInput.focus(); // 🔥 حركة حلوة
   }
 
