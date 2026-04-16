@@ -616,12 +616,13 @@ function prepareReceipt(order, cart, cash, card, method) {
 
   // العناصر
   document.getElementById("printItems").innerHTML =
-    cart.map(i => `
-      <div style="display:flex;justify-content:space-between">
-        <span>${i.name} x${i.qty}</span>
-        <span>${(i.price * i.qty).toFixed(2)}</span>
-      </div>
-    `).join("");
+  cart.map(i => `
+    <div class="receipt-row">
+      <span>${i.name}</span>
+      <span>${i.qty}</span>
+      <span>${(i.price * i.qty).toFixed(2)}</span>
+    </div>
+  `).join("");
 
   // الإجمالي
   document.getElementById("printTotal").textContent =
