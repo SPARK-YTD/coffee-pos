@@ -489,7 +489,15 @@ if (editingOrderId) {
 
     overlay.remove();
 
-    window.print();
+// 🔥 نخلي الفاتورة تظهر لحظة قبل الطباعة
+document.getElementById("printArea").style.display = "block";
+
+setTimeout(() => {
+  window.print();
+
+  // 🔥 نرجع نخفيها بعد الطباعة
+  document.getElementById("printArea").style.display = "none";
+}, 300);
   };
 }
 
@@ -591,15 +599,15 @@ window.editOrder = async function(orderId) {
 
 function prepareReceipt(order, cart, cash, card, method) {
 
+  // رقم الطلب
   document.getElementById("printOrderId").textContent =
-    order.id.slice(0,6);
+    order.id ? order.id.slice(0,6) : "000000";
 
+  // التاريخ
   document.getElementById("printDate").textContent =
     new Date().toLocaleString();
 
-  document.getElementById("printTotal").textContent =
-    formatMoney(order.total);
-
+  // العناصر
   document.getElementById("printItems").innerHTML =
     cart.map(i => `
       <div style="display:flex;justify-content:space-between">
@@ -608,20 +616,28 @@ function prepareReceipt(order, cart, cash, card, method) {
       </div>
     `).join("");
 
+  // الإجمالي
+  document.getElementById("printTotal").textContent =
+    formatMoney(order.total);
+
+  // الدفع
   let paymentText =
     method === "cash" ? "💵 كاش" :
     method === "card" ? "💳 بطاقة" :
     "💰 مختلط";
 
-  document.getElementById("printPayment").textContent =
-    `طريقة الدفع: ${paymentText}`;
+  let extra = "";
 
   if ((cash + card) > order.total) {
     const change = (cash + card) - order.total;
-
-    document.getElementById("printPayment").innerHTML +=
-      `<br>💰 الباقي: ${formatMoney(change)}`;
+    extra = `<br>الباقي: ${change.toFixed(2)} ريال`;
   }
+
+  document.getElementById("printPayment").innerHTML =
+    `طريقة الدفع: ${paymentText}<br>
+     كاش: ${cash.toFixed(2)}<br>
+     بطاقة: ${card.toFixed(2)}
+     ${extra}`;
 }
 loadActiveOrders();
 
