@@ -69,30 +69,59 @@
 <script type="module" src="app.js"></script>
 
 <div id="printArea" class="print-area">
+
   <div class="receipt">
 
-    <div class="title">☕ كاشير المقهى</div>
-
-    <div class="receipt-no">
-      رقم الطلب: <span id="printOrderId"></span>
+    <!-- اسم المحل -->
+    <div class="receipt-header">
+      <div class="title">☕ كاشير المقهى</div>
+      <div>📍 البحرين</div>
     </div>
 
-    <div id="printDate"></div>
+    <div class="line"></div>
 
-    <hr>
+    <!-- معلومات الطلب -->
+    <div class="receipt-info">
+      <div>رقم الطلب: <span id="printOrderId"></span></div>
+      <div id="printDate"></div>
+    </div>
 
-    <div id="printItems"></div>
+    <div class="line"></div>
 
-    <hr>
+    <!-- العناصر -->
+    <div class="receipt-items">
 
-    <div class="total">
+      <div class="receipt-row header">
+        <span>الصنف</span>
+        <span>العدد</span>
+        <span>السعر</span>
+      </div>
+
+      <div id="printItems"></div>
+
+    </div>
+
+    <div class="line"></div>
+
+    <!-- الإجمالي -->
+    <div class="receipt-total">
       الإجمالي: <span id="printTotal"></span>
     </div>
 
-    <div id="printPayment"></div>
+    <div class="line"></div>
+
+    <!-- الدفع -->
+    <div id="printPayment" class="receipt-payment"></div>
+
+    <div class="line"></div>
+
+    <!-- رسالة -->
+    <div class="receipt-footer">
+      شكراً لزيارتكم ❤️
+    </div>
 
   </div>
-</div>
 
+</div>
 </body>
 </html>
