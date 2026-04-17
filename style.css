@@ -375,3 +375,7 @@ body {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+.order-box.prepared{
+  background:#ecfdf5;
+  border-left:6px solid #22c55e;
+}
