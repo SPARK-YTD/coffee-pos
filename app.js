@@ -536,7 +536,7 @@ ${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
   <button onclick="viewOrder('${order.id}')">👁 عرض</button>
   <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
   <button onclick="deleteOrder('${order.id}')">🗑 حذف</button>
-  <button onclick="markCompleted('${order.id}')">✅ مكتمل</button>
+  <button onclick="markCompleted('${order.id}')">تم التسليم </button>
 `;
 
     box.appendChild(div);
