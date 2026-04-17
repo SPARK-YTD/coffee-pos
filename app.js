@@ -364,7 +364,15 @@ cardInput.onfocus = () => {
 function updateRemain() {
 
   const cash = parseFloat(cashInput.value || "0");
-  const card = parseFloat(cardInput.value || "0");
+  let card = parseFloat(cardInput.value || "0");
+
+  /* 🔥 البطاقة ما تتعدى المتبقي */
+  const maxCard = total - cash;
+
+  if (maxCard >= 0 && card > maxCard) {
+    card = maxCard;
+    cardInput.value = maxCard.toFixed(2);
+  }
 
   const paid = cash + card;
   const diff = paid - total;
@@ -650,22 +658,34 @@ function prepareReceipt(order, cart, cash, card, method) {
 loadActiveOrders();
 
 // 🔥 كاش (ما يمس البطاقة)
-window.setCash = function(amount) {
+window.setCash = function(total) {
+
   const cashInput = document.getElementById("cashInput");
+  const cardInput = document.getElementById("cardInput");
 
-  if (!cashInput) return;
+  if (!cashInput || !cardInput) return;
 
-  cashInput.value = amount.toFixed(2);
+  const card = parseFloat(cardInput.value) || 0;
+  const remaining = total - card;
+
+  cashInput.value = remaining > 0 ? remaining.toFixed(2) : "0.00";
+
   cashInput.dispatchEvent(new Event("input"));
 };
 
 // 🔥 بطاقة (ما تمس الكاش)
-window.setCard = function(amount) {
+window.setCard = function(total) {
+
+  const cashInput = document.getElementById("cashInput");
   const cardInput = document.getElementById("cardInput");
 
-  if (!cardInput) return;
+  if (!cashInput || !cardInput) return;
 
-  cardInput.value = amount.toFixed(2);
+  const cash = parseFloat(cashInput.value) || 0;
+  const remaining = total - cash;
+
+  cardInput.value = remaining > 0 ? remaining.toFixed(2) : "0.00";
+
   cardInput.dispatchEvent(new Event("input"));
 };
 
