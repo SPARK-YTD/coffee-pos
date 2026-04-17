@@ -524,11 +524,14 @@ function renderActiveOrders() {
   activeOrders.forEach(order => {
 
     const div = document.createElement("div");
-    div.className = "order-box";
+    div.className = order.is_prepared
+  ? "order-box prepared"
+  : "order-box";
 
     div.innerHTML = `
   <strong>فاتورة رقم ${order.id.slice(0,6)}</strong><br>
-  💰 ${formatMoney(order.total)}<br> ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br><br>
+  💰 ${formatMoney(order.total)}<br> ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br>
+${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
 
   <button onclick="viewOrder('${order.id}')">👁 عرض</button>
   <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
