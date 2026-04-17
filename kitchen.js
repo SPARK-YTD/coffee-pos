@@ -11,6 +11,7 @@ async function loadOrders() {
     .from("orders")
     .select("*")
     .eq("status", "active")
+    .eq("is_prepared", false)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -76,7 +77,7 @@ window.markReady = async function(id) {
 
   await supabase
     .from("orders")
-    .update({ status: "ready" })
+    .update({ is_prepared: true })
     .eq("id", id);
 
   loadOrders();
