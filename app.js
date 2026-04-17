@@ -325,11 +325,12 @@ function openPaymentAndSave(total) {
       <div>الإجمالي: ${formatMoney(total)}</div>
 
       <label>💵 كاش:</label>
-  <input type="number" id="cashInput" placeholder="0">
-  <button onclick="completeWithCash(${total})">💵 أكمل الباقي</button>
-  <div style="margin:5px 0">
+<input type="number" id="cashInput" placeholder="0">
+
+<div style="display:flex; gap:6px; margin:5px 0">
   <button onclick="setCash(${total})">💵 كاش كامل</button>
-  </div>
+  <button onclick="completeWithCash(${total})">💵 أكمل الباقي</button>
+</div>
 
   <label>💳 بطاقة:</label>
   <input type="number" id="cardInput" placeholder="0">
@@ -337,7 +338,6 @@ function openPaymentAndSave(total) {
   <div style="margin:5px 0">
   <button onclick="setCard(${total})">💳 بطاقة كاملة</button>
   <button onclick="completeWithCard(${total})">💳 أكمل الباقي</button>
-  <button onclick="completeWithCash(${total})">💵 أكمل الباقي</button>
   </div>
 
       <div id="remainBox" style="margin:10px 0;font-weight:bold"></div>
