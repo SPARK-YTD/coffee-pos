@@ -327,7 +327,7 @@ function openPaymentAndSave(total) {
       <label>💵 كاش:</label>
 <input type="number" id="cashInput" placeholder="0">
 
-<div style="display:flex; gap:6px; margin:5px 0">
+<div style="display:flex; gap:6px; margin:5px 0; justify-content:center;">
   <button onclick="setCash(${total})">💵 كاش كامل</button>
   <button onclick="completeWithCash(${total})">💵 أكمل الكاش</button>
 </div>
