@@ -14,11 +14,20 @@ body {
   background: linear-gradient(90deg, #3e2723, #5d4037);
   color: #fff;
   padding: 16px;
-  text-align: center;
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;    
+
+  position: relative;
+}
+.topbar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 20px;
   font-weight: bold;
 }
-
 /* ===============================
    Layout (Desktop)
 ================================ */
@@ -380,14 +389,15 @@ body {
   border-left:6px solid #22c55e;
 }
 .menu-container {
-  position: relative;
+  position: absolute;
+  right: 15px;
+  top: 12px;
 }
 
 #menuBtn {
-  background: transparent;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 5px 10px;
 }
 
 
