@@ -892,13 +892,17 @@ window.addEventListener("load", () => {
   const menuBtn = document.getElementById("menuBtn");
   const menu = document.getElementById("menuDropdown");
 
-  console.log("MENU BTN:", menuBtn); // للتأكد
+  console.log("MENU BTN:", menuBtn);
 
   if (menuBtn && menu) {
     menuBtn.onclick = (e) => {
       e.stopPropagation();
-      menu.style.display =
-        menu.style.display === "flex" ? "none" : "flex";
+
+      if (menu.style.display === "flex") {
+        menu.style.display = "none";
+      } else {
+        menu.style.display = "flex";
+      }
     };
 
     document.addEventListener("click", () => {
