@@ -822,17 +822,17 @@ window.closeShift = async function () {
     return;
   }
 
-  // نجيب الطلبات المدفوعة فقط
-  const { data: orders } = await supabase
-  .from("orders")
-  .select("total, cash_amount, card_amount")
-  .eq("shift_id", currentShiftId)
-  .eq("is_paid", true);
+  // 🔴 يمنع الإغلاق إذا فيه طلبات
+  const { data: active } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("shift_id", currentShiftId)
+    .eq("status", "active");
 
-if (!orders || orders.length === 0) {
-  const ok = confirm("⚠️ ما فيه مبيعات، متأكد تبغى تقفل الشفت؟");
-  if (!ok) return;
-}
+  if (active && active.length > 0) {
+    alert("❌ فيه طلبات مفتوحة! لازم تخلصها أول");
+    return;
+  }
 
 
   let totalSales = 0;
