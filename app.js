@@ -341,8 +341,34 @@ window.filterCategory = function (category, btn) {
 
 /* =============================== */
 (async () => {
+
+  const savedShift = localStorage.getItem("shiftId");
+
+if (savedShift) {
+
+  const { data } = await supabase
+    .from("shifts")
+    .select("id, is_open")
+    .eq("id", savedShift)
+    .single();
+
+  if (data && data.is_open) {
+    currentShiftId = savedShift;
+    localStorage.setItem("shiftId", savedShift);
+    console.log("📂 تم استرجاع الشفت");
+  } else {
+    localStorage.removeItem("shiftId");
+    await openShiftPrompt();
+  }
+
+} else {
   await openShiftPrompt();
+  if (currentShiftId) {
+    localStorage.setItem("shiftId", currentShiftId);
+  }
+}
   loadItems("drinks");
+
 })();
 
 window.completeOrder = function () {
@@ -887,6 +913,7 @@ window.closeShift = async function () {
 
   // 🧹 تصفير
   currentShiftId = null;
+  localStorage.removeItem("shiftId"); // 🔥 هذا المهم
   cart = [];
   renderCart();
 
