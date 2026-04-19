@@ -55,6 +55,11 @@ const { data: shift } = await supabase
   .select()
   .single();
 
+if (!shift || !shift.id) {
+  alert("❌ فشل فتح الشفت");
+  return;
+}
+
 currentShiftId = shift.id;
 
 alert(`✅ تم فتح الشفت - ${emp.name}`);
@@ -357,7 +362,7 @@ async function loadActiveOrders() {
 
   const { data } = await supabase
     .from("orders")
-    .select("*")
+    .select("id, total, is_paid, is_prepared, created_at")
     .eq("status", "active")
     .order("created_at", { ascending: false });
 
@@ -816,10 +821,16 @@ window.closeShift = async function () {
 
   // نجيب الطلبات المدفوعة فقط
   const { data: orders } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("shift_id", currentShiftId)
-    .eq("is_paid", true);
+  .from("orders")
+  .select("total, cash_amount, card_amount")
+  .eq("shift_id", currentShiftId)
+  .eq("is_paid", true);
+
+if (!orders || orders.length === 0) {
+  const ok = confirm("⚠️ ما فيه مبيعات، متأكد تبغى تقفل الشفت؟");
+  if (!ok) return;
+}
+
 
   let totalSales = 0;
   let totalCash = 0;
@@ -856,7 +867,7 @@ window.closeShift = async function () {
       total_cash: totalCash,
       total_card: totalCard,
       total_orders: totalOrders,
-      closed_at: new Date()
+      closed_at: new Date().toISOString()
     })
     .eq("id", currentShiftId);
 
@@ -867,8 +878,11 @@ window.closeShift = async function () {
 
   alert("✅ تم إغلاق الشفت");
 
-  // يفتح شفت جديد
+const reopen = confirm("هل تبي تفتح شفت جديد؟");
+
+if (reopen) {
   await openShiftPrompt();
+}
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -878,18 +892,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!menuBtn || !menu) return;
 
-  // فتح / إغلاق
   menuBtn.onclick = (e) => {
     e.stopPropagation();
     menu.style.display = menu.style.display === "flex" ? "none" : "flex";
   };
 
-  // الضغط خارج القائمة = إغلاق
   document.addEventListener("click", () => {
     menu.style.display = "none";
   });
 
-  // منع الإغلاق لما تضغط داخل القائمة
   menu.onclick = (e) => {
     e.stopPropagation();
   };
