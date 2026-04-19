@@ -806,3 +806,67 @@ window.completeWithCash = function(total) {
 
   cashInput.dispatchEvent(new Event("input"));
 };
+
+window.closeShift = async function () {
+
+  if (!currentShiftId) {
+    alert("❌ ما فيه شفت مفتوح");
+    return;
+  }
+
+  // نجيب الطلبات المدفوعة فقط
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("shift_id", currentShiftId)
+    .eq("is_paid", true);
+
+  let totalSales = 0;
+  let totalCash = 0;
+  let totalCard = 0;
+
+  (orders || []).forEach(o => {
+    totalSales += Number(o.total || 0);
+    totalCash += Number(o.cash_amount || 0);
+    totalCard += Number(o.card_amount || 0);
+  });
+
+  const totalOrders = orders?.length || 0;
+
+  // تقرير قبل الإغلاق
+  const ok = confirm(`
+📊 تقرير الشفت:
+
+💰 الإجمالي: ${formatMoney(totalSales)}
+💵 كاش: ${formatMoney(totalCash)}
+💳 بطاقة: ${formatMoney(totalCard)}
+🧾 عدد الطلبات: ${totalOrders}
+
+تأكيد الإغلاق؟
+  `);
+
+  if (!ok) return;
+
+  // تحديث الشفت
+  await supabase
+    .from("shifts")
+    .update({
+      is_open: false,
+      total_sales: totalSales,
+      total_cash: totalCash,
+      total_card: totalCard,
+      total_orders: totalOrders,
+      closed_at: new Date()
+    })
+    .eq("id", currentShiftId);
+
+  // تصفير
+  currentShiftId = null;
+  cart = [];
+  renderCart();
+
+  alert("✅ تم إغلاق الشفت");
+
+  // يفتح شفت جديد
+  await openShiftPrompt();
+};
