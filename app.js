@@ -1,3 +1,5 @@
+let currentShiftId = null;
+let currentEmployee = null;
 function formatMoney(amount) {
   return `${Number(amount).toFixed(2)} ﷼`;
 }
@@ -6,6 +8,57 @@ import { supabase } from "./supabase.js";
 
 let items = [];
 let cart = [];
+
+
+async function openShiftPrompt() {
+
+  const pin = prompt("ادخل رقم الموظف (PIN)");
+
+  if (!pin) {
+  alert("لازم تفتح شفت أول");
+  return openShiftPrompt();
+}
+
+  const { data: emp } = await supabase
+    .from("employees")
+    .select("*")
+    .eq("pin", pin)
+    .single();
+
+if (!emp) {
+  alert("❌ PIN خطأ");
+  return openShiftPrompt();
+}
+
+  currentEmployee = emp;
+
+  // 🔍 نتحقق هل فيه شفت مفتوح
+const { data: existingShift } = await supabase
+  .from("shifts")
+  .select("*")
+  .eq("employee_id", emp.id)
+  .eq("is_open", true)
+  .maybeSingle();
+
+if (existingShift) {
+  currentShiftId = existingShift.id;
+  alert(`📂 تم استرجاع الشفت - ${emp.name}`);
+  return;
+}
+
+// ➕ إنشاء شفت جديد
+const { data: shift } = await supabase
+  .from("shifts")
+  .insert({
+    employee_id: emp.id
+  })
+  .select()
+  .single();
+
+currentShiftId = shift.id;
+
+alert(`✅ تم فتح الشفت - ${emp.name}`);
+}
 
 /* ===============================
    تحميل المنتجات
@@ -279,7 +332,11 @@ window.filterCategory = function (category, btn) {
 };
 
 /* =============================== */
-loadItems("drinks");
+(async () => {
+  await openShiftPrompt();
+  loadItems("drinks");
+})();
+
 window.completeOrder = function () {
 
   if (!cart.length) {
@@ -408,7 +465,11 @@ updateRemain();
   overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
 
   overlay.querySelector("#confirmPay").onclick = async () => {
-
+    
+  if (!currentShiftId) {
+      await openShiftPrompt();
+      if (!currentShiftId) return;
+  }
     const cash = parseFloat(cashInput.value || "0");
     const card = parseFloat(cardInput.value || "0");
 
@@ -444,7 +505,8 @@ if (editingOrderId) {
       is_paid: true,
       cash_amount: cash,
       card_amount: card,
-      payment_method: method
+      payment_method: method,
+      shift_id: currentShiftId
     })
     .eq("id", editingOrderId);
 
@@ -463,14 +525,15 @@ if (editingOrderId) {
   // ➕ طلب جديد
   const { data } = await supabase
     .from("orders")
-    .insert({
-      total,
-      status: "active",
-      is_paid: true,
-      cash_amount: cash,
-      card_amount: card,
-      payment_method: method
-    })
+   .insert({
+  total,
+  status: "active",
+  is_paid: true,
+  cash_amount: cash,
+  card_amount: card,
+  payment_method: method,
+  shift_id: currentShiftId
+})
     .select()
     .single();
 
@@ -497,16 +560,14 @@ if (editingOrderId) {
 
     overlay.remove();
 
-// 🔥 نخلي الفاتورة تظهر لحظة قبل const printArea = document.getElementById("printArea");
+const printArea = document.getElementById("printArea");
 
 printArea.style.display = "block";
-
 
 printArea.offsetHeight;
 
 setTimeout(() => {
   window.print();
-
 
   setTimeout(() => {
     printArea.style.display = "none";
