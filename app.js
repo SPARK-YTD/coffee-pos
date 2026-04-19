@@ -814,7 +814,6 @@ window.completeWithCash = function(total) {
 
   cashInput.dispatchEvent(new Event("input"));
 };
-
 window.closeShift = async function () {
 
   if (!currentShiftId) {
@@ -822,7 +821,7 @@ window.closeShift = async function () {
     return;
   }
 
-  // 🔴 يمنع الإغلاق إذا فيه طلبات
+  // 🔴 يمنع الإغلاق إذا فيه طلبات مفتوحة
   const { data: active } = await supabase
     .from("orders")
     .select("id")
@@ -834,6 +833,18 @@ window.closeShift = async function () {
     return;
   }
 
+  // ✅ نجيب الطلبات المدفوعة (هذا كان ناقص عندك 🔥)
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("total, cash_amount, card_amount")
+    .eq("shift_id", currentShiftId)
+    .eq("is_paid", true);
+
+  // لو ما فيه مبيعات
+  if (!orders || orders.length === 0) {
+    const ok = confirm("⚠️ ما فيه مبيعات، متأكد تبغى تقفل الشفت؟");
+    if (!ok) return;
+  }
 
   let totalSales = 0;
   let totalCash = 0;
@@ -847,7 +858,7 @@ window.closeShift = async function () {
 
   const totalOrders = orders?.length || 0;
 
-  // تقرير قبل الإغلاق
+  // 📊 تقرير قبل الإغلاق
   const ok = confirm(`
 📊 تقرير الشفت:
 
@@ -861,7 +872,7 @@ window.closeShift = async function () {
 
   if (!ok) return;
 
-  // تحديث الشفت
+  // 🔒 إغلاق الشفت
   await supabase
     .from("shifts")
     .update({
@@ -874,43 +885,16 @@ window.closeShift = async function () {
     })
     .eq("id", currentShiftId);
 
-  // تصفير
+  // 🧹 تصفير
   currentShiftId = null;
   cart = [];
   renderCart();
 
   alert("✅ تم إغلاق الشفت");
 
-const reopen = confirm("هل تبي تفتح شفت جديد؟");
+  const reopen = confirm("هل تبي تفتح شفت جديد؟");
 
-if (reopen) {
-  await openShiftPrompt();
-}
-};
-
-window.addEventListener("load", () => {
-  const menuBtn = document.getElementById("menuBtn");
-  const menu = document.getElementById("menuDropdown");
-
-  console.log("MENU BTN:", menuBtn);
-
-  if (menuBtn && menu) {
-    menuBtn.onclick = (e) => {
-      e.stopPropagation();
-
-      if (menu.style.display === "flex") {
-        menu.style.display = "none";
-      } else {
-        menu.style.display = "flex";
-      }
-    };
-
-    document.addEventListener("click", () => {
-      menu.style.display = "none";
-    });
-
-    menu.onclick = (e) => {
-      e.stopPropagation();
-    };
+  if (reopen) {
+    await openShiftPrompt();
   }
-});
+};
