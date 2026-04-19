@@ -925,3 +925,35 @@ window.closeShift = async function () {
     await openShiftPrompt();
   }
 };
+// ===============================
+// 🔥 كود المنيو (زر ☰)
+// ===============================
+window.addEventListener("load", () => {
+  const menuBtn = document.getElementById("menuBtn");
+  const menu = document.getElementById("menuDropdown");
+
+  if (menuBtn && menu) {
+
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+
+      if (menu.style.display === "flex") {
+        menu.style.display = "none";
+      } else {
+        menu.style.display = "flex";
+      }
+    };
+
+    // يقفل فقط إذا ضغطت خارج القائمة
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && e.target !== menuBtn) {
+        menu.style.display = "none";
+      }
+    });
+
+    // يخلي الأزرار داخل المنيو تشتغل
+    menu.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
+});
