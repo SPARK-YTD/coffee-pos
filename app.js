@@ -888,16 +888,14 @@ if (reopen) {
 }
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+const menuBtn = document.getElementById("menuBtn");
+const menu = document.getElementById("menuDropdown");
 
-  const menuBtn = document.getElementById("menuBtn");
-  const menu = document.getElementById("menuDropdown");
-
-  if (!menuBtn || !menu) return;
-
+if (menuBtn && menu) {
   menuBtn.onclick = (e) => {
     e.stopPropagation();
-    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+    menu.style.display =
+      menu.style.display === "flex" ? "none" : "flex";
   };
 
   document.addEventListener("click", () => {
@@ -907,5 +905,4 @@ document.addEventListener("DOMContentLoaded", () => {
   menu.onclick = (e) => {
     e.stopPropagation();
   };
-
-});
+}
