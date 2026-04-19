@@ -13,8 +13,15 @@
 
 <!-- ===== Top Bar ===== -->
 <header class="topbar">
-  <div class="topbar-title">
-    ☕ كاشير المقهى
+  <div class="topbar-title">☕ كاشير المقهى</div>
+
+  <div class="menu-container">
+    <button id="menuBtn">☰</button>
+
+    <div id="menuDropdown" class="menu-dropdown">
+      <button onclick="closeShift()">🔒 إغلاق الشفت</button>
+      <button onclick="openShiftPrompt()">🟢 فتح شفت</button>
+    </div>
   </div>
 </header>
 
