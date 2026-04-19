@@ -22,8 +22,9 @@ async function openShiftPrompt() {
   const { data: emp } = await supabase
   .from("employees")
   .select("*")
-  .eq("pin", pin)
+  .eq("pin", pin.trim())
   .maybeSingle();
+  console.log("EMP:", emp);
 
 if (!emp) {
   alert("❌ PIN خطأ");
