@@ -390,19 +390,6 @@ body {
   cursor: pointer;
 }
 
-.menu-dropdown {
-  position: absolute;
-  top: 40px;
-  left: 0;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-  padding: 10px;
-  display: none;
-  flex-direction: column;
-  min-width: 150px;
-  z-index: 999;
-}
 
 .menu-dropdown button {
   background: none;
