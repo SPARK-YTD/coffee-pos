@@ -416,7 +416,7 @@ body {
 .menu-dropdown {
   position: absolute;
   top: 40px;
-  left: 0;
+  right: 0;
   background: white;
   border-radius: 10px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
