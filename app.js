@@ -888,21 +888,25 @@ if (reopen) {
 }
 };
 
-const menuBtn = document.getElementById("menuBtn");
-const menu = document.getElementById("menuDropdown");
+window.addEventListener("load", () => {
+  const menuBtn = document.getElementById("menuBtn");
+  const menu = document.getElementById("menuDropdown");
 
-if (menuBtn && menu) {
-  menuBtn.onclick = (e) => {
-    e.stopPropagation();
-    menu.style.display =
-      menu.style.display === "flex" ? "none" : "flex";
-  };
+  console.log("MENU BTN:", menuBtn); // للتأكد
 
-  document.addEventListener("click", () => {
-    menu.style.display = "none";
-  });
+  if (menuBtn && menu) {
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      menu.style.display =
+        menu.style.display === "flex" ? "none" : "flex";
+    };
 
-  menu.onclick = (e) => {
-    e.stopPropagation();
-  };
-}
+    document.addEventListener("click", () => {
+      menu.style.display = "none";
+    });
+
+    menu.onclick = (e) => {
+      e.stopPropagation();
+    };
+  }
+});
