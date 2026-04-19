@@ -416,3 +416,15 @@ body {
 .menu-dropdown button:hover {
   background: #f3f4f6;
 }
+#menuDropdown {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: 0.2s;
+  pointer-events: none;
+}
+
+#menuDropdown.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
