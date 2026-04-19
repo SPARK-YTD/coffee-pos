@@ -49,16 +49,19 @@ if (existingShift) {
 }
 
 // ➕ إنشاء شفت جديد
-const { data: shift } = await supabase
+const { data: shift, error } = await supabase
   .from("shifts")
   .insert({
-    employee_id: emp.id
+    employee_id: emp.id,
+    is_open: true,
+    opened_at: new Date().toISOString()
   })
   .select()
   .single();
 
-if (!shift || !shift.id) {
-  alert("❌ فشل فتح الشفت");
+if (error) {
+  console.error("SHIFT ERROR:", error);
+  alert(error.message);
   return;
 }
 
