@@ -52,10 +52,8 @@ if (existingShift) {
 const { data: shift, error } = await supabase
   .from("shifts")
   .insert({
-    employee_id: emp.id,
-    is_open: true,
-    opened_at: new Date().toISOString()
-  })
+  employee_id: emp.id
+})
   .select()
   .single();
 
