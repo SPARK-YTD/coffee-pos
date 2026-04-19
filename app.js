@@ -870,3 +870,28 @@ window.closeShift = async function () {
   // يفتح شفت جديد
   await openShiftPrompt();
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const menuBtn = document.getElementById("menuBtn");
+  const menu = document.getElementById("menuDropdown");
+
+  if (!menuBtn || !menu) return;
+
+  // فتح / إغلاق
+  menuBtn.onclick = (e) => {
+    e.stopPropagation();
+    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+  };
+
+  // الضغط خارج القائمة = إغلاق
+  document.addEventListener("click", () => {
+    menu.style.display = "none";
+  });
+
+  // منع الإغلاق لما تضغط داخل القائمة
+  menu.onclick = (e) => {
+    e.stopPropagation();
+  };
+
+});
