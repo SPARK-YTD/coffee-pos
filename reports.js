@@ -5,11 +5,13 @@ function formatMoney(amount) {
   return `${Number(amount).toFixed(2)} ﷼`;
 }
 
-export async function loadCancelledOrders() {
+export async function loadCancelledOrders(shiftId) {
+
   const { data } = await supabase
     .from("orders")
     .select("id, total, cancelled_at")
     .eq("status", "cancelled")
+    .eq("shift_id", shiftId) // 🔥 هذا المهم
     .order("cancelled_at", { ascending: false });
 
   renderCancelledOrders(data || []);
