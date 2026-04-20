@@ -426,3 +426,23 @@ body {
   min-width: 150px;
   z-index: 9999; /* 🔥 مهم */
 }
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #ddd;
+  font-weight: bold;
+}
+
+.tab.active {
+  background: #6d4c41;
+  color: white;
+}
