@@ -1,10 +1,14 @@
+import { loadCancelledOrders } from "./reports.js";
+import { supabase } from "./supabase.js";
+
 let currentShiftId = null;
 let currentEmployee = null;
+
 function formatMoney(amount) {
   return `${Number(amount).toFixed(2)} ﷼`;
 }
 
-import { supabase } from "./supabase.js";
+
 
 let items = [];
 let cart = [];
