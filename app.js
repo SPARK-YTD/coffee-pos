@@ -630,7 +630,7 @@ ${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
 
   <button onclick="viewOrder('${order.id}')">👁 عرض</button>
   <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
-  <button onclick="deleteOrder('${order.id}')">🗑 حذف</button>
+  <button onclick="cancelOrder('${order.id}')">❌ إلغاء</button>
   <button onclick="markCompleted('${order.id}')">تم التسليم </button>
 `;
 
@@ -648,20 +648,15 @@ window.markCompleted = async function (id) {
   loadActiveOrders();
 };
 
-window.deleteOrder = async function(id) {
+window.cancelOrder = async function(id) {
 
-  if (!confirm("حذف الطلب نهائيًا؟")) return;
+  if (!confirm("إلغاء الطلب؟")) return;
 
-  // حذف العناصر أول
-  await supabase
-    .from("order_items")
-    .delete()
-    .eq("order_id", id);
-
-  // حذف الطلب نفسه
   await supabase
     .from("orders")
-    .delete()
+    .update({
+      status: "cancelled"
+    })
     .eq("id", id);
 
   loadActiveOrders();
