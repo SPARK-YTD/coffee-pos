@@ -67,9 +67,20 @@
 
   <!-- الطلبات الجارية -->
 <section class="card orders-card">
-    <h2>الطلبات الجارية</h2>
-    <div id="activeOrders" class="orders-list"></div>
-  </section>
+
+  <!-- التبويبات -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('active')">🟡 الجارية</button>
+    <button class="tab" onclick="showTab('cancelled')">❌ الملغية</button>
+  </div>
+
+  <!-- الطلبات الجارية -->
+  <div id="activeOrders" class="orders-list"></div>
+
+  <!-- الطلبات الملغية -->
+  <div id="cancelledOrders" class="orders-list" style="display:none;"></div>
+
+</section>
 
 </main>
 
