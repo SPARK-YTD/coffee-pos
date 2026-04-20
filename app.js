@@ -651,10 +651,8 @@ window.markCompleted = async function (id) {
 window.cancelOrder = async function(id) {
 
   const pin = prompt("🔐 أدخل رقم المدير");
-
   if (!pin) return;
 
-  // 🔥 تحقق من المدير (من الداتابيس)
   const { data: manager } = await supabase
     .from("employees")
     .select("id, role")
@@ -669,11 +667,12 @@ window.cancelOrder = async function(id) {
 
   if (!confirm("تأكيد إلغاء الطلب؟")) return;
 
-  // 🔥 حالياً نغير الحالة فقط
   await supabase
     .from("orders")
     .update({
-      status: "cancelled"
+      status: "cancelled",
+      cancelled_by: manager.id,
+      cancelled_at: new Date().toISOString()
     })
     .eq("id", id);
 
