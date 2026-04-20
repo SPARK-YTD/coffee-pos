@@ -681,6 +681,7 @@ window.cancelOrder = async function(id) {
     .eq("id", id);
 
   loadActiveOrders();
+  loadCancelledOrders();
 };
 
 let editingOrderId = null;
