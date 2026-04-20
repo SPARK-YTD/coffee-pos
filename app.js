@@ -650,8 +650,26 @@ window.markCompleted = async function (id) {
 
 window.cancelOrder = async function(id) {
 
-  if (!confirm("إلغاء الطلب؟")) return;
+  const pin = prompt("🔐 أدخل رقم المدير");
 
+  if (!pin) return;
+
+  // 🔥 تحقق من المدير (من الداتابيس)
+  const { data: manager } = await supabase
+    .from("employees")
+    .select("id, role")
+    .eq("pin", pin.trim())
+    .eq("role", "manager")
+    .maybeSingle();
+
+  if (!manager) {
+    alert("❌ غير مصرح");
+    return;
+  }
+
+  if (!confirm("تأكيد إلغاء الطلب؟")) return;
+
+  // 🔥 حالياً نغير الحالة فقط
   await supabase
     .from("orders")
     .update({
