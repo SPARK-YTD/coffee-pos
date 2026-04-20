@@ -371,7 +371,10 @@ if (savedShift) {
     localStorage.setItem("shiftId", currentShiftId);
   }
 }
-  loadItems("drinks");
+loadItems("drinks");
+
+loadActiveOrders();
+loadCancelledOrders(currentShiftId);  
 
 })();
 
@@ -994,3 +997,5 @@ window.showTab = function(type) {
     tabs[1].classList.add("active");
   }
 };
+
+
