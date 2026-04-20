@@ -974,3 +974,23 @@ window.addEventListener("load", () => {
     });
   }
 });
+
+window.showTab = function(type) {
+
+  const active = document.getElementById("activeOrders");
+  const cancelled = document.getElementById("cancelledOrders");
+
+  const tabs = document.querySelectorAll(".tab");
+
+  tabs.forEach(t => t.classList.remove("active"));
+
+  if (type === "active") {
+    active.style.display = "block";
+    cancelled.style.display = "none";
+    tabs[0].classList.add("active");
+  } else {
+    active.style.display = "none";
+    cancelled.style.display = "block";
+    tabs[1].classList.add("active");
+  }
+};
