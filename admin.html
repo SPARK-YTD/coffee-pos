@@ -115,9 +115,15 @@
 
   <!-- 📊 التقارير -->
   <div id="reportsTab" class="admin-section" style="display:none;">
-    <h3>📊 التقارير</h3>
-    <div id="reportBox"></div>
+
+  <h3>📊 التقارير</h3>
+
+  <div style="margin-bottom:10px;">
+    <input type="date" id="reportDate">
+    <button onclick="loadDailyReport()">عرض</button>
   </div>
+
+  <div id="reportBox"></div>
 
 </div>
 
