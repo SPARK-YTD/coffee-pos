@@ -119,9 +119,10 @@
   <h3>📊 التقارير</h3>
 
   <div style="margin-bottom:10px;">
-    <input type="date" id="reportDate">
-    <button onclick="loadDailyReport()">عرض</button>
-  </div>
+  من: <input type="date" id="fromDate">
+  إلى: <input type="date" id="toDate">
+  <button onclick="loadRangeReport()">عرض</button>
+</div>
 
   <div id="reportBox"></div>
 
