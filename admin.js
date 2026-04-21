@@ -245,7 +245,7 @@ window.loadDailyReport = async function() {
   // 🟢 نجيب الشفتات في هذا اليوم
   const { data: shifts } = await supabase
     .from("shifts")
-    .select("*")
+    .select("*, employees(name)")
     .gte("opened_at", start)
     .lte("opened_at", end);
 
@@ -262,7 +262,7 @@ window.loadDailyReport = async function() {
 
     return `
       <div class="card">
-        👤 الموظف: ${s.employee_id}<br>
+        👤 الموظف: ${s.employees?.name || "غير معروف"}.employee_id}<br>
         💰 المبيعات: ${Number(s.total_sales || 0).toFixed(2)}<br>
         💵 كاش: ${Number(s.total_cash || 0).toFixed(2)}<br>
         💳 بطاقة: ${Number(s.total_card || 0).toFixed(2)}
