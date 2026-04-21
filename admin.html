@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>لوحة الإدارة</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h2>⚙️ لوحة الإدارة</h2>
+<h2 style="text-align:center">⚙️ لوحة الإدارة</h2>
 
-<!-- التبويبات -->
+<!-- 🔘 التبويبات -->
 <div class="admin-tabs">
   <button class="tab active" onclick="showAdminTab('products')">📦 الأصناف</button>
   <button class="tab" onclick="showAdminTab('employees')">👥 الموظفين</button>
@@ -18,16 +19,28 @@
   <button class="tab" onclick="showAdminTab('reports')">📊 التقارير</button>
 </div>
 
-<!-- الأقسام -->
+<!-- ===============================
+     📦 الأصناف
+================================ -->
+<div id="productsTab" class="admin-section">
 
-<!-- 📦 الأصناف -->
-<div id="productsTab" class="admin-section"></div>
+  <!-- نعرض صفحة المنتجات داخل admin -->
+  <iframe 
+    src="products.html" 
+    style="width:100%; height:650px; border:none; border-radius:10px;">
+  </iframe>
 
-<!-- 👥 الموظفين -->
+</div>
+
+<!-- ===============================
+     👥 الموظفين
+================================ -->
 <div id="employeesTab" class="admin-section" style="display:none;">
-  <h3>إضافة موظف</h3>
 
-  <input id="empName" placeholder="الاسم"><br><br>
+  <h3>➕ إضافة موظف</h3>
+
+  <input id="empName" placeholder="اسم الموظف"><br><br>
+
   <input id="empPin" placeholder="PIN"><br><br>
 
   <select id="empRole">
@@ -39,19 +52,34 @@
 
   <hr>
 
+  <h3>👥 قائمة الموظفين</h3>
   <div id="employeesList"></div>
+
 </div>
 
-<!-- 💰 المبيعات -->
+<!-- ===============================
+     💰 المبيعات
+================================ -->
 <div id="salesTab" class="admin-section" style="display:none;">
+
+  <h3>💰 المبيعات</h3>
+
   <div id="salesBox"></div>
+
 </div>
 
-<!-- 📊 التقارير -->
+<!-- ===============================
+     📊 التقارير
+================================ -->
 <div id="reportsTab" class="admin-section" style="display:none;">
+
+  <h3>📊 التقارير</h3>
+
   <div id="reportBox"></div>
+
 </div>
 
+<!-- 🔥 ربط الجافاسكربت -->
 <script type="module" src="admin.js"></script>
 
 </body>
