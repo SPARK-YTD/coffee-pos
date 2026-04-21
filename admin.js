@@ -21,7 +21,7 @@ if (!manager) {
 
 console.log("✅ دخول مدير:", manager.name);
 
-import { supabase } from "./supabase.js";
+
 
 /* ===============================
    التنقل بين التبويبات
