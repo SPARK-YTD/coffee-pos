@@ -1,5 +1,28 @@
 import { supabase } from "./supabase.js";
 
+const pin = prompt("🔐 أدخل رقم المدير");
+
+if (!pin) {
+  document.body.innerHTML = "❌ تم إلغاء الدخول";
+  throw new Error("No PIN");
+}
+
+const { data: manager } = await supabase
+  .from("employees")
+  .select("id, role, name")
+  .eq("pin", pin.trim())
+  .eq("role", "manager")
+  .maybeSingle();
+
+if (!manager) {
+  document.body.innerHTML = "❌ غير مصرح";
+  throw new Error("Unauthorized");
+}
+
+console.log("✅ دخول مدير:", manager.name);
+
+import { supabase } from "./supabase.js";
+
 /* ===============================
    التنقل بين التبويبات
 ================================ */
