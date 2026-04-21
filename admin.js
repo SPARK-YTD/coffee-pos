@@ -229,3 +229,52 @@ setInterval(() => {
     location.reload();
   }
 }, 60000);
+
+window.loadDailyReport = async function() {
+
+  const date = document.getElementById("reportDate").value;
+
+  if (!date) {
+    alert("اختر تاريخ");
+    return;
+  }
+
+  const start = date + " 00:00:00";
+  const end = date + " 23:59:59";
+
+  // 🟢 نجيب الشفتات في هذا اليوم
+  const { data: shifts } = await supabase
+    .from("shifts")
+    .select("*")
+    .gte("opened_at", start)
+    .lte("opened_at", end);
+
+  if (!shifts || shifts.length === 0) {
+    document.getElementById("reportBox").innerHTML = "❌ لا يوجد بيانات";
+    return;
+  }
+
+  let totalDay = 0;
+
+  const html = shifts.map(s => {
+
+    totalDay += Number(s.total_sales || 0);
+
+    return `
+      <div class="card">
+        👤 الموظف: ${s.employee_id}<br>
+        💰 المبيعات: ${Number(s.total_sales || 0).toFixed(2)}<br>
+        💵 كاش: ${Number(s.total_cash || 0).toFixed(2)}<br>
+        💳 بطاقة: ${Number(s.total_card || 0).toFixed(2)}
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("reportBox").innerHTML = `
+    ${html}
+    <hr>
+    <div class="card">
+      💰 إجمالي اليوم: ${totalDay.toFixed(2)} ر.س
+    </div>
+  `;
+};
