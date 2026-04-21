@@ -5,81 +5,123 @@
   <title>لوحة الإدارة</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* 🔐 شاشة الدخول */
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .login-box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 260px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 10px;
+      background: #6d4c41;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+
 </head>
 
 <body>
 
-<h2 style="text-align:center">⚙️ لوحة الإدارة</h2>
+<!-- 🔐 LOGIN -->
+<div id="loginScreen" class="login-screen">
 
-<!-- 🔘 التبويبات -->
-<div class="admin-tabs">
-  <button class="tab active" onclick="showAdminTab('products')">📦 الأصناف</button>
-  <button class="tab" onclick="showAdminTab('employees')">👥 الموظفين</button>
-  <button class="tab" onclick="showAdminTab('sales')">💰 المبيعات</button>
-  <button class="tab" onclick="showAdminTab('reports')">📊 التقارير</button>
-</div>
+  <div class="login-box">
+    <h2>🔐 دخول الإدارة</h2>
 
-<!-- ===============================
-     📦 الأصناف
-================================ -->
-<div id="productsTab" class="admin-section">
+    <input id="loginPin" placeholder="أدخل PIN" type="password">
 
-  <!-- نعرض صفحة المنتجات داخل admin -->
-  <iframe 
-    src="products.html" 
-    style="width:100%; height:650px; border:none; border-radius:10px;">
-  </iframe>
+    <button onclick="login()">دخول</button>
+
+    <p id="loginError" style="color:red; display:none;"></p>
+  </div>
 
 </div>
 
-<!-- ===============================
-     👥 الموظفين
-================================ -->
-<div id="employeesTab" class="admin-section" style="display:none;">
+<!-- 🧠 ADMIN APP -->
+<div id="adminApp" style="display:none;">
 
-  <h3>➕ إضافة موظف</h3>
+  <h2 style="text-align:center">⚙️ لوحة الإدارة</h2>
 
-  <input id="empName" placeholder="اسم الموظف"><br><br>
+  <!-- 🔘 التبويبات -->
+  <div class="admin-tabs">
+    <button class="tab active" onclick="showAdminTab('products')">📦 الأصناف</button>
+    <button class="tab" onclick="showAdminTab('employees')">👥 الموظفين</button>
+    <button class="tab" onclick="showAdminTab('sales')">💰 المبيعات</button>
+    <button class="tab" onclick="showAdminTab('reports')">📊 التقارير</button>
+  </div>
 
-  <input id="empPin" placeholder="PIN"><br><br>
+  <!-- 📦 الأصناف -->
+  <div id="productsTab" class="admin-section">
+    <iframe 
+      src="products.html" 
+      style="width:100%; height:650px; border:none; border-radius:10px;">
+    </iframe>
+  </div>
 
-  <select id="empRole">
-    <option value="employee">موظف</option>
-    <option value="manager">مدير</option>
-  </select><br><br>
+  <!-- 👥 الموظفين -->
+  <div id="employeesTab" class="admin-section" style="display:none;">
 
-  <button onclick="addEmployee()">➕ إضافة</button>
+    <h3>➕ إضافة موظف</h3>
 
-  <hr>
+    <input id="empName" placeholder="اسم الموظف"><br><br>
 
-  <h3>👥 قائمة الموظفين</h3>
-  <div id="employeesList"></div>
+    <input id="empPin" placeholder="PIN"><br><br>
+
+    <select id="empRole">
+      <option value="employee">موظف</option>
+      <option value="manager">مدير</option>
+    </select><br><br>
+
+    <button onclick="addEmployee()">➕ إضافة</button>
+
+    <hr>
+
+    <h3>👥 قائمة الموظفين</h3>
+    <div id="employeesList"></div>
+
+  </div>
+
+  <!-- 💰 المبيعات -->
+  <div id="salesTab" class="admin-section" style="display:none;">
+    <h3>💰 المبيعات</h3>
+    <div id="salesBox"></div>
+  </div>
+
+  <!-- 📊 التقارير -->
+  <div id="reportsTab" class="admin-section" style="display:none;">
+    <h3>📊 التقارير</h3>
+    <div id="reportBox"></div>
+  </div>
 
 </div>
 
-<!-- ===============================
-     💰 المبيعات
-================================ -->
-<div id="salesTab" class="admin-section" style="display:none;">
-
-  <h3>💰 المبيعات</h3>
-
-  <div id="salesBox"></div>
-
-</div>
-
-<!-- ===============================
-     📊 التقارير
-================================ -->
-<div id="reportsTab" class="admin-section" style="display:none;">
-
-  <h3>📊 التقارير</h3>
-
-  <div id="reportBox"></div>
-
-</div>
-
-<!-- 🔥 ربط الجافاسكربت -->
+<!-- 🔥 JS -->
 <script type="module" src="admin.js"></script>
 
 </body>
