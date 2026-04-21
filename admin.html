@@ -1,84 +1,58 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>إضافة صنف</title>
+  <title>لوحة الإدارة</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<h2>➕ إضافة صنف</h2>
+<h2>⚙️ لوحة الإدارة</h2>
 
-<input id="name" placeholder="اسم الصنف"><br><br>
-
-<input id="price" type="number" step="0.001" placeholder="السعر الأساسي"><br><br>
-
-<input type="file" id="image" accept="image/*"><br><br> 
-  
-<img id="preview" style="width:100px;display:none;margin-top:10px;"><br><br>
-  
-<select id="category">
-  <option value="drinks">مشروبات</option>
-  <option value="food">طعام</option>
-</select><br><br>
-
-<label>
-  <input type="checkbox" id="hasVariants"> فيه أحجام؟
-</label>
-
-<div id="variantsBox" style="display:none">
-  <h4>الأحجام</h4>
-
-  <div>
-    Small: <input id="smallPrice" type="number" step="0.001">
-  </div>
-  <div>
-    Medium: <input id="mediumPrice" type="number" step="0.001">
-  </div>
-  <div>
-    Large: <input id="largePrice" type="number" step="0.001">
-  </div>
+<!-- التبويبات -->
+<div class="admin-tabs">
+  <button class="tab active" onclick="showAdminTab('products')">📦 الأصناف</button>
+  <button class="tab" onclick="showAdminTab('employees')">👥 الموظفين</button>
+  <button class="tab" onclick="showAdminTab('sales')">💰 المبيعات</button>
+  <button class="tab" onclick="showAdminTab('reports')">📊 التقارير</button>
 </div>
 
-<br>
+<!-- الأقسام -->
 
-<textarea id="extras" placeholder="الإضافات (كل سطر = خيار)"></textarea>
+<!-- 📦 الأصناف -->
+<div id="productsTab" class="admin-section"></div>
 
-<br><br>
+<!-- 👥 الموظفين -->
+<div id="employeesTab" class="admin-section" style="display:none;">
+  <h3>إضافة موظف</h3>
 
-<button onclick="addProduct()" id="submitBtn">➕ حفظ المنتج</button>
+  <input id="empName" placeholder="الاسم"><br><br>
+  <input id="empPin" placeholder="PIN"><br><br>
 
-  <h3>📦 المنتجات الحالية</h3>
+  <select id="empRole">
+    <option value="employee">موظف</option>
+    <option value="manager">مدير</option>
+  </select><br><br>
 
-<table border="1" width="100%">
-  <thead>
-    <tr>
-      <th>الاسم</th>
-      <th>السعر</th>
-      <th>الإجراءات</th>
-    </tr>
-  </thead>
-  <tbody id="productsList"></tbody>
-</table>
+  <button onclick="addEmployee()">➕ إضافة</button>
+
+  <hr>
+
+  <div id="employeesList"></div>
+</div>
+
+<!-- 💰 المبيعات -->
+<div id="salesTab" class="admin-section" style="display:none;">
+  <div id="salesBox"></div>
+</div>
+
+<!-- 📊 التقارير -->
+<div id="reportsTab" class="admin-section" style="display:none;">
+  <div id="reportBox"></div>
+</div>
 
 <script type="module" src="admin.js"></script>
-
-<script>
-document.getElementById("image").onchange = function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const url = URL.createObjectURL(file);
-
-  const img = document.getElementById("preview");
-  img.src = url;
-  img.style.display = "block";
-};
-
-document.getElementById("hasVariants").onchange = function() {
-  document.getElementById("variantsBox").style.display =
-    this.checked ? "block" : "none";
-};
-</script>
 
 </body>
 </html>
