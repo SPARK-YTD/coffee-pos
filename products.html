@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>إدارة الأصناف</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h2>➕ إضافة صنف</h2>
+
+<input id="name" placeholder="اسم الصنف"><br><br>
+
+<input id="price" type="number" step="0.001" placeholder="السعر الأساسي"><br><br>
+
+<input type="file" id="image" accept="image/*"><br><br> 
+<img id="preview" style="width:100px;display:none;margin-top:10px;"><br><br>
+
+<select id="category">
+  <option value="drinks">مشروبات</option>
+  <option value="food">طعام</option>
+</select><br><br>
+
+<label>
+  <input type="checkbox" id="hasVariants"> فيه أحجام؟
+</label>
+
+<div id="variantsBox" style="display:none">
+  <h4>الأحجام</h4>
+
+  <div>Small: <input id="smallPrice" type="number"></div>
+  <div>Medium: <input id="mediumPrice" type="number"></div>
+  <div>Large: <input id="largePrice" type="number"></div>
+</div>
+
+<br>
+
+<textarea id="extras" placeholder="الإضافات (كل سطر = خيار)"></textarea>
+
+<br><br>
+
+<button id="submitBtn">➕ حفظ المنتج</button>
+
+<hr>
+
+<h3>📦 المنتجات الحالية</h3>
+
+<table border="1" width="100%">
+  <thead>
+    <tr>
+      <th>الاسم</th>
+      <th>السعر</th>
+      <th>الإجراءات</th>
+    </tr>
+  </thead>
+  <tbody id="productsList"></tbody>
+</table>
+
+<script type="module" src="products.js"></script>
+
+</body>
+</html>
