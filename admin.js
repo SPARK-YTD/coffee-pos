@@ -62,7 +62,6 @@ window.login = async function() {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("adminApp").style.display = "block";
   
-  loadDashboard();
 
   showAdminTab("products"); // ✅
   errorBox.style.display = "none"; // ✅
@@ -166,10 +165,39 @@ window.deleteEmployee = async function(id) {
 
 async function loadSales() {
 
-  const { data } = await supabase
+  const mode = document.getElementById("salesMode")?.value || "current";
+
+  let query = supabase
     .from("orders")
-    .select("total, cash_amount, card_amount")
-    .eq("status", "completed"); // 🔥 فقط المسلّم
+    .select("total, cash_amount, card_amount, status");
+
+  // 🟢 فلترة الشفت الحالي
+  if (mode === "current") {
+    const currentShiftId = localStorage.getItem("shiftId");
+
+    if (!currentShiftId) {
+      document.getElementById("salesBox").innerHTML = "❌ لا يوجد شفت مفتوح";
+      return;
+    }
+
+    query = query.eq("shift_id", currentShiftId);
+  }
+
+  // ✅ الطلبات المكتملة
+  const { data } = await query.eq("status", "completed");
+
+  // ❌ الطلبات الملغية
+  let cancelledQuery = supabase
+    .from("orders")
+    .select("id")
+    .eq("status", "cancelled");
+
+  if (mode === "current") {
+    const currentShiftId = localStorage.getItem("shiftId");
+    cancelledQuery = cancelledQuery.eq("shift_id", currentShiftId);
+  }
+
+  const { data: cancelled } = await cancelledQuery;
 
   let total = 0;
   let cash = 0;
@@ -183,11 +211,14 @@ async function loadSales() {
 
   document.getElementById("salesBox").innerHTML = `
     <div class="card">
-      <h3>💰 المبيعات</h3>
-      <p>الإجمالي: ${total.toFixed(2)} ر.س</p>
-      <p>💵 كاش: ${cash.toFixed(2)} ر.س</p>
-      <p>💳 بطاقة: ${card.toFixed(2)} ر.س</p>
-      <p>🧾 عدد الطلبات: ${(data || []).length}</p>
+      <h3>📊 الإحصائيات</h3>
+
+      💰 الإجمالي: ${total.toFixed(2)} ر.س<br>
+      💵 كاش: ${cash.toFixed(2)} ر.س<br>
+      💳 بطاقة: ${card.toFixed(2)} ر.س<br><br>
+
+      🧾 الطلبات: ${(data || []).length}<br>
+      ❌ الملغية: ${(cancelled || []).length}
     </div>
   `;
 }
