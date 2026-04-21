@@ -998,4 +998,48 @@ window.showTab = function(type) {
   }
 };
 
+window.showReport = async function () {
 
+  if (!currentShiftId) {
+    alert("❌ ما فيه شفت");
+    return;
+  }
+
+  // 🟢 الطلبات المدفوعة
+  const { data: sales } = await supabase
+    .from("orders")
+    .select("total, cash_amount, card_amount")
+    .eq("shift_id", currentShiftId)
+    .eq("is_paid", true);
+
+  // 🔴 الطلبات الملغية
+  const { data: cancelled } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("shift_id", currentShiftId)
+    .eq("status", "cancelled");
+
+  let totalSales = 0;
+  let totalCash = 0;
+  let totalCard = 0;
+
+  (sales || []).forEach(o => {
+    totalSales += Number(o.total || 0);
+    totalCash += Number(o.cash_amount || 0);
+    totalCard += Number(o.card_amount || 0);
+  });
+
+  const totalOrders = sales?.length || 0;
+  const totalCancelled = cancelled?.length || 0;
+
+  alert(`
+📊 تقرير الشفت:
+
+💰 الإجمالي: ${formatMoney(totalSales)}
+💵 كاش: ${formatMoney(totalCash)}
+💳 بطاقة: ${formatMoney(totalCard)}
+
+🧾 الطلبات: ${totalOrders}
+❌ الملغية: ${totalCancelled}
+  `);
+};
