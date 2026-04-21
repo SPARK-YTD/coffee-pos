@@ -364,3 +364,38 @@ async function loadDashboard() {
     <div class="card">❌ ${(cancelled || []).length}</div>
   `;
 }
+window.loadEmployeeReport = async function() {
+
+  const { data: shifts } = await supabase
+    .from("shifts")
+    .select("*, employees(name)");
+
+  if (!shifts || shifts.length === 0) {
+    document.getElementById("reportBox").innerHTML = "❌ لا يوجد بيانات";
+    return;
+  }
+
+  const summary = {};
+
+  shifts.forEach(s => {
+    const name = s.employees?.name || "غير معروف";
+    const sales = Number(s.total_sales || 0);
+
+    if (!summary[name]) {
+      summary[name] = 0;
+    }
+
+    summary[name] += sales;
+  });
+
+  const html = Object.entries(summary)
+    .sort((a, b) => b[1] - a[1]) // 🔥 ترتيب الأعلى أول
+    .map(([name, total]) => `
+      <div class="card">
+        👤 ${name}<br>
+        💰 ${total.toFixed(2)} ر.س
+      </div>
+    `).join("");
+
+  document.getElementById("reportBox").innerHTML = html;
+};
