@@ -17,38 +17,53 @@ function isSessionValid() {
 }
 
 
-if (localStorage.getItem("admin") === "true" && isSessionValid()) {
-  console.log("✅ جلسة نشطة");
+window.addEventListener("load", () => {
+
+  if (localStorage.getItem("admin") === "true" && isSessionValid()) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminApp").style.display = "block";
+    updateLastActivity();
+
+    showAdminTab("products");  
+  } else {
+    localStorage.removeItem("admin");
+  }
+
+});
+
+window.login = async function() {
+
+  const pin = document.getElementById("loginPin").value.trim();
+  const errorBox = document.getElementById("loginError");
+
+  if (!pin) {
+    errorBox.textContent = "❌ أدخل PIN";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  const { data: manager } = await supabase
+    .from("employees")
+    .select("*")
+    .eq("pin", pin)
+    .eq("role", "manager")
+    .maybeSingle();
+
+  if (!manager) {
+    errorBox.textContent = "❌ PIN خطأ";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  localStorage.setItem("admin", "true");
   updateLastActivity();
-} else {
 
-  localStorage.removeItem("admin");
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("adminApp").style.display = "block";
 
-  const pin = prompt("🔐 أدخل رقم المدير");
-
-if (!pin) {
-  alert("❌ لازم تدخل رقم المدير");
-  location.reload();
-  return;
-}
-
-const { data: manager } = await supabase
-  .from("employees")
-  .select("id, role, name")
-  .eq("pin", pin.trim())
-  .eq("role", "manager")
-  .maybeSingle();
-
-if (!manager) {
-  alert("❌ غير مصرح");
-  location.reload();
-  return;
-}
-
-localStorage.setItem("admin", "true");
-updateLastActivity();
-}
-
+  showAdminTab("products"); // ✅
+  errorBox.style.display = "none"; // ✅
+};
 /* ===============================
    التنقل بين التبويبات
 ================================ */
@@ -198,9 +213,6 @@ async function loadReport() {
 /* ===============================
    تشغيل أولي
 ================================ */
-
-// يبدأ على تبويب الأصناف
-showAdminTab("products");
 
 ["click", "mousemove", "keydown", "touchstart"].forEach(event => {
   document.addEventListener(event, updateLastActivity);
