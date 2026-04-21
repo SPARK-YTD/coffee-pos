@@ -1,210 +1,97 @@
-import { supabase } from "./supabase.js";
+window.showAdminTab = function(type) {
 
-let editingId = null;
+  const sections = {
+    products: document.getElementById("productsTab"),
+    employees: document.getElementById("employeesTab"),
+    sales: document.getElementById("salesTab"),
+    reports: document.getElementById("reportsTab"),
+  };
 
-/* ===============================
-   إضافة / تعديل منتج
-================================ */
-window.addProduct = async function () {
+  document.querySelectorAll(".admin-section")
+    .forEach(s => s.style.display = "none");
 
-  const name = document.getElementById("name").value.trim();
-  const basePrice = parseFloat(document.getElementById("price").value);
-  const category = document.getElementById("category").value;
-  const hasVariants = document.getElementById("hasVariants").checked;
-  const extras = document.getElementById("extras").value;
+  document.querySelectorAll(".tab")
+    .forEach(t => t.classList.remove("active"));
 
-  if (!name) {
-    alert("اكتب اسم المنتج");
-    return;
-  }
+  sections[type].style.display = "block";
 
-  let product;
-   
-let imageUrl = null;
+  const index = ["products","employees","sales","reports"].indexOf(type);
+  document.querySelectorAll(".tab")[index].classList.add("active");
 
-const file = document.getElementById("image")?.files[0];
-
-if (file) {
-
-  const fileName = Date.now() + "-" + file.name;
-
-  const { error: uploadError } = await supabase
-    .storage
-    .from("products")
-    .upload(fileName, file);
-
-  if (uploadError) {
-    console.error(uploadError);
-    alert("❌ فشل رفع الصورة");
-    return;
-  }
-
-  const { data } = supabase
-    .storage
-    .from("products")
-    .getPublicUrl(fileName);
-
-  imageUrl = data.publicUrl;
-}
-   
-  // ✏️ تعديل
-  if (editingId) {
-
-    const { data, error } = await supabase
-      .from("products")
-      .update({
-  name,
-  price: hasVariants ? null : basePrice,
-  has_variants: hasVariants,
-  category,
-  extras_text: extras,
-  ...(imageUrl && { image_url: imageUrl })
-})
-      .eq("id", editingId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(error);
-      alert("❌ خطأ في التعديل");
-      return;
-    }
-
-    product = data;
-    editingId = null;
-
-  } else {
-
-    // ➕ إضافة جديدة
-    const { data, error } = await supabase
-      .from("products")
-      .insert({
-    name,
-    price: hasVariants ? null : basePrice,
-    has_variants: hasVariants,
-    category,
-    extras_text: extras,
-    image_url: imageUrl
-  })
-      .select()
-      .single();
-
-    if (error) {
-      console.error(error);
-      alert("❌ خطأ في الإضافة");
-      return;
-    }
-
-    product = data;
-  }
-
-  /* ===============================
-     الأحجام
-  ================================ */
-  if (hasVariants) {
-
-    // حذف القديم (في حالة التعديل)
-    await supabase
-      .from("product_variants")
-      .delete()
-      .eq("product_id", product.id);
-
-    const variants = [
-      { label: "Small", price: parseFloat(document.getElementById("smallPrice").value) },
-      { label: "Medium", price: parseFloat(document.getElementById("mediumPrice").value) },
-      { label: "Large", price: parseFloat(document.getElementById("largePrice").value) }
-    ].filter(v => !isNaN(v.price));
-
-    if (variants.length > 0) {
-      await supabase.from("product_variants").insert(
-        variants.map(v => ({
-          product_id: product.id,
-          label: v.label,
-          price: v.price
-        }))
-      );
-    }
-  }
-
-  /* ===============================
-     تنظيف الفورم
-  ================================ */
-  document.getElementById("name").value = "";
-  document.getElementById("price").value = "";
-  document.getElementById("extras").value = "";
-  document.getElementById("hasVariants").checked = false;
-
-  alert("✅ تم الحفظ");
-
-  loadProducts();
+  // 🔥 تحميل حسب التبويب
+  if (type === "sales") loadSales();
+  if (type === "reports") loadReport();
+  if (type === "employees") loadEmployees();
 };
+async function addEmployee() {
+  const name = document.getElementById("empName").value;
+  const pin = document.getElementById("empPin").value;
+  const role = document.getElementById("empRole").value;
 
-/* ===============================
-   عرض المنتجات
-================================ */
-async function loadProducts() {
+  await supabase.from("employees").insert({ name, pin, role });
 
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false });
+  alert("✅ تم إضافة الموظف");
+  loadEmployees();
+}
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+async function loadEmployees() {
+  const { data } = await supabase.from("employees").select("*");
 
-  const tbody = document.getElementById("productsList");
-  tbody.innerHTML = "";
+  const box = document.getElementById("employeesList");
+  box.innerHTML = "";
 
-  data.forEach(p => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.price ? p.price.toFixed(3) : "حسب الحجم"}</td>
-        <td>
-          <button onclick="editProduct('${p.id}', '${p.name}', ${p.price || 0}, '${p.category}', ${p.has_variants}, \`${p.extras_text || ""}\`)">✏️</button>
-          <button onclick="deleteProduct('${p.id}')">🗑</button>
-        </td>
-      </tr>
+  (data || []).forEach(e => {
+    box.innerHTML += `
+      <div>
+        👤 ${e.name} (${e.role})
+        <button onclick="deleteEmployee('${e.id}')">🗑</button>
+      </div>
     `;
   });
 }
 
-/* ===============================
-   تعديل
-================================ */
-window.editProduct = function(id, name, price, category, hasVariants, extras) {
-
-  document.getElementById("name").value = name;
-  document.getElementById("price").value = price;
-  document.getElementById("category").value = category;
-  document.getElementById("hasVariants").checked = hasVariants;
-  document.getElementById("extras").value = extras || "";
-
-  // إظهار/إخفاء الأحجام
-  document.getElementById("variantsBox").style.display =
-    hasVariants ? "block" : "none";
-
-  editingId = id;
+window.deleteEmployee = async function(id) {
+  if (!confirm("حذف الموظف؟")) return;
+  await supabase.from("employees").delete().eq("id", id);
+  loadEmployees();
 };
 
-/* ===============================
-   حذف
-================================ */
-window.deleteProduct = async function(id) {
+async function loadSales() {
 
-  if (!confirm("حذف المنتج؟")) return;
+  const { data } = await supabase
+    .from("orders")
+    .select("total, cash_amount, card_amount")
+    .eq("status", "completed");
 
-  await supabase
-    .from("products")
-    .delete()
-    .eq("id", id);
+  let total = 0, cash = 0, card = 0;
 
-  loadProducts();
-};
+  (data || []).forEach(o => {
+    total += Number(o.total || 0);
+    cash += Number(o.cash_amount || 0);
+    card += Number(o.card_amount || 0);
+  });
 
-/* ===============================
-   تشغيل أولي
-================================ */
-loadProducts();
+  document.getElementById("salesBox").innerHTML = `
+    <div class="card">
+      <h3>💰 المبيعات</h3>
+      <p>الإجمالي: ${total.toFixed(2)} ر.س</p>
+      <p>كاش: ${cash.toFixed(2)} ر.س</p>
+      <p>بطاقة: ${card.toFixed(2)} ر.س</p>
+    </div>
+  `;
+}
+
+async function loadReport() {
+
+  const { data } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("status", "cancelled");
+
+  document.getElementById("reportBox").innerHTML = `
+    <div class="card">
+      <h3>📊 التقارير</h3>
+      <p>❌ الطلبات الملغية: ${data?.length || 0}</p>
+    </div>
+  `;
+}
