@@ -109,9 +109,23 @@
 
   <!-- 💰 المبيعات -->
   <div id="salesTab" class="admin-section" style="display:none;">
-    <h3>💰 المبيعات</h3>
-    <div id="salesBox"></div>
+
+  <h3>💰 المبيعات</h3>
+
+  <!-- 🔽 اختيار نوع الإحصائية -->
+  <div style="margin-bottom:10px;">
+    <select id="salesMode">
+      <option value="current">الشفت الحالي</option>
+      <option value="all">كل المبيعات</option>
+    </select>
+
+    <button onclick="loadSales()">عرض</button>
   </div>
+
+  <!-- 📊 النتائج -->
+  <div id="salesBox"></div>
+
+</div>
 
   <!-- 📊 التقارير -->
   <div id="reportsTab" class="admin-section" style="display:none;">
