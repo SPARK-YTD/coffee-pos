@@ -1,10 +1,35 @@
 import { supabase } from "./supabase.js";
 
-const pin = prompt("🔐 أدخل رقم المدير");
+const SESSION_TIMEOUT = 30 * 60 * 1000;
+
+// تحديث آخر نشاط
+function updateLastActivity() {
+  localStorage.setItem("lastActivity", Date.now());
+}
+
+// التحقق من الجلسة
+function isSessionValid() {
+  const last = localStorage.getItem("lastActivity");
+  if (!last) return false;
+
+  const diff = Date.now() - Number(last);
+  return diff < SESSION_TIMEOUT;
+}
+
+
+if (localStorage.getItem("admin") === "true" && isSessionValid()) {
+  console.log("✅ جلسة نشطة");
+  updateLastActivity();
+} else {
+
+  localStorage.removeItem("admin");
+
+  const pin = prompt("🔐 أدخل رقم المدير");
 
 if (!pin) {
-  document.body.innerHTML = "❌ تم إلغاء الدخول";
-  throw new Error("No PIN");
+  alert("❌ لازم تدخل رقم المدير");
+  location.reload();
+  return;
 }
 
 const { data: manager } = await supabase
@@ -15,13 +40,14 @@ const { data: manager } = await supabase
   .maybeSingle();
 
 if (!manager) {
-  document.body.innerHTML = "❌ غير مصرح";
-  throw new Error("Unauthorized");
+  alert("❌ غير مصرح");
+  location.reload();
+  return;
 }
 
-console.log("✅ دخول مدير:", manager.name);
-
-
+localStorage.setItem("admin", "true");
+updateLastActivity();
+}
 
 /* ===============================
    التنقل بين التبويبات
@@ -175,3 +201,19 @@ async function loadReport() {
 
 // يبدأ على تبويب الأصناف
 showAdminTab("products");
+
+["click", "mousemove", "keydown", "touchstart"].forEach(event => {
+  document.addEventListener(event, updateLastActivity);
+});
+
+let sessionExpired = false;
+
+setInterval(() => {
+  if (!isSessionValid() && !sessionExpired) {
+    sessionExpired = true;
+
+    alert("🔒 انتهت الجلسة");
+    localStorage.removeItem("admin");
+    location.reload();
+  }
+}, 60000);
