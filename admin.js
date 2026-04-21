@@ -261,11 +261,59 @@ window.loadDailyReport = async function() {
     totalDay += Number(s.total_sales || 0);
 
     return `
+  <div class="card">
+    👤 الموظف: ${s.employees?.name || "غير معروف"}<br>
+    💰 المبيعات: ${Number(s.total_sales || 0).toFixed(2)}<br>
+    💵 كاش: ${Number(s.total_cash || 0).toFixed(2)}<br>
+    💳 بطاقة: ${Number(s.total_card || 0).toFixed(2)}
+  </div>
+`;
+  }).join("");
+
+  document.getElementById("reportBox").innerHTML = `
+    ${html}
+    <hr>
+    <div class="card">
+      💰 إجمالي اليوم: ${totalDay.toFixed(2)} ر.س
+    </div>
+  `;
+};
+
+window.loadRangeReport = async function() {
+
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+
+  if (!from || !to) {
+    alert("حدد التاريخ");
+    return;
+  }
+
+  const start = from + " 00:00:00";
+  const end = to + " 23:59:59";
+
+  const { data: shifts } = await supabase
+    .from("shifts")
+    .select("*, employees(name)")
+    .gte("opened_at", start)
+    .lte("opened_at", end);
+
+  if (!shifts || shifts.length === 0) {
+    document.getElementById("reportBox").innerHTML = "❌ لا يوجد بيانات";
+    return;
+  }
+
+  let total = 0;
+
+  const html = shifts.map(s => {
+
+    total += Number(s.total_sales || 0);
+
+    return `
       <div class="card">
-        👤 الموظف: ${s.employees?.name || "غير معروف"}.employee_id}<br>
-        💰 المبيعات: ${Number(s.total_sales || 0).toFixed(2)}<br>
-        💵 كاش: ${Number(s.total_cash || 0).toFixed(2)}<br>
-        💳 بطاقة: ${Number(s.total_card || 0).toFixed(2)}
+        👤 ${s.employees?.name || "غير معروف"}<br>
+        📅 ${new Date(s.opened_at).toLocaleDateString()}<br>
+        💰 ${Number(s.total_sales || 0).toFixed(2)} ر.س
       </div>
     `;
   }).join("");
@@ -274,7 +322,7 @@ window.loadDailyReport = async function() {
     ${html}
     <hr>
     <div class="card">
-      💰 إجمالي اليوم: ${totalDay.toFixed(2)} ر.س
+      💰 إجمالي الفترة: ${total.toFixed(2)} ر.س
     </div>
   `;
 };
