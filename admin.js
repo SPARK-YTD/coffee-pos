@@ -162,26 +162,27 @@ window.deleteEmployee = async function(id) {
    المبيعات (completed فقط)
 ================================ */
 
-window.loadSales = async function() {
+window.loadSales = async function () {
 
   const mode = document.getElementById("salesMode")?.value || "current";
 
   let query = supabase
     .from("orders")
-.select(`
-  total,
-  cash_amount,
-  card_amount,
-  status,
-  items,
-  shift_id,
-  shifts (
-    employee_id,
-    employees (
-      name
-    )
-  )
-`)
+    .select(`
+      total,
+      cash_amount,
+      card_amount,
+      status,
+      items,
+      shift_id,
+      shifts (
+        employee_id,
+        employees (
+          name
+        )
+      )
+    `);
+
   // 🟢 فلترة الشفت الحالي
   if (mode === "current") {
     const shiftId = localStorage.getItem("shiftId");
@@ -194,23 +195,16 @@ window.loadSales = async function() {
     query = query.eq("shift_id", shiftId);
   }
 
-  // ✅ المكتملة
-  const { data, error } = await supabase
-  .from("orders")
-  .select(`
-    *,
-    shifts (
-      *,
-      employees (
-        *
-      )
-    )
-  `);
+  // ✅ الطلبات المكتملة
+  const { data, error } = await query.eq("status", "completed");
 
-console.log("DATA:", data);
-console.log("ERROR:", error);
-  
-  // ❌ الملغية
+  if (error) {
+    console.error("ERROR:", error);
+    document.getElementById("salesBox").innerHTML = "❌ خطأ في جلب البيانات";
+    return;
+  }
+
+  // ❌ الطلبات الملغية
   let cancelledQuery = supabase
     .from("orders")
     .select("id");
@@ -222,7 +216,10 @@ console.log("ERROR:", error);
 
   const { data: cancelled } = await cancelledQuery.eq("status", "cancelled");
 
-  let total = 0, cash = 0, card = 0;
+  // 🔢 الحسابات
+  let total = 0;
+  let cash = 0;
+  let card = 0;
 
   const productCount = {}; // 🔥 أكثر صنف
   const employeeSales = {}; // 🔥 أفضل موظف
@@ -234,34 +231,39 @@ console.log("ERROR:", error);
     card += Number(o.card_amount || 0);
 
     // 🧠 تحليل الأصناف
-  let items = o.items;
+    let items = o.items;
 
-if (typeof items === "string") {
-  try {
-    items = JSON.parse(items);
-  } catch {}
-}
+    if (typeof items === "string") {
+      try {
+        items = JSON.parse(items);
+      } catch {}
+    }
 
-if (Array.isArray(items)) {
-  items.forEach(item => {
-    const name = item.name;
-    productCount[name] = (productCount[name] || 0) + item.qty;
-  });
-}
+    if (Array.isArray(items)) {
+      items.forEach(item => {
+        const name = item.name;
+        productCount[name] = (productCount[name] || 0) + (item.qty || 0);
+      });
+    }
 
     // 🧠 تحليل الموظفين
-   const empName = o.shifts?.employees?.name || "غير معروف";
-employeeSales[empName] = (employeeSales[empName] || 0) + Number(o.total || 0);
+    const empName = o.shifts?.employees?.name || "غير معروف";
+    employeeSales[empName] = (employeeSales[empName] || 0) + Number(o.total || 0);
+
   });
 
   // 🔥 أعلى صنف
   const topProduct = Object.entries(productCount)
-    .sort((a,b) => b[1]-a[1])[0];
+    .sort((a, b) => b[1] - a[1])[0];
 
   // 🔥 أفضل موظف
   const topEmployee = Object.entries(employeeSales)
-    .sort((a,b) => b[1]-a[1])[0];
+    .sort((a, b) => b[1] - a[1])[0];
 
+  // 📈 متوسط الطلب
+  const avg = data?.length ? (total / data.length) : 0;
+
+  // 🎨 العرض
   document.getElementById("salesBox").innerHTML = `
     <div class="card">
 
@@ -271,15 +273,17 @@ employeeSales[empName] = (employeeSales[empName] || 0) + Number(o.total || 0);
       💵 كاش: ${cash.toFixed(2)} ر.س<br>
       💳 بطاقة: ${card.toFixed(2)} ر.س<br><br>
 
-      🧾 الطلبات: ${(data || []).length}<br>
-      ❌ الملغية: ${(cancelled || []).length}<br><br>
+      🧾 الطلبات: ${data?.length || 0}<br>
+      ❌ الملغية: ${cancelled?.length || 0}<br><br>
+
+      📈 متوسط الطلب: ${avg.toFixed(2)} ر.س<br><br>
 
       🔥 أكثر صنف: ${topProduct ? topProduct[0] + " (" + topProduct[1] + ")" : "-"}<br>
       👑 أفضل موظف: ${topEmployee ? topEmployee[0] : "-"}
 
     </div>
   `;
-}
+};
 
 /* ===============================
    التقارير
