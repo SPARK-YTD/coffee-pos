@@ -169,48 +169,68 @@ async function loadSales() {
 
   let query = supabase
     .from("orders")
-    .select("total, cash_amount, card_amount, status");
+    .select("total, cash_amount, card_amount, status, items, employee_id");
 
   // 🟢 فلترة الشفت الحالي
   if (mode === "current") {
-    const currentShiftId = localStorage.getItem("shiftId");
+    const shiftId = localStorage.getItem("shiftId");
 
-    if (!currentShiftId) {
+    if (!shiftId) {
       document.getElementById("salesBox").innerHTML = "❌ لا يوجد شفت مفتوح";
       return;
     }
 
-    query = query.eq("shift_id", currentShiftId);
+    query = query.eq("shift_id", shiftId);
   }
 
-  // ✅ الطلبات المكتملة
+  // ✅ المكتملة
   const { data } = await query.eq("status", "completed");
 
-  // ❌ الطلبات الملغية
+  // ❌ الملغية
   let cancelledQuery = supabase
     .from("orders")
-    .select("id")
-    .eq("status", "cancelled");
+    .select("id");
 
   if (mode === "current") {
-    const currentShiftId = localStorage.getItem("shiftId");
-    cancelledQuery = cancelledQuery.eq("shift_id", currentShiftId);
+    const shiftId = localStorage.getItem("shiftId");
+    cancelledQuery = cancelledQuery.eq("shift_id", shiftId);
   }
 
-  const { data: cancelled } = await cancelledQuery;
+  const { data: cancelled } = await cancelledQuery.eq("status", "cancelled");
 
-  let total = 0;
-  let cash = 0;
-  let card = 0;
+  let total = 0, cash = 0, card = 0;
+
+  const productCount = {}; // 🔥 أكثر صنف
+  const employeeSales = {}; // 🔥 أفضل موظف
 
   (data || []).forEach(o => {
+
     total += Number(o.total || 0);
     cash += Number(o.cash_amount || 0);
     card += Number(o.card_amount || 0);
+
+    // 🧠 تحليل الأصناف
+    (o.items || []).forEach(item => {
+      const name = item.name;
+      productCount[name] = (productCount[name] || 0) + item.qty;
+    });
+
+    // 🧠 تحليل الموظفين
+    const emp = o.employee_id || "unknown";
+    employeeSales[emp] = (employeeSales[emp] || 0) + Number(o.total || 0);
   });
+
+  // 🔥 أعلى صنف
+  const topProduct = Object.entries(productCount)
+    .sort((a,b) => b[1]-a[1])[0];
+
+  // 🔥 أفضل موظف
+  const topEmployee = Object.entries(employeeSales)
+    .sort((a,b) => b[1]-a[1])[0];
 
   document.getElementById("salesBox").innerHTML = `
     <div class="card">
+
       <h3>📊 الإحصائيات</h3>
 
       💰 الإجمالي: ${total.toFixed(2)} ر.س<br>
@@ -218,11 +238,14 @@ async function loadSales() {
       💳 بطاقة: ${card.toFixed(2)} ر.س<br><br>
 
       🧾 الطلبات: ${(data || []).length}<br>
-      ❌ الملغية: ${(cancelled || []).length}
+      ❌ الملغية: ${(cancelled || []).length}<br><br>
+
+      🔥 أكثر صنف: ${topProduct ? topProduct[0] + " (" + topProduct[1] + ")" : "-"}<br>
+      👑 أفضل موظف: ${topEmployee ? topEmployee[0] : "-"}
+
     </div>
   `;
 }
-
 
 /* ===============================
    التقارير
