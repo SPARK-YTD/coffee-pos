@@ -197,7 +197,15 @@ window.loadSales = async function() {
   // ✅ المكتملة
   const { data, error } = await supabase
   .from("orders")
-  .select("*, shifts(*), shifts(employees(*))");
+  .select(`
+    *,
+    shifts (
+      *,
+      employees (
+        *
+      )
+    )
+  `);
 
 console.log("DATA:", data);
 console.log("ERROR:", error);
