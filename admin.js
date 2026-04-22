@@ -167,21 +167,20 @@ window.loadSales = async function () {
   const mode = document.getElementById("salesMode")?.value || "current";
 
   let query = supabase
-    .from("orders")
-    .select(`
-      total,
-      cash_amount,
-      card_amount,
-      status,
-      items,
-      shift_id,
-      shifts (
-        employee_id,
-        employees (
-          name
-        )
+  .from("orders")
+  .select(`
+    total,
+    cash_amount,
+    card_amount,
+    status,
+    shift_id,
+    shifts (
+      employee_id,
+      employees (
+        name
       )
-    `);
+    )
+  `);
 
   // 🟢 فلترة الشفت الحالي
   if (mode === "current") {
