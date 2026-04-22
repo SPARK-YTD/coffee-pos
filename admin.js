@@ -168,7 +168,7 @@ window.loadSales = async function() {
 
   let query = supabase
     .from("orders")
-    .select("total, cash_amount, card_amount, status, items, employee_id");
+    .select(`   total,   cash_amount,   card_amount,   status,   items,   shift_id,   shifts (     employee_id,     employees (name)   ) `)
 
   // 🟢 فلترة الشفت الحالي
   if (mode === "current") {
@@ -209,16 +209,24 @@ window.loadSales = async function() {
     card += Number(o.card_amount || 0);
 
     // 🧠 تحليل الأصناف
-  if (Array.isArray(o.items)) {
-  o.items.forEach(item => {
+  let items = o.items;
+
+if (typeof items === "string") {
+  try {
+    items = JSON.parse(items);
+  } catch {}
+}
+
+if (Array.isArray(items)) {
+  items.forEach(item => {
     const name = item.name;
     productCount[name] = (productCount[name] || 0) + item.qty;
   });
 }
 
     // 🧠 تحليل الموظفين
-    const emp = o.employee_id || "unknown";
-    employeeSales[emp] = (employeeSales[emp] || 0) + Number(o.total || 0);
+   const empName = o.shifts?.employees?.name || "غير معروف";
+employeeSales[empName] = (employeeSales[empName] || 0) + Number(o.total || 0);
   });
 
   // 🔥 أعلى صنف
