@@ -175,9 +175,11 @@ window.loadSales = async function() {
   status,
   items,
   shift_id,
-  shifts (
+  shifts:shift_id (
     employee_id,
-    employees!inner (name)
+    employees:employee_id (
+      name
+    )
   )
 `)
   // 🟢 فلترة الشفت الحالي
