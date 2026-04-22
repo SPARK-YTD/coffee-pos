@@ -195,8 +195,13 @@ window.loadSales = async function() {
   }
 
   // ✅ المكتملة
-  const { data } = await query.eq("status", "completed");
+  const { data, error } = await supabase
+  .from("orders")
+  .select("*, shifts(*), shifts(employees(*))");
 
+console.log("DATA:", data);
+console.log("ERROR:", error);
+  
   // ❌ الملغية
   let cancelledQuery = supabase
     .from("orders")
