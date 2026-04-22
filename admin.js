@@ -22,7 +22,6 @@ window.addEventListener("load", () => {
   if (localStorage.getItem("admin") === "true" && isSessionValid()) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("adminApp").style.display = "block";
-    loadDashboard();
     updateLastActivity();
 
     showAdminTab("products");  
@@ -163,7 +162,7 @@ window.deleteEmployee = async function(id) {
    المبيعات (completed فقط)
 ================================ */
 
-async function loadSales() {
+window.loadSales = async function() {
 
   const mode = document.getElementById("salesMode")?.value || "current";
 
@@ -210,10 +209,12 @@ async function loadSales() {
     card += Number(o.card_amount || 0);
 
     // 🧠 تحليل الأصناف
-    (o.items || []).forEach(item => {
-      const name = item.name;
-      productCount[name] = (productCount[name] || 0) + item.qty;
-    });
+  if (Array.isArray(o.items)) {
+  o.items.forEach(item => {
+    const name = item.name;
+    productCount[name] = (productCount[name] || 0) + item.qty;
+  });
+}
 
     // 🧠 تحليل الموظفين
     const emp = o.employee_id || "unknown";
@@ -383,41 +384,7 @@ window.loadRangeReport = async function() {
     </div>
   `;
 };
-async function loadDashboard() {
 
-  const today = new Date().toISOString().split("T")[0];
-
-  const start = today + " 00:00:00";
-  const end = today + " 23:59:59";
-
-  // الطلبات المسلّمة اليوم
-  const { data: sales } = await supabase
-    .from("orders")
-    .select("total")
-    .eq("status", "completed")
-    .gte("created_at", start)
-    .lte("created_at", end);
-
-  // الطلبات الملغية اليوم
-  const { data: cancelled } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("status", "cancelled")
-    .gte("created_at", start)
-    .lte("created_at", end);
-
-  let total = 0;
-
-  (sales || []).forEach(o => {
-    total += Number(o.total || 0);
-  });
-
-  document.getElementById("dashboard").innerHTML = `
-    <div class="card">💰 ${total.toFixed(2)} ر.س</div>
-    <div class="card">🧾 ${(sales || []).length} طلب</div>
-    <div class="card">❌ ${(cancelled || []).length}</div>
-  `;
-}
 window.loadEmployeeReport = async function() {
 
   const { data: shifts } = await supabase
