@@ -48,6 +48,9 @@ const { data: existingShift } = await supabase
 
 if (existingShift) {
   currentShiftId = existingShift.id;
+
+  localStorage.setItem("shiftId", existingShift.id);
+
   alert(`📂 تم استرجاع الشفت - ${emp.name}`);
   return;
 }
@@ -68,6 +71,8 @@ if (error) {
 }
 
 currentShiftId = shift.id;
+
+localStorage.setItem("shiftId", shift.id);
 
 alert(`✅ تم فتح الشفت - ${emp.name}`);
 }
