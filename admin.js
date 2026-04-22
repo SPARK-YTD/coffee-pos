@@ -175,9 +175,9 @@ window.loadSales = async function() {
   status,
   items,
   shift_id,
-  shifts:shift_id (
+  shifts (
     employee_id,
-    employees:employee_id (
+    employees (
       name
     )
   )
