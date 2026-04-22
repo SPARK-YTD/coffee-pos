@@ -168,8 +168,18 @@ window.loadSales = async function() {
 
   let query = supabase
     .from("orders")
-    .select(`   total,   cash_amount,   card_amount,   status,   items,   shift_id,   shifts (     employee_id,     employees (name)   ) `)
-
+.select(`
+  total,
+  cash_amount,
+  card_amount,
+  status,
+  items,
+  shift_id,
+  shifts (
+    employee_id,
+    employees!inner (name)
+  )
+`)
   // 🟢 فلترة الشفت الحالي
   if (mode === "current") {
     const shiftId = localStorage.getItem("shiftId");
