@@ -112,15 +112,18 @@
 
   <h3>💰 المبيعات</h3>
 
-  <!-- 🔽 اختيار نوع الإحصائية -->
   <div style="margin-bottom:10px;">
     <select id="salesMode">
-      <option value="current">الشفت الحالي</option>
-      <option value="all">كل المبيعات</option>
+      <option value="current">🟢 الشفت الحالي</option>
+      <option value="all">📊 كل المبيعات</option>
     </select>
 
     <button onclick="loadSales()">عرض</button>
   </div>
+
+  <div id="salesBox"></div>
+
+</div>
 
   <!-- 📊 النتائج -->
   <div id="salesBox"></div>
