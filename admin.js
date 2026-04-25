@@ -249,30 +249,8 @@ window.loadSales = async function() {
   const topEmployee = Object.entries(employeeSales)
     .sort((a, b) => b[1] - a[1])[0];
 
-  // 🔥 أكثر صنف (من order_items)
-  const orderIds = (data || []).map(o => o.id);
-
   let topProductText = "-";
 
-  if (orderIds.length > 0) {
-    const { data: itemsData } = await supabase
-      .from("order_items")
-      .select("name, qty, order_id")
-      .in("order_id", orderIds);
-
-    const productCount = {};
-
-    (itemsData || []).forEach(item => {
-      productCount[item.name] = (productCount[item.name] || 0) + Number(item.qty || 0);
-    });
-
-    const topProduct = Object.entries(productCount)
-      .sort((a, b) => b[1] - a[1])[0];
-
-    if (topProduct) {
-      topProductText = `${topProduct[0]} (${topProduct[1]})`;
-    }
-  }
 
   document.getElementById("salesBox").innerHTML = `
     <div class="card">
@@ -287,8 +265,11 @@ window.loadSales = async function() {
       ❌ الملغية: ${(cancelled || []).length}<br><br>
 
       🔥 أكثر صنف: ${topProductText}<br>
-      👑 أفضل موظف: ${topEmployee ? topEmployee[0] : "-"}
-
+👑 أفضل موظف: ${
+  topEmployee 
+  ? topEmployee[0] + " (" + topEmployee[1].toFixed(2) + " ر.س)"
+  : "-"
+}
     </div>
   `;
 };
