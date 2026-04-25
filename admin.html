@@ -107,27 +107,20 @@
 
   </div>
 
-  <!-- 💰 المبيعات -->
-<!-- 💰 المبيعات -->
-<div id="salesTab" class="admin-section" style="display:none;">
+ <div id="salesTab" class="admin-section" style="display:none;">
 
   <h3>💰 المبيعات</h3>
 
   <div style="margin-bottom:10px;">
-    <select id="salesMode">
+    <select id="salesMode" onchange="loadSales()">
       <option value="current">🟢 الشفت الحالي</option>
       <option value="today">📅 اليوم</option>
       <option value="all">📊 كل المبيعات</option>
     </select>
-
-    <button onclick="loadSales()">عرض</button>
   </div>
 
   <div id="salesBox"></div>
 
-</div>
-
-  <!-- 📊 النتائج -->
 </div>
 
   <!-- 📊 التقارير -->
