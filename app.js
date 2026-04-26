@@ -396,9 +396,9 @@ window.completeOrder = function () {
 
   const vat = subtotal * VAT_RATE;
 
-  const finalTotal = subtotal + vat;
+  const total = subtotal + vat;
 
-  openPaymentAndSave(finalTotal);
+openPaymentAndSave(total, subtotal, vat);
 };
 
 
@@ -416,7 +416,7 @@ async function loadActiveOrders() {
   renderActiveOrders();
 }
 
-function openPaymentAndSave(total) {
+function openPaymentAndSave(total, subtotal, vat) {
 
   const overlay = document.createElement("div");
   overlay.className = "popup-overlay";
@@ -552,7 +552,9 @@ if (editingOrderId) {
   await supabase
     .from("orders")
     .update({
-      total,
+      subtotal: subtotal,
+      vat: vat,
+      total: total,
       is_paid: true,
       cash_amount: cash,
       card_amount: card,
@@ -576,15 +578,17 @@ if (editingOrderId) {
   // ➕ طلب جديد
   const { data } = await supabase
     .from("orders")
-   .insert({
-  total,
-  status: "active",
-  is_paid: true,
-  cash_amount: cash,
-  card_amount: card,
-  payment_method: method,
-  shift_id: currentShiftId
-})
+    .insert({
+      subtotal: subtotal,
+      vat: vat,
+      total: total,
+      status: "active",
+      is_paid: true,
+      cash_amount: cash,
+      card_amount: card,
+      payment_method: method,
+      shift_id: currentShiftId
+    })
     .select()
     .single();
 
