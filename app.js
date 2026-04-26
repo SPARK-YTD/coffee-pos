@@ -390,11 +390,16 @@ window.completeOrder = function () {
     return;
   }
 
-  const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
+  const VAT_RATE = Number(localStorage.getItem("taxRate") || 0) / 100;
 
-  openPaymentAndSave(total);
+  const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
+
+  const vat = subtotal * VAT_RATE;
+
+  const finalTotal = subtotal + vat;
+
+  openPaymentAndSave(finalTotal);
 };
-
 
 
 let activeOrders = [];
