@@ -450,28 +450,23 @@ window.loadEmployeeReport = async function() {
 // 🔥 حفظ الضريبة
 window.saveTax = async function() {
 
-  // ✅ نجيب القيمة ونحولها رقم
   const rate = parseFloat(document.getElementById("taxRate")?.value);
 
-  // ❌ تحقق من الرقم
   if (isNaN(rate)) {
     alert("❌ اكتب رقم صحيح");
     return;
   }
 
-  // 🔒 (اختياري) تحقق من صلاحية الأدمن
-  if (localStorage.getItem("admin") !== "true") {
-    alert("❌ غير مصرح");
-    return;
-  }
-
   const { error } = await supabase
     .from("settings")
-    .update({ tax_rate: rate })
-    .eq("id", 1);
+    .upsert({
+      id: 1,            // 🔥 مهم جدًا
+      tax_rate: rate
+    });
 
   if (error) {
-    alert(error.message);
+    console.error(error);
+    alert("❌ خطأ في الحفظ");
     return;
   }
 
