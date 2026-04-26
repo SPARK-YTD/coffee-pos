@@ -446,3 +446,44 @@ window.loadEmployeeReport = async function() {
 
   document.getElementById("reportBox").innerHTML = html;
 };
+
+// 🔥 حفظ الضريبة
+window.saveTax = async function() {
+
+  const rate = document.getElementById("taxRate").value;
+
+  if (!rate) {
+    alert("اكتب النسبة");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("settings")
+    .update({ tax_rate: rate })
+    .eq("id", 1);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("✅ تم حفظ الضريبة");
+};
+
+
+// 🔥 تحميل الضريبة
+async function loadSettings() {
+
+  const { data } = await supabase
+    .from("settings")
+    .select("tax_rate")
+    .eq("id", 1)
+    .single();
+
+  if (data) {
+    document.getElementById("taxRate").value = data.tax_rate;
+  }
+}
+
+// 🔥 تشغيلها عند فتح الصفحة
+loadSettings();
