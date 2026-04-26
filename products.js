@@ -129,3 +129,10 @@ window.saveTax = function() {
 
   alert("✅ تم حفظ الضريبة");
 };
+
+window.addEventListener("load", () => {
+  const saved = localStorage.getItem("taxRate");
+  if (saved) {
+    document.getElementById("taxRate").value = saved;
+  }
+});
