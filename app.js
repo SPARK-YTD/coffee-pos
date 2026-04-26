@@ -395,6 +395,8 @@ window.completeOrder = async function () {
   .select("tax_rate")
   .eq("id", 1)
   .single();
+  
+  console.log("TAX FROM DB:", settings);
 
 const VAT_RATE = Number(settings?.tax_rate || 0) / 100;
 
