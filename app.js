@@ -383,14 +383,20 @@ loadCancelledOrders(currentShiftId);
 
 })();
 
-window.completeOrder = function () {
+window.completeOrder = async function () {
 
   if (!cart.length) {
     alert("السلة فاضية");
     return;
   }
 
-  const VAT_RATE = Number(localStorage.getItem("taxRate") || 0) / 100;
+  const { data: settings } = await supabase
+  .from("settings")
+  .select("tax_rate")
+  .eq("id", 1)
+  .single();
+
+const VAT_RATE = Number(settings?.tax_rate || 0) / 100;
 
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
@@ -430,7 +436,9 @@ function openPaymentAndSave(total, subtotal, vat) {
   </button>
 </div>
 
-      <div>الإجمالي: ${formatMoney(total)}</div>
+    <div>المجموع: ${formatMoney(subtotal)}</div>
+<div>الضريبة: ${formatMoney(vat)}</div>
+<div><strong>الإجمالي: ${formatMoney(total)}</strong></div>
 
       <label>💵 كاش:</label>
 <input type="number" id="cashInput" placeholder="0">
@@ -763,6 +771,15 @@ function prepareReceipt(order, cart, cash, card, method) {
       <span>${(i.price * i.qty).toFixed(2)}</span>
     </div>
   `).join("");
+
+// 🔥 الضريبة
+document.getElementById("printItems").innerHTML += `
+  <div class="receipt-row">
+    <span>الضريبة</span>
+    <span></span>
+    <span>${order.vat?.toFixed(2) || "0.00"}</span>
+  </div>
+`;
 
   // الإجمالي
   document.getElementById("printTotal").textContent =
