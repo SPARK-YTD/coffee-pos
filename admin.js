@@ -450,10 +450,18 @@ window.loadEmployeeReport = async function() {
 // 🔥 حفظ الضريبة
 window.saveTax = async function() {
 
-  const rate = document.getElementById("taxRate").value;
+  // ✅ نجيب القيمة ونحولها رقم
+  const rate = parseFloat(document.getElementById("taxRate")?.value);
 
-  if (!rate) {
-    alert("اكتب النسبة");
+  // ❌ تحقق من الرقم
+  if (isNaN(rate)) {
+    alert("❌ اكتب رقم صحيح");
+    return;
+  }
+
+  // 🔒 (اختياري) تحقق من صلاحية الأدمن
+  if (localStorage.getItem("admin") !== "true") {
+    alert("❌ غير مصرح");
     return;
   }
 
