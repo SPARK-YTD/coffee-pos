@@ -422,7 +422,11 @@ async function loadActiveOrders() {
   renderActiveOrders();
 }
 
-function openPaymentAndSave(total, subtotal, vat) {
+  function openPaymentAndSave(total, subtotal, vat) {
+  
+  const finalSubtotal = subtotal;
+  const finalVat = vat;
+  const finalTotal = total;
 
   const overlay = document.createElement("div");
   overlay.className = "popup-overlay";
@@ -557,12 +561,12 @@ remainBox.style.color = "green";
 if (editingOrderId) {
 
   // 🔄 تحديث الطلب
-  await supabase
+  const { error: updateError } = await supabase
     .from("orders")
     .update({
-      subtotal: subtotal,
-      vat: vat,
-      total: total,
+      subtotal: finalSubtotal,
+      vat: finalVat,
+      total: finalTotal,
       is_paid: true,
       cash_amount: cash,
       card_amount: card,
@@ -571,25 +575,36 @@ if (editingOrderId) {
     })
     .eq("id", editingOrderId);
 
+  if (updateError) {
+    alert("❌ خطأ في تحديث الطلب");
+    console.error(updateError);
+    return;
+  }
+
   // 🧹 حذف العناصر القديمة
-  await supabase
+  const { error: deleteError } = await supabase
     .from("order_items")
     .delete()
     .eq("order_id", editingOrderId);
 
-  order = { id: editingOrderId };
+  if (deleteError) {
+    alert("❌ خطأ في حذف العناصر");
+    console.error(deleteError);
+    return;
+  }
 
+  order = { id: editingOrderId };
   editingOrderId = null;
 
 } else {
 
   // ➕ طلب جديد
-  const { data } = await supabase
+  const { data, error: insertError } = await supabase
     .from("orders")
     .insert({
-      subtotal: subtotal,
-      vat: vat,
-      total: total,
+      subtotal: finalSubtotal,
+      vat: finalVat,
+      total: finalTotal,
       status: "active",
       is_paid: true,
       cash_amount: cash,
@@ -599,6 +614,12 @@ if (editingOrderId) {
     })
     .select()
     .single();
+
+  if (insertError) {
+    alert("❌ خطأ في إنشاء الطلب");
+    console.error(insertError);
+    return;
+  }
 
   order = data;
 }
