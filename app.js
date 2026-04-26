@@ -4,6 +4,20 @@ import { supabase } from "./supabase.js";
 let currentShiftId = null;
 let currentEmployee = null;
 
+let TAX_RATE = 0;
+
+async function loadTax() {
+  const { data } = await supabase
+    .from("settings")
+    .select("tax_rate")
+    .eq("id", 1)
+    .single();
+
+  TAX_RATE = Number(data?.tax_rate || 0) / 100;
+
+  console.log("🔥 TAX LOADED:", TAX_RATE);
+}
+
 function formatMoney(amount) {
   return `${Number(amount).toFixed(2)} ﷼`;
 }
@@ -351,9 +365,11 @@ window.filterCategory = function (category, btn) {
 /* =============================== */
 (async () => {
 
-  const savedShift = localStorage.getItem("shiftId");
+  await loadTax();
 
-if (savedShift) {
+  const savedShift = localStorage.getItem("shiftId");
+  
+  if (savedShift) {
 
   const { data } = await supabase
     .from("shifts")
@@ -390,23 +406,18 @@ window.completeOrder = async function () {
     return;
   }
 
-  const { data: settings } = await supabase
-  .from("settings")
-  .select("tax_rate")
-  .eq("id", 1)
-  .single();
-  
-  console.log("TAX FROM DB:", settings);
-
-const VAT_RATE = Number(settings?.tax_rate || 0) / 100;
+  if (TAX_RATE === 0) {
+    alert("⚠️ الضريبة ما تحملت");
+    return;
+  }
 
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
-  const vat = subtotal * VAT_RATE;
+  const vat = subtotal * TAX_RATE;
 
   const total = subtotal + vat;
 
-openPaymentAndSave(total, subtotal, vat);
+  openPaymentAndSave(total, subtotal, vat);
 };
 
 
