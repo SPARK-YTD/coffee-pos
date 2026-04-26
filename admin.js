@@ -488,8 +488,11 @@ async function loadSettings() {
     .eq("id", 1)
     .single();
 
-  if (data) {
-    document.getElementById("taxRate").value = data.tax_rate;
+  const input = document.getElementById("taxRate");
+
+  // ✅ نحمي الكود
+  if (data && input) {
+    input.value = data.tax_rate;
   }
 }
 
