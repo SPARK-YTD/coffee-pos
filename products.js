@@ -116,3 +116,16 @@ document.getElementById("submitBtn").onclick = async () => {
 
 // تشغيل
 loadProducts();
+
+window.saveTax = function() {
+  const rate = document.getElementById("taxRate").value;
+
+  if (!rate) {
+    alert("اكتب النسبة");
+    return;
+  }
+
+  localStorage.setItem("taxRate", rate);
+
+  alert("✅ تم حفظ الضريبة");
+};
