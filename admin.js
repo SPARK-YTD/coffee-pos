@@ -450,7 +450,23 @@ window.loadEmployeeReport = async function() {
 // 🔥 حفظ الضريبة
 window.saveTax = async function() {
 
-  const rate = parseFloat(document.getElementById("taxRate")?.value);
+  const pin = prompt("🔐 أدخل رقم المدير");
+
+  if (!pin) return;
+
+  const { data: manager } = await supabase
+    .from("employees")
+    .select("id, role")
+    .eq("pin", pin.trim())
+    .eq("role", "manager")
+    .maybeSingle();
+
+  if (!manager) {
+    alert("❌ غير مصرح");
+    return;
+  }
+
+  const rate = parseFloat(document.getElementById("taxRate").value);
 
   if (isNaN(rate)) {
     alert("❌ اكتب رقم صحيح");
@@ -460,7 +476,7 @@ window.saveTax = async function() {
   const { error } = await supabase
     .from("settings")
     .upsert({
-      id: 1,            // 🔥 مهم جدًا
+      id: 1,
       tax_rate: rate
     });
 
@@ -472,7 +488,6 @@ window.saveTax = async function() {
 
   alert("✅ تم حفظ الضريبة");
 };
-
 
 // 🔥 تحميل الضريبة
 async function loadSettings() {
