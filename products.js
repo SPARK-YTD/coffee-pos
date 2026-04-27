@@ -139,6 +139,22 @@ loadProducts();
 
 window.saveTax = async function() {
 
+  const pin = prompt("🔐 أدخل رقم المدير");
+
+  if (!pin) return;
+
+  const { data: manager } = await supabase
+    .from("employees")
+    .select("id, role")
+    .eq("pin", pin.trim())
+    .eq("role", "manager")
+    .maybeSingle();
+
+  if (!manager) {
+    alert("❌ غير مصرح");
+    return;
+  }
+
   const rate = parseFloat(document.getElementById("taxRate").value);
 
   if (isNaN(rate)) {
