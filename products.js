@@ -52,6 +52,11 @@ document.getElementById("submitBtn").onclick = async () => {
   const price = document.getElementById("price").value;
   const category = document.getElementById("category").value;
   const extras = document.getElementById("extras").value;
+  
+  if (!name) {
+  alert("❌ اكتب اسم المنتج");
+  return;
+}
 
   const hasVariants = document.getElementById("hasVariants").checked;
 
@@ -63,31 +68,40 @@ document.getElementById("submitBtn").onclick = async () => {
     const fileName = Date.now() + "_" + file.name;
 
     const { data, error } = await supabase.storage
-      .from("products")
-      .upload(fileName, file);
+  .from("products")
+  .upload(fileName, file);
 
-    if (!error) {
-      const { data: urlData } = supabase.storage
-        .from("products")
-        .getPublicUrl(fileName);
+if (error) {
+  console.error("❌ IMAGE UPLOAD ERROR:", error);
+  alert("فشل رفع الصورة");
+} else {
+  const { data: urlData } = supabase.storage
+    .from("products")
+    .getPublicUrl(fileName);
 
-      imageUrl = urlData.publicUrl;
-    }
+  imageUrl = urlData.publicUrl;
+}
   }
 
   // إدخال المنتج
-  const { data: product } = await supabase
-    .from("products")
-    .insert({
-      name,
-      price: hasVariants ? null : price,
-      category,
-      extras_text: extras,
-      has_variants: hasVariants,
-      image_url: imageUrl
-    })
-    .select()
-    .single();
+    const { data: product, error } = await supabase
+  .from("products")
+  .insert({
+    name,
+    price: hasVariants ? null : price,
+    category,
+    extras_text: extras,
+    has_variants: hasVariants,
+    image_url: imageUrl
+  })
+  .select()
+  .single();
+
+if (error) {
+  console.error(error);
+  alert("❌ خطأ في إضافة المنتج");
+  return;
+}
 
   // الأحجام
   if (hasVariants && product) {
@@ -110,6 +124,12 @@ document.getElementById("submitBtn").onclick = async () => {
   }
 
   alert("✅ تم إضافة المنتج");
+  
+  document.getElementById("name").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("extras").value = "";
+  document.getElementById("image").value = "";
+  document.getElementById("preview").style.display = "none";
 
   loadProducts();
 };
@@ -117,22 +137,47 @@ document.getElementById("submitBtn").onclick = async () => {
 // تشغيل
 loadProducts();
 
-window.saveTax = function() {
-  const rate = document.getElementById("taxRate").value;
+window.saveTax = async function() {
 
-  if (!rate) {
-    alert("اكتب النسبة");
+  const rate = parseFloat(document.getElementById("taxRate").value);
+
+  if (isNaN(rate)) {
+    alert("❌ اكتب رقم صحيح");
     return;
   }
 
-  localStorage.setItem("taxRate", rate);
+  const { error } = await supabase
+    .from("settings")
+    .upsert({
+      id: 1,
+      tax_rate: rate
+    });
+
+  if (error) {
+    console.error(error);
+    alert("❌ خطأ في الحفظ");
+    return;
+  }
 
   alert("✅ تم حفظ الضريبة");
 };
 
-window.addEventListener("load", () => {
-  const saved = localStorage.getItem("taxRate");
-  if (saved) {
-    document.getElementById("taxRate").value = saved;
+async function loadTax() {
+
+  const { data, error } = await supabase
+    .from("settings")
+    .select("tax_rate")
+    .eq("id", 1)
+    .single();
+
+  if (error) {
+    console.error("❌ TAX LOAD ERROR:", error);
+    return;
   }
-});
+
+  if (data) {
+    document.getElementById("taxRate").value = data.tax_rate;
+  }
+}
+
+loadTax();
