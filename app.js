@@ -24,11 +24,38 @@ function formatMoney(amount) {
 
 
 
-let items = [];
-let cart = [];
+  let items = [];
+  let cart = [];
 
+  function listenToTaxChanges() {
 
-async function openShiftPrompt() {
+  supabase
+    .channel("tax-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "settings",
+        filter: "id=eq.1"
+      },
+      (payload) => {
+
+        TAX_RATE = Number(payload.new.tax_rate || 0) / 100;
+
+        console.log("⚡ TAX UPDATED LIVE:", TAX_RATE);
+
+        if (cart.length > 0) {
+          renderCart();
+        }
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 REALTIME STATUS:", status);
+    });
+}
+
+  async function openShiftPrompt() {
 
   const pin = prompt("ادخل رقم الموظف (PIN)");
 
@@ -366,6 +393,7 @@ window.filterCategory = function (category, btn) {
 (async () => {
 
   await loadTax();
+  listenToTaxChanges();
 
   const savedShift = localStorage.getItem("shiftId");
   
@@ -406,9 +434,9 @@ window.completeOrder = async function () {
     return;
   }
 
-  if (TAX_RATE === 0) {
-    alert("⚠️ الضريبة ما تحملت");
-    return;
+  if (TAX_RATE === null || TAX_RATE === undefined) {
+  alert("⚠️ الضريبة ما تحملت");
+  return;
   }
 
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
