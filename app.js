@@ -1229,74 +1229,68 @@ window.sendReceiptWhatsApp = function () {
 
   let phone = document.getElementById("customerPhone")?.value;
 
+  // إذا ما فيه رقم → نطلبه
   if (!phone) {
-    alert("❌ ما فيه رقم عميل");
-    return;
+    phone = prompt("📱 أدخل رقم العميل");
+
+    if (!phone) {
+      alert("❌ تم الإلغاء");
+      return;
+    }
   }
 
   if (!lastOrder || !lastCart) {
-  alert("❌ سو عملية الدفع أول بعدين أرسل");
-  return;
-}
+    alert("❌ سو عملية الدفع أول بعدين أرسل");
+    return;
+  }
 
-  // 🔥 تنظيف الرقم
+  // تنظيف الرقم
   phone = phone.replace(/\D/g, "");
 
-// 🇸🇦 إذا سعودي ويبدأ بـ 05
-if (phone.startsWith("05")) {
-  phone = "966" + phone.substring(1);
-}
+  // 🇸🇦 سعودي
+  if (phone.startsWith("05")) {
+    phone = "966" + phone.substring(1);
+  }
+  // 🇧🇭 بحريني
+  else if (phone.length === 8) {
+    phone = "973" + phone;
+  }
 
-// 🇧🇭 إذا بحريني ويبدأ بـ 3 أو 6
-else if (phone.length === 8) {
-  phone = "973" + phone;
-}
-
-// 🌍 إذا فيه كود دولة (مثل 966 أو 973) نخليه زي ما هو
-
+  // ===============================
+  // 🧾 نص الفاتورة
+  // ===============================
   let message = `╔══════════════════════════╗
         ☕ *قهوة ترانكيلا* ☕
    ✨ تجربة قهوة استثنائية ✨
 ╚══════════════════════════╝
 
-📍 السعودية • الرياض
+📍 البحرين
 ═══════ ✦ ═══════
 
 🧾 *فاتورة رقم ${lastOrder.invoice_number || ""}*
+📅 ${new Date().toLocaleString()}
 ═══════ ✦ ═══════
-
 `;
 
-lastCart.forEach(i => {
-  const total = (i.qty * i.price).toFixed(2);
+  lastCart.forEach(i => {
+    const total = (i.qty * i.price).toFixed(2);
 
-  message += `
+    message += `
 🌿 *${i.name}*
-   ${i.qty} × ${i.price.toFixed(2)} = ${total} ريال
+   ${i.qty} × ${i.price.toFixed(2)} = ${total} ﷼
 ───────────────
 `;
-});
+  });
 
-message += `
-💰 *الإجمالي النهائي:* ${lastOrder.total.toFixed(2)} ريال
+  message += `
+💰 *الإجمالي:* ${lastOrder.total.toFixed(2)} ﷼
 ═══════ ✦ ═══════
 
 💖 *شكراً لاختياركم قهوة ترانكيلا*
-☕ *وجودكم يضيف لنا طعم أجمل للحياة*
-✨ *ننتظركم مرة أخرى بكل حب* ✨
-
-🖤 *نخدمكم بشغف… ونقدم لكم الأفضل دائماً*
-
-📅 ${new Date().toLocaleString()}
-
-╔══════════════════════════╗
-        ❤️ *مع تحياتنا* ❤️
-     ☕ قهوة ترانكيلا ☕
-╚══════════════════════════╝
+☕ ننتظركم مرة أخرى بكل حب
 `;
-  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-  console.log("WA URL:", url); // 🔥 للتأكد
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
   window.open(url, "_blank");
 };
