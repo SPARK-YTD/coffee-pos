@@ -684,6 +684,9 @@ if (editingOrderId) {
     lastCart = [...cart];
     cart = [];
     renderCart();
+    
+    document.getElementById("customerPhone").value = "";
+    
     loadActiveOrders();
     
     
