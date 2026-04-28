@@ -95,7 +95,7 @@ if (!openDay) {
   const { error: dayError } = await supabase
     .from("business_days")
     .insert({
-      day_date: new Date().toISOString(),
+     day_date: new Date().toISOString().split("T")[0],
       is_open: true,
       invoice_counter: 0
     });
@@ -1081,11 +1081,66 @@ window.closeShift = async function () {
 
   alert("✅ تم إغلاق الشفت");
 
-  const reopen = confirm("هل تبي تفتح شفت جديد؟");
+// ===============================
+// 🔥 تحقق هل فيه شفتات مفتوحة
+// ===============================
+const { data: openShifts } = await supabase
+  .from("shifts")
+  .select("id")
+  .eq("is_open", true);
 
-  if (reopen) {
-    await openShiftPrompt();
+// إذا ما فيه أي شفت → نقفل اليوم
+if (!openShifts || openShifts.length === 0) {
+
+  const { data: day } = await supabase
+    .from("business_days")
+    .select("*")
+    .eq("is_open", true)
+    .maybeSingle();
+
+if (day) {
+
+  // 🔥 1. نحسب مبيعات اليوم كامل
+  const startOfDay = new Date(day.day_date + "T00:00:00");
+  const endOfDay = new Date(day.day_date + "T23:59:59");
+
+  const { data: dayOrders } = await supabase
+    .from("orders")
+    .select("total")
+    .eq("is_paid", true)
+    .gte("created_at", startOfDay.toISOString())
+    .lte("created_at", endOfDay.toISOString());
+
+  let dayTotal = 0;
+
+  (dayOrders || []).forEach(o => {
+    dayTotal += Number(o.total || 0);
+  });
+
+  const dayCount = dayOrders?.length || 0;
+
+  // 🔥 2. نقفل اليوم ونحفظ التقرير
+  await supabase
+    .from("business_days")
+    .update({
+      is_open: false,
+      closed_at: new Date().toISOString(),
+      total_sales: dayTotal,
+      total_orders: dayCount
+    })
+    .eq("id", day.id);
+
+  console.log("📅 تم إغلاق يوم العمل");
+  alert("📅 تم إغلاق يوم العمل");
   }
+}
+
+// 🔁 بعدها تسأله يفتح شفت جديد
+const reopen = confirm("هل تبي تفتح شفت جديد؟");
+
+if (reopen) {
+  await openShiftPrompt();
+}
 };
 // ===============================
 // 🔥 كود المنيو (زر ☰)
