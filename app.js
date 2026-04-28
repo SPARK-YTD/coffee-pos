@@ -775,16 +775,15 @@ actionOverlay.querySelector("#waBtn").onclick = () => {
   actionOverlay.remove(); 
 };
 
-// ❌ إغلاق
-actionOverlay.querySelector("#closeBtn").onclick = () => {
+  // ❌ إغلاق
+  actionOverlay.querySelector("#closeBtn").onclick = () => {
   actionOverlay.remove();
-};
+  };
 
-actionOverlay.onclick = (e) => {
+  actionOverlay.onclick = (e) => {
   if (e.target === actionOverlay) actionOverlay.remove();
-};
+  };
 
-};
 
 function renderActiveOrders() {
 
