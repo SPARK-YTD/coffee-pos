@@ -785,8 +785,9 @@ actionOverlay.onclick = (e) => {
   if (e.target === actionOverlay) actionOverlay.remove();
 };
 
-};
+}; // يقفل onclick
 
+}; // 🔥 يقفل openPaymentAndSave
 function renderActiveOrders() {
 
   const box = document.getElementById("activeOrders");
