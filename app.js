@@ -769,22 +769,23 @@ actionOverlay.querySelector("#printBtn").onclick = () => {
   }, 300);
 };
 
+
 // 📱 واتساب
 actionOverlay.querySelector("#waBtn").onclick = () => {
   window.sendReceiptWhatsApp();
   actionOverlay.remove(); 
 };
 
-  // ❌ إغلاق
-  actionOverlay.querySelector("#closeBtn").onclick = () => {
+// ❌ إغلاق
+actionOverlay.querySelector("#closeBtn").onclick = () => {
   actionOverlay.remove();
-  };
+};
 
-  actionOverlay.onclick = (e) => {
+actionOverlay.onclick = (e) => {
   if (e.target === actionOverlay) actionOverlay.remove();
-  };
-  };
+};
 
+};
 
 function renderActiveOrders() {
 
@@ -795,19 +796,20 @@ function renderActiveOrders() {
 
     const div = document.createElement("div");
     div.className = order.is_prepared
-  ? "order-box prepared"
-  : "order-box";
+      ? "order-box prepared"
+      : "order-box";
 
     div.innerHTML = `
-  <strong>🧾 فاتورة رقم ${order.invoice_number || order.id.slice(0,6)}</strong><br>
-  💰 ${formatMoney(order.total)}<br> ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br>
-${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
+      <strong>🧾 فاتورة رقم ${order.invoice_number || order.id.slice(0,6)}</strong><br>
+      💰 ${formatMoney(order.total)}<br>
+      ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br>
+      ${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
 
-  <button onclick="viewOrder('${order.id}')">👁 عرض</button>
-  <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
-  <button onclick="cancelOrder('${order.id}')">❌ إلغاء</button>
-  <button onclick="markCompleted('${order.id}')">تم التسليم </button>
-`;
+      <button onclick="viewOrder('${order.id}')">👁 عرض</button>
+      <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
+      <button onclick="cancelOrder('${order.id}')">❌ إلغاء</button>
+      <button onclick="markCompleted('${order.id}')">تم التسليم</button>
+    `;
 
     box.appendChild(div);
   });
