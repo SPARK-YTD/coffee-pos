@@ -1203,12 +1203,19 @@ window.sendReceiptWhatsApp = function () {
   }
 
   // 🔥 تنظيف الرقم
-  phone = phone.replace(/\D/g, ""); // يشيل أي رموز
+  phone = phone.replace(/\D/g, "");
 
-  // 🔥 إذا ما فيه كود الدولة (البحرين)
-  if (!phone.startsWith("973")) {
-    phone = "973" + phone;
-  }
+// 🇸🇦 إذا سعودي ويبدأ بـ 05
+if (phone.startsWith("05")) {
+  phone = "966" + phone.substring(1);
+}
+
+// 🇧🇭 إذا بحريني ويبدأ بـ 3 أو 6
+else if (phone.length === 8) {
+  phone = "973" + phone;
+}
+
+// 🌍 إذا فيه كود دولة (مثل 966 أو 973) نخليه زي ما هو
 
   let message = `
 ╔══════════════════════════╗
