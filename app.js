@@ -26,6 +26,8 @@ function formatMoney(amount) {
 
   let items = [];
   let cart = [];
+  let lastOrder = null;
+  let lastCart = null;
 
   function listenToTaxChanges() {
 
@@ -677,6 +679,9 @@ if (editingOrderId) {
     await supabase.from("order_items").insert(itemsToInsert);
 
     prepareReceipt(order, cart, cash, card, method);
+    
+    lastOrder = order;
+    lastCart = [...cart];
     cart = [];
     renderCart();
     loadActiveOrders();
@@ -1135,4 +1140,31 @@ window.showReport = async function () {
 🧾 الطلبات: ${totalOrders}
 ❌ الملغية: ${totalCancelled}
   `);
+};
+
+window.sendReceiptWhatsApp = function () {
+
+  const phone = document.getElementById("customerPhone")?.value;
+
+  if (!phone) {
+    alert("❌ ما فيه رقم عميل");
+    return;
+  }
+
+  if (!lastOrder || !lastCart) {
+    alert("❌ ما فيه فاتورة");
+    return;
+  }
+
+  let message = `🧾 فاتورة\n\n`;
+
+  lastCart.forEach(i => {
+    message += `- ${i.name} × ${i.qty}\n`;
+  });
+
+  message += `\n💰 الإجمالي: ${lastOrder.total.toFixed(2)} ريال`;
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+  window.open(url, "_blank");
 };
