@@ -80,6 +80,34 @@ if (!emp) {
 }
 
   currentEmployee = emp;
+  
+  // ===============================
+// 🔥 تأكد فيه يوم عمل مفتوح
+// ===============================
+const { data: openDay } = await supabase
+  .from("business_days")
+  .select("*")
+  .eq("is_open", true)
+  .maybeSingle();
+
+if (!openDay) {
+
+  const { error: dayError } = await supabase
+    .from("business_days")
+    .insert({
+      day_date: new Date().toISOString(),
+      is_open: true,
+      invoice_counter: 0
+    });
+
+  if (dayError) {
+    console.error("DAY ERROR:", dayError);
+    alert("❌ خطأ في فتح يوم العمل");
+    return;
+  }
+
+  console.log("📅 تم فتح يوم عمل جديد");
+}
 
   // 🔍 نتحقق هل فيه شفت مفتوح
 const { data: existingShift } = await supabase
