@@ -446,3 +446,86 @@ body {
   background: #6d4c41;
   color: white;
 }
+
+/* ===============================
+   🔥 Receipt VIP Design
+================================ */
+
+.receipt {
+  width: 320px;
+  background: linear-gradient(180deg, #0f5132, #145c3a);
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 18px;
+  font-family: "Tahoma", sans-serif;
+  direction: rtl;
+  display: none;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.receipt .header {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.receipt .sub {
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
+
+.receipt .divider {
+  border-bottom: 1px dashed rgba(255,255,255,0.6);
+  margin: 10px 0;
+}
+
+.receipt .invoice {
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.receipt .table-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.receipt .receipt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin: 5px 0;
+}
+
+.receipt .totals {
+  font-size: 14px;
+}
+
+.receipt .totals div {
+  margin: 4px 0;
+}
+
+.receipt .grand {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.receipt .thanks {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.receipt .footer {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.8;
+}
