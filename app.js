@@ -603,7 +603,7 @@ remainBox.style.color = "green";
 
 if (editingOrderId) {
 
-  // 🔄 تحديث الطلب
+  // 🔄 تحديث الطلب (بدون تغيير رقم الفاتورة)
   const { error: updateError } = await supabase
     .from("orders")
     .update({
@@ -642,6 +642,18 @@ if (editingOrderId) {
 } else {
 
   // ➕ طلب جديد
+
+  // 🔥 رقم الفاتورة من الداتابيس (آمن 100%)
+const { data: newCounter, error } = await supabase
+  .rpc("get_next_invoice");
+
+if (error || !newCounter) {
+  alert("❌ خطأ في رقم الفاتورة");
+  console.error(error);
+  return;
+}
+
+  // 🔥 إنشاء الطلب مع رقم الفاتورة
   const { data, error: insertError } = await supabase
     .from("orders")
     .insert({
@@ -653,7 +665,8 @@ if (editingOrderId) {
       cash_amount: cash,
       card_amount: card,
       payment_method: method,
-      shift_id: currentShiftId
+      shift_id: currentShiftId,
+      invoice_number: newCounter
     })
     .select()
     .single();
@@ -685,7 +698,8 @@ if (editingOrderId) {
     cart = [];
     renderCart();
     
-    document.getElementById("customerPhone").value = "";
+    const phoneInput = document.getElementById("customerPhone");
+    if (phoneInput) phoneInput.value = "";
     
     loadActiveOrders();
     
@@ -723,7 +737,7 @@ function renderActiveOrders() {
   : "order-box";
 
     div.innerHTML = `
-  <strong>فاتورة رقم ${order.id.slice(0,6)}</strong><br>
+  <strong>🧾 فاتورة رقم ${order.invoice_number || order.id.slice(0,6)}</strong><br>
   💰 ${formatMoney(order.total)}<br> ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br>
 ${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
 
@@ -826,8 +840,7 @@ function prepareReceipt(order, cart, cash, card, method) {
 
   // رقم الطلب
   document.getElementById("printOrderId").textContent =
-    order.id ? order.id.slice(0,6) : "000000";
-
+  order.invoice_number || order.id.slice(0,6);
   // التاريخ
   document.getElementById("printDate").textContent =
     new Date().toLocaleString();
@@ -1159,13 +1172,13 @@ window.sendReceiptWhatsApp = function () {
     return;
   }
 
-  let message = `🧾 فاتورة\n\n`;
+  let message = `🧾 فاتورة رقم ${lastOrder.invoice_number || ""}\n\n`;
 
-  lastCart.forEach(i => {
-    message += `- ${i.name} × ${i.qty}\n`;
-  });
+lastCart.forEach(i => {
+  message += `- ${i.name} × ${i.qty}\n`;
+});
 
-  message += `\n💰 الإجمالي: ${lastOrder.total.toFixed(2)} ريال`;
+message += `\n💰 الإجمالي: ${lastOrder.total.toFixed(2)} ريال`;
 
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
