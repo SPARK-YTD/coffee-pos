@@ -1225,88 +1225,53 @@ window.showReport = async function () {
   `);
 };
 
-window.sendReceiptWhatsApp = function () {
+window.sendReceiptWhatsApp = async function () {
 
   let phone = document.getElementById("customerPhone")?.value;
 
-  // إذا ما فيه رقم → نطلبه
   if (!phone) {
     phone = prompt("📱 أدخل رقم العميل");
-
-    if (!phone) {
-      alert("❌ تم الإلغاء");
-      return;
-    }
+    if (!phone) return;
   }
 
   if (!lastOrder || !lastCart) {
-    alert("❌ سو عملية الدفع أول بعدين أرسل");
+    alert("❌ سو عملية الدفع أول");
     return;
   }
 
   // تنظيف الرقم
   phone = phone.replace(/\D/g, "");
 
-  // 🇸🇦 سعودي
   if (phone.startsWith("05")) {
     phone = "966" + phone.substring(1);
-  }
-  // 🇧🇭 بحريني
-  else if (phone.length === 8) {
+  } else if (phone.length === 8) {
     phone = "973" + phone;
   }
 
-  // ===============================
-  // 🧾 نص الفاتورة
-  // ===============================
-  let message = `╔══════════════════════════╗
-        ☕ *قهوة ترانكيلا* ☕
-   ✨ تجربة قهوة استثنائية ✨
-╚══════════════════════════╝
+  prepareReceipt(lastOrder, lastCart, 0, 0, "cash");
 
-📍 *السعودية / الرياض*
-━━━━━━━━━━━━━━━━━━━━━━
+const printArea = document.getElementById("printArea");
 
-🧾 *فاتورة رقم:* ${lastOrder.invoice_number || ""}
-📅 ${new Date().toLocaleString()}
-━━━━━━━━━━━━━━━━━━━━━━
+printArea.style.display = "block";
 
-        📦 *تفاصيل الطلب*
-━━━━━━━━━━━━━━━━━━━━━━
-`;
+await new Promise(r => setTimeout(r, 300));
 
-lastCart.forEach(i => {
-  const total = (i.qty * i.price).toFixed(2);
+html2canvas(printArea).then(canvas => {
 
-  message += `▸ *${i.name}*
-   ${i.qty} × ${i.price.toFixed(2)} = *${total} ﷼*
-──────────────────────
-`;
-});
+  const image = canvas.toDataURL("image/png");
 
-const subtotal = lastCart.reduce((s, i) => s + i.qty * i.price, 0);
-const vat = subtotal * 0.05;
-const total = lastOrder.total;
+  const link = document.createElement("a");
+  link.href = image;
+  link.download = `invoice-${lastOrder.invoice_number}.png`;
+  link.click();
 
-message += `
-        📊 *الحساب*
-━━━━━━━━━━━━━━━━━━━━━━
-المجموع        : ${subtotal.toFixed(2)} ﷼
-الضريبة (5%)   : ${vat.toFixed(2)} ﷼
-━━━━━━━━━━━━━━━━━━━━━━
-💰 *الإجمالي النهائي:* ${total.toFixed(2)} ﷼
-━━━━━━━━━━━━━━━━━━━━━━
-
-🌿 *شكراً لزيارتكم*
-🖤 *نسعد بخدمتكم دائماً*
-
-📞 لأي استفسار تواصل معنا
-╚══════════════════════════╝
-`;
-
-  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
+  const url = `https://wa.me/${phone}`;
   window.open(url, "_blank");
+
+  printArea.style.display = "none";
+
+  alert("✅ تم تحميل صورة الفاتورة\n📌 أرسلها من الواتساب");
+});
 };
 
 window.closeDay = async function () {
