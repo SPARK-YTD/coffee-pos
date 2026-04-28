@@ -1198,9 +1198,10 @@ window.sendReceiptWhatsApp = function () {
   }
 
   if (!lastOrder || !lastCart) {
-    alert("❌ ما فيه فاتورة");
-    return;
-  }
+  alert("⚠️ لازم تكمل الطلب أول");
+  completeOrder(); // 🔥 يفتح شاشة الدفع
+  return;
+}
 
   // 🔥 تنظيف الرقم
   phone = phone.replace(/\D/g, "");
@@ -1217,8 +1218,7 @@ else if (phone.length === 8) {
 
 // 🌍 إذا فيه كود دولة (مثل 966 أو 973) نخليه زي ما هو
 
-  let message = `
-╔══════════════════════════╗
+  let message = `╔══════════════════════════╗
         ☕ *قهوة ترانكيلا* ☕
    ✨ تجربة قهوة استثنائية ✨
 ╚══════════════════════════╝
