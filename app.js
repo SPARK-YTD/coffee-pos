@@ -1264,30 +1264,44 @@ window.sendReceiptWhatsApp = function () {
    ✨ تجربة قهوة استثنائية ✨
 ╚══════════════════════════╝
 
-📍 البحرين
-═══════ ✦ ═══════
+📍 *السعودية / الرياض*
+━━━━━━━━━━━━━━━━━━━━━━
 
-🧾 *فاتورة رقم ${lastOrder.invoice_number || ""}*
+🧾 *فاتورة رقم:* ${lastOrder.invoice_number || ""}
 📅 ${new Date().toLocaleString()}
-═══════ ✦ ═══════
+━━━━━━━━━━━━━━━━━━━━━━
+
+        📦 *تفاصيل الطلب*
+━━━━━━━━━━━━━━━━━━━━━━
 `;
 
-  lastCart.forEach(i => {
-    const total = (i.qty * i.price).toFixed(2);
+lastCart.forEach(i => {
+  const total = (i.qty * i.price).toFixed(2);
 
-    message += `
-🌿 *${i.name}*
-   ${i.qty} × ${i.price.toFixed(2)} = ${total} ﷼
-───────────────
+  message += `▸ *${i.name}*
+   ${i.qty} × ${i.price.toFixed(2)} = *${total} ﷼*
+──────────────────────
 `;
-  });
+});
 
-  message += `
-💰 *الإجمالي:* ${lastOrder.total.toFixed(2)} ﷼
-═══════ ✦ ═══════
+const subtotal = lastCart.reduce((s, i) => s + i.qty * i.price, 0);
+const vat = subtotal * 0.05;
+const total = lastOrder.total;
 
-💖 *شكراً لاختياركم قهوة ترانكيلا*
-☕ ننتظركم مرة أخرى بكل حب
+message += `
+        📊 *الحساب*
+━━━━━━━━━━━━━━━━━━━━━━
+المجموع        : ${subtotal.toFixed(2)} ﷼
+الضريبة (5%)   : ${vat.toFixed(2)} ﷼
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *الإجمالي النهائي:* ${total.toFixed(2)} ﷼
+━━━━━━━━━━━━━━━━━━━━━━
+
+🌿 *شكراً لزيارتكم*
+🖤 *نسعد بخدمتكم دائماً*
+
+📞 لأي استفسار تواصل معنا
+╚══════════════════════════╝
 `;
 
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
