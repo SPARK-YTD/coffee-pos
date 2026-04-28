@@ -946,11 +946,6 @@ document.getElementById("printItems").innerHTML += `
     extra = `<br>الباقي: ${change.toFixed(2)} ريال`;
   }
 
-  document.getElementById("printPayment").innerHTML =
-    `طريقة الدفع: ${paymentText}<br>
-     كاش: ${cash.toFixed(2)}<br>
-     بطاقة: ${card.toFixed(2)}
-     ${extra}`;
 }
 loadActiveOrders();
 
