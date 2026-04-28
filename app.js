@@ -1210,14 +1210,47 @@ window.sendReceiptWhatsApp = function () {
     phone = "973" + phone;
   }
 
-  let message = `🧾 فاتورة رقم ${lastOrder.invoice_number || ""}\n\n`;
+  let message = `
+╔══════════════════════════╗
+        ☕ *قهوة ترانكيلا* ☕
+   ✨ تجربة قهوة استثنائية ✨
+╚══════════════════════════╝
 
-  lastCart.forEach(i => {
-    message += `- ${i.name} × ${i.qty}\n`;
-  });
+📍 السعودية • الرياض
+═══════ ✦ ═══════
 
-  message += `\n💰 الإجمالي: ${lastOrder.total.toFixed(2)} ريال`;
+🧾 *فاتورة رقم ${lastOrder.invoice_number || ""}*
+═══════ ✦ ═══════
 
+`;
+
+lastCart.forEach(i => {
+  const total = (i.qty * i.price).toFixed(2);
+
+  message += `
+🌿 *${i.name}*
+   ${i.qty} × ${i.price.toFixed(2)} = ${total} ريال
+───────────────
+`;
+});
+
+message += `
+💰 *الإجمالي النهائي:* ${lastOrder.total.toFixed(2)} ريال
+═══════ ✦ ═══════
+
+💖 *شكراً لاختياركم قهوة ترانكيلا*
+☕ *وجودكم يضيف لنا طعم أجمل للحياة*
+✨ *ننتظركم مرة أخرى بكل حب* ✨
+
+🖤 *نخدمكم بشغف… ونقدم لكم الأفضل دائماً*
+
+📅 ${new Date().toLocaleString()}
+
+╔══════════════════════════╗
+        ❤️ *مع تحياتنا* ❤️
+     ☕ قهوة ترانكيلا ☕
+╚══════════════════════════╝
+`;
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
   console.log("WA URL:", url); // 🔥 للتأكد
