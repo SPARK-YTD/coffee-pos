@@ -738,8 +738,6 @@ if (error || !newCounter) {
 const doPrint = confirm("🖨 هل تبي تطبع الفاتورة؟");
 
 if (doPrint) {
-  
-  if (doPrint) {
   const printArea = document.getElementById("printArea");
 
   printArea.style.display = "block";
