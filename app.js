@@ -735,22 +735,27 @@ if (error || !newCounter) {
 
     overlay.remove();
 
-const printArea = document.getElementById("printArea");
+const doPrint = confirm("🖨 هل تبي تطبع الفاتورة؟");
 
-printArea.style.display = "block";
+if (doPrint) {
+  
+  if (doPrint) {
+  const printArea = document.getElementById("printArea");
 
-printArea.offsetHeight;
-
-setTimeout(() => {
-  window.print();
+  printArea.style.display = "block";
+  printArea.offsetHeight;
 
   setTimeout(() => {
-    printArea.style.display = "none";
-  }, 300);
+    window.print();
 
-}, 600);
-  };
+    setTimeout(() => {
+      printArea.style.display = "none";
+    }, 300);
+
+  }, 300);
 }
+
+};
 
 function renderActiveOrders() {
 
@@ -1198,8 +1203,7 @@ window.sendReceiptWhatsApp = function () {
   }
 
   if (!lastOrder || !lastCart) {
-  alert("⚠️ لازم تكمل الطلب أول");
-  completeOrder(); // 🔥 يفتح شاشة الدفع
+  alert("❌ سو عملية الدفع أول بعدين أرسل");
   return;
 }
 
