@@ -1081,59 +1081,6 @@ window.closeShift = async function () {
 
   alert("✅ تم إغلاق الشفت");
 
-// ===============================
-// 🔥 تحقق هل فيه شفتات مفتوحة
-// ===============================
-const { data: openShifts } = await supabase
-  .from("shifts")
-  .select("id")
-  .eq("is_open", true);
-
-// إذا ما فيه أي شفت → نقفل اليوم
-if (!openShifts || openShifts.length === 0) {
-
-  const { data: day } = await supabase
-    .from("business_days")
-    .select("*")
-    .eq("is_open", true)
-    .maybeSingle();
-
-if (day) {
-
-  // 🔥 1. نحسب مبيعات اليوم كامل
-  const startOfDay = new Date(day.day_date + "T00:00:00");
-  const endOfDay = new Date(day.day_date + "T23:59:59");
-
-  const { data: dayOrders } = await supabase
-    .from("orders")
-    .select("total")
-    .eq("is_paid", true)
-    .gte("created_at", startOfDay.toISOString())
-    .lte("created_at", endOfDay.toISOString());
-
-  let dayTotal = 0;
-
-  (dayOrders || []).forEach(o => {
-    dayTotal += Number(o.total || 0);
-  });
-
-  const dayCount = dayOrders?.length || 0;
-
-  // 🔥 2. نقفل اليوم ونحفظ التقرير
-  await supabase
-    .from("business_days")
-    .update({
-      is_open: false,
-      closed_at: new Date().toISOString(),
-      total_sales: dayTotal,
-      total_orders: dayCount
-    })
-    .eq("id", day.id);
-
-  console.log("📅 تم إغلاق يوم العمل");
-  alert("📅 تم إغلاق يوم العمل");
-  }
-}
 
 // 🔁 بعدها تسأله يفتح شفت جديد
 const reopen = confirm("هل تبي تفتح شفت جديد؟");
@@ -1275,5 +1222,71 @@ window.sendReceiptWhatsApp = function () {
 
   console.log("WA URL:", url); // 🔥 للتأكد
 
-  window.location.href = url;
+  window.open(url, "_blank");
+};
+
+window.closeDay = async function () {
+
+  const { data: day } = await supabase
+    .from("business_days")
+    .select("*")
+    .eq("is_open", true)
+    .maybeSingle();
+
+  if (!day) {
+    alert("❌ ما فيه يوم مفتوح");
+    return;
+  }
+
+  const { data: openShifts } = await supabase
+    .from("shifts")
+    .select("id")
+    .eq("is_open", true);
+
+  if (openShifts && openShifts.length > 0) {
+    alert("❌ لازم تقفل كل الشفتات أول");
+    return;
+  }
+
+    const start = new Date(day.day_date);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("total")
+    .eq("is_paid", true)
+    .gte("created_at", start.toISOString())
+    .lt("created_at", end.toISOString());
+
+  let total = 0;
+
+  (orders || []).forEach(o => {
+    total += Number(o.total || 0);
+  });
+
+  const count = orders?.length || 0;
+
+  const ok = confirm(`
+📊 تقرير اليوم:
+
+💰 الإجمالي: ${formatMoney(total)}
+🧾 الطلبات: ${count}
+
+تأكيد الإغلاق؟
+  `);
+
+  if (!ok) return;
+
+  await supabase
+    .from("business_days")
+    .update({
+      is_open: false,
+      closed_at: new Date().toISOString(),
+      total_sales: total,
+      total_orders: count
+    })
+    .eq("id", day.id);
+
+  alert("📅 تم إغلاق يوم العمل");
 };
