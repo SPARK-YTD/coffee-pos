@@ -783,6 +783,7 @@ actionOverlay.querySelector("#waBtn").onclick = () => {
   actionOverlay.onclick = (e) => {
   if (e.target === actionOverlay) actionOverlay.remove();
   };
+  };
 
 
 function renderActiveOrders() {
