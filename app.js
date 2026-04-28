@@ -735,9 +735,25 @@ if (error || !newCounter) {
 
     overlay.remove();
 
-const doPrint = confirm("🖨 هل تبي تطبع الفاتورة؟");
+const actionOverlay = document.createElement("div");
+actionOverlay.className = "popup-overlay";
 
-if (doPrint) {
+actionOverlay.innerHTML = `
+  <div class="popup-box" style="text-align:center">
+    <h3>✅ تم الدفع بنجاح</h3>
+    <p>اختر الإجراء</p>
+
+    <button id="printBtn" style="margin:5px">🖨 طباعة الفاتورة</button>
+    <button id="waBtn" style="margin:5px">📱 إرسال واتساب</button>
+    <button id="closeBtn" class="cancel-btn">❌ إغلاق</button>
+  </div>
+`;
+
+document.body.appendChild(actionOverlay);
+
+// 🖨 طباعة
+// 🖨 طباعة
+actionOverlay.querySelector("#printBtn").onclick = () => {
   const printArea = document.getElementById("printArea");
 
   printArea.style.display = "block";
@@ -748,10 +764,25 @@ if (doPrint) {
 
     setTimeout(() => {
       printArea.style.display = "none";
+      actionOverlay.remove(); // 🔥 هنا
     }, 300);
-
   }, 300);
-}
+};
+
+// 📱 واتساب
+actionOverlay.querySelector("#waBtn").onclick = () => {
+  window.sendReceiptWhatsApp();
+  actionOverlay.remove(); 
+};
+
+// ❌ إغلاق
+actionOverlay.querySelector("#closeBtn").onclick = () => {
+  actionOverlay.remove();
+};
+
+actionOverlay.onclick = (e) => {
+  if (e.target === actionOverlay) actionOverlay.remove();
+};
 
 };
 
