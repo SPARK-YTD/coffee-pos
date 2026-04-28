@@ -1275,5 +1275,5 @@ window.sendReceiptWhatsApp = function () {
 
   console.log("WA URL:", url); // 🔥 للتأكد
 
-  window.open(url, "_blank");
+  window.location.href = url;
 };
