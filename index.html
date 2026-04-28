@@ -101,60 +101,57 @@
 
 <script type="module" src="app.js?v=1"></script>
 
-<div id="printArea" class="print-area">
+<div id="printArea" class="receipt">
 
-  <div class="receipt">
+  <div class="header">
+    ☕ قهوة ترانكيلا ☕
+  </div>
 
-    <!-- اسم المحل -->
-    <div class="receipt-header">
-      <div class="title">☕ كاشير المقهى</div>
-      <div>📍 البحرين</div>
-    </div>
+  <div class="sub">
+    البحرين 📍
+  </div>
 
-    <div class="line"></div>
+  <div class="divider"></div>
 
-    <!-- معلومات الطلب -->
-    <div class="receipt-info">
-      <div>رقم الطلب: <span id="printOrderId"></span></div>
-      <div id="printDate"></div>
-    </div>
+  <div class="invoice">
+    🧾 فاتورة رقم <span id="printOrderId"></span>
+  </div>
 
-    <div class="line"></div>
+  <div class="divider"></div>
 
-    <!-- العناصر -->
-    <div class="receipt-items">
+  <div class="table-header">
+    <span>الصنف</span>
+    <span>الكمية</span>
+    <span>السعر</span>
+  </div>
 
-      <div class="receipt-row header">
-        <span>الصنف</span>
-        <span>العدد</span>
-        <span>السعر</span>
-      </div>
+  <div id="printItems"></div>
 
-      <div id="printItems"></div>
+  <div class="divider"></div>
 
-    </div>
+  <div class="totals">
+    <div>المجموع: <span id="printSubtotal"></span></div>
+    <div>الضريبة: <span id="printVat"></span></div>
+    <div class="grand">الإجمالي: <span id="printTotal"></span></div>
+  </div>
 
-    <div class="line"></div>
+  <div class="divider"></div>
 
-    <!-- الإجمالي -->
-    <div class="receipt-total">
-      الإجمالي: <span id="printTotal"></span>
-    </div>
+  <div class="thanks">
+    🌿 شكراً لزيارتكم 🌿  
+    <br>
+    🖤 نسعد بخدمتكم دائماً
+  </div>
 
-    <div class="line"></div>
-
-    <!-- الدفع -->
-    <div id="printPayment" class="receipt-payment"></div>
-
-    <div class="line"></div>
-
-    <!-- رسالة -->
-    <div class="receipt-footer">
-      شكراً لزيارتكم ❤️
-    </div>
-
+  <div class="footer">
+    📅 <span id="printDate"></span>
   </div>
 
 </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
+
 </body>
 </html>
