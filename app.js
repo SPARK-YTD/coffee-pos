@@ -1243,7 +1243,7 @@ window.showReport = async function () {
 
 window.sendReceiptWhatsApp = function () {
 
-  const phone = document.getElementById("customerPhone")?.value;
+  let phone = document.getElementById("customerPhone")?.value;
 
   if (!phone) {
     alert("❌ ما فيه رقم عميل");
@@ -1255,15 +1255,25 @@ window.sendReceiptWhatsApp = function () {
     return;
   }
 
+  // 🔥 تنظيف الرقم
+  phone = phone.replace(/\D/g, ""); // يشيل أي رموز
+
+  // 🔥 إذا ما فيه كود الدولة (البحرين)
+  if (!phone.startsWith("973")) {
+    phone = "973" + phone;
+  }
+
   let message = `🧾 فاتورة رقم ${lastOrder.invoice_number || ""}\n\n`;
 
-lastCart.forEach(i => {
-  message += `- ${i.name} × ${i.qty}\n`;
-});
+  lastCart.forEach(i => {
+    message += `- ${i.name} × ${i.qty}\n`;
+  });
 
-message += `\n💰 الإجمالي: ${lastOrder.total.toFixed(2)} ريال`;
+  message += `\n💰 الإجمالي: ${lastOrder.total.toFixed(2)} ريال`;
 
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+  console.log("WA URL:", url); // 🔥 للتأكد
 
   window.open(url, "_blank");
 };
