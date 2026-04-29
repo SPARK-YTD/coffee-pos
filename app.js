@@ -1327,12 +1327,22 @@ window.closeDay = async function () {
   }
 
   const { data: openShifts } = await supabase
-    .from("shifts")
-    .select("id")
-    .eq("is_open", true);
+  .from("shifts")
+  .select(`
+    id,
+    employees (
+      name
+    )
+  `)
+  .eq("is_open", true);
 
 if (openShifts && openShifts.length > 0) {
-  alert("❌ لازم تقفل كل الشفتات أول");
+
+  const names = openShifts
+    .map(s => s.employees?.name || "غير معروف")
+    .join("\n");
+
+  alert(`❌ فيه شفتات مفتوحة:\n\n${names}\n\nلازم تقفلهم أول`);
   return;
 }
 
