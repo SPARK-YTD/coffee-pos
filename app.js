@@ -912,13 +912,13 @@ function prepareReceipt(order, cart, cash, card, method) {
 
   // العناصر
   document.getElementById("printItems").innerHTML =
-  cart.map(i => `
-    <div class="receipt-row">
-      <span>${i.name}</span>
-      <span>${i.qty}</span>
-      <span>${(i.price * i.qty).toFixed(2)}</span>
-    </div>
-  `).join("");
+cart.map(i => `
+  <div class="receipt-row">
+    <span>${i.name}</span>
+    <span>${i.qty}</span>
+    <span>${formatMoney(i.price * i.qty)}</span>
+  </div>
+`).join("");
 
 // 🔥 الضريبة
 document.getElementById("printItems").innerHTML += `
