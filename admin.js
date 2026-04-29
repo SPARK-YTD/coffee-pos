@@ -28,6 +28,12 @@ window.addEventListener("load", () => {
   } else {
     localStorage.removeItem("admin");
   }
+  
+  setInterval(() => {
+  if (currentAdminTab === "shifts") {
+    loadAdminShifts();
+  }
+}, 10000);
 
 });
 
@@ -68,14 +74,16 @@ window.login = async function() {
 /* ===============================
    التنقل بين التبويبات
 ================================ */
-window.showAdminTab = function(type) {
+  window.showAdminTab = function(type) {
+  currentAdminTab = type;
 
   const sections = {
-    products: document.getElementById("productsTab"),
-    employees: document.getElementById("employeesTab"),
-    sales: document.getElementById("salesTab"),
-    reports: document.getElementById("reportsTab"),
-  };
+  products: document.getElementById("productsTab"),
+  employees: document.getElementById("employeesTab"),
+  sales: document.getElementById("salesTab"),
+  reports: document.getElementById("reportsTab"),
+  shifts: document.getElementById("shiftsTab"),
+};
 
   // إخفاء الكل
   document.querySelectorAll(".admin-section")
@@ -85,15 +93,21 @@ window.showAdminTab = function(type) {
     .forEach(t => t.classList.remove("active"));
 
   // إظهار القسم
+if (sections[type]) {
   sections[type].style.display = "block";
+}
 
-  const index = ["products","employees","sales","reports"].indexOf(type);
-  document.querySelectorAll(".tab")[index].classList.add("active");
+document.querySelectorAll(".tab").forEach(btn => {
+  if (btn.dataset.tab === type) {
+    btn.classList.add("active");
+  }
+});
 
   // تحميل البيانات حسب التبويب
   if (type === "sales") loadSales();
   if (type === "reports") loadReport();
   if (type === "employees") loadEmployees();
+  if (type === "shifts") loadAdminShifts();
 };
 
 
@@ -314,6 +328,19 @@ setInterval(() => {
   }
 }, 60000);
 
+setInterval(async () => {
+
+  const { data: shifts } = await supabase
+    .from("shifts")
+    .select("employees(name)")
+    .eq("is_open", true);
+
+  if (shifts && shifts.length > 0) {
+    console.log("⚠️ شفتات مفتوحة:", shifts.map(s => s.employees?.name));
+  }
+
+}, 15000);
+
 window.loadDailyReport = async function() {
 
   const date = document.getElementById("reportDate").value;
@@ -506,5 +533,78 @@ async function loadSettings() {
   }
 }
 
-// 🔥 تشغيلها عند فتح الصفحة
+
 loadSettings();
+
+window.loadAdminShifts = async function () {
+
+  const { data: shifts, error } = await supabase
+    .from("shifts")
+    .select(`
+      id,
+      is_open,
+      opened_at,
+      employees (
+        name
+      )
+    `)
+    .eq("is_open", true);
+
+  const box = document.getElementById("adminShifts");
+
+  if (error || !shifts || shifts.length === 0) {
+    box.innerHTML = "❌ لا يوجد شفتات مفتوحة";
+    return;
+  }
+
+  let html = "";
+
+  for (const s of shifts) {
+
+    // 🔥 نجيب المبيعات الحقيقية
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("total, cash_amount, card_amount")
+      .eq("shift_id", s.id)
+      .eq("is_paid", true);
+
+    let total = 0, cash = 0, card = 0;
+
+    (orders || []).forEach(o => {
+      total += Number(o.total || 0);
+      cash += Number(o.cash_amount || 0);
+      card += Number(o.card_amount || 0);
+    });
+
+    const start = new Date(s.opened_at);
+    const now = new Date();
+
+    const diff = Math.floor((now - start) / 60000);
+    const hours = Math.floor(diff / 60);
+    const mins = diff % 60;
+
+    const isLong = hours >= 8;
+
+    html += `
+      <div class="card">
+
+        <h3 style="color:${isLong ? 'red' : 'green'}">
+          ${isLong ? "⚠️ شفت طويل" : "🟢 شفت مفتوح"}
+        </h3>
+
+        👤 الموظف: <strong>${s.employees?.name || "غير معروف"}</strong><br><br>
+
+        ⏱ المدة: ${hours} ساعة ${mins} دقيقة<br><br>
+
+        💰 المبيعات: ${total.toFixed(2)}<br>
+        💵 كاش: ${cash.toFixed(2)}<br>
+        💳 بطاقة: ${card.toFixed(2)}<br><br>
+
+        🧾 الطلبات: ${(orders || []).length}
+
+      </div>
+    `;
+  }
+
+  box.innerHTML = html;
+};
