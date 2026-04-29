@@ -451,20 +451,16 @@ body {
    🔥 Receipt VIP Design
 ================================ */
 
+/* الخلفية */
 .receipt {
-  display: none;
+  background: #f5efe6;
+  color: #3e2c23;
+  border-radius: 20px;
+  padding: 20px;
   width: 380px;
   margin: auto;
-  padding: 20px;
-  border-radius: 20px;
-
-  background: linear-gradient(135deg, #1a120b, #2c1c13);
-  color: #f5e6d3;
-
-  font-family: 'Tahoma', sans-serif;
-  box-shadow: 0 0 25px rgba(0,0,0,0.6);
-
-  border: 1px solid #c8a97e;
+  font-family: 'Tahoma';
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
 /* العنوان */
@@ -472,81 +468,65 @@ body {
   text-align: center;
   font-size: 26px;
   font-weight: bold;
-  color: #d4af37; /* ذهبي */
-  margin-bottom: 5px;
+  color: #5c3b2e;
 }
 
 /* الموقع */
 .receipt .sub {
   text-align: center;
-  font-size: 14px;
-  color: #c8a97e;
+  color: #8b6f5a;
   margin-bottom: 10px;
-}
-
-/* خطوط */
-.divider {
-  border-top: 1px dashed #c8a97e;
-  margin: 12px 0;
-}
-
-/* رقم الفاتورة */
-.invoice {
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  color: #f5e6d3;
 }
 
 /* جدول */
 .table-header,
 .receipt-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  padding: 6px 0;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 8px 0;
   font-size: 14px;
 }
 
 .table-header {
-  color: #d4af37;
-  border-bottom: 1px solid #c8a97e;
-  margin-bottom: 6px;
+  background: #c8a97e;
+  color: white;
+  border-radius: 10px;
+  padding: 10px;
 }
 
 .receipt-row {
-  border-bottom: 1px dotted rgba(255,255,255,0.1);
+  border-bottom: 1px dashed #ddd;
 }
 
-/* المجموع */
-.totals {
-  margin-top: 10px;
-  font-size: 14px;
+/* totals */
+.totals-box {
+  margin-top: 15px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
 }
 
-.totals div {
+.totals-row {
   display: flex;
   justify-content: space-between;
-  margin: 4px 0;
+  margin: 5px 0;
 }
 
-.grand {
-  font-size: 20px;
+.grand-box {
+  margin-top: 10px;
+  background: #c8a97e;
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
   font-weight: bold;
-  color: #ffd700;
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
 }
 
 /* الشكر */
 .thanks {
   text-align: center;
   margin-top: 15px;
-  font-size: 14px;
-  color: #c8a97e;
-}
-
-/* التاريخ */
-.footer {
-  text-align: center;
-  font-size: 12px;
-  margin-top: 10px;
-  color: #aaa;
+  color: #6b4f3f;
 }
