@@ -1059,12 +1059,14 @@ window.completeWithCash = function(total) {
 
   cashInput.dispatchEvent(new Event("input"));
 };
-window.closeShift = async function () {
+window.closeShift = async function (autoAsk = true) {
 
-  if (!currentShiftId) {
-    alert("❌ ما فيه شفت مفتوح");
-    return;
+  if (autoAsk) {
+  const reopen = confirm("هل تبي تفتح شفت جديد؟");
+  if (reopen) {
+    await openShiftPrompt();
   }
+}
 
   // 🔴 يمنع الإغلاق إذا فيه طلبات مفتوحة
   const { data: active } = await supabase
@@ -1313,9 +1315,14 @@ window.closeDay = async function () {
     .eq("is_open", true);
 
   if (openShifts && openShifts.length > 0) {
-    alert("❌ لازم تقفل كل الشفتات أول");
-    return;
+
+  const ok = confirm("فيه شفتات مفتوحة، نقفلهم تلقائي؟");
+  if (!ok) return;
+
+  for (let s of openShifts) {
+    await window.closeShift(false); // 🔥 بدون ما يفتح شفت جديد
   }
+}
 
     const start = new Date(day.day_date);
     const end = new Date(start);
