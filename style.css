@@ -256,7 +256,7 @@ body {
 /* ===============================
    Receipt (Screen hidden)
 ================================ */
-.print-area {
+#printArea {
   display: none;
 }
 
