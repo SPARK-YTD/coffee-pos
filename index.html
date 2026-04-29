@@ -105,7 +105,7 @@
 ================================ -->
 <div id="printArea" class="receipt">
 
-  <div class="header">☕ قهوة ترانكيلا ☕</div>
+  <div class="header">قهوة ترانكيلا</div>
   <div class="sub">السعودية | الرياض 📍</div>
 
   <div class="divider"></div>
@@ -116,29 +116,45 @@
 
   <div class="divider"></div>
 
-  <div class="table-header">
-    <span>الصنف</span>
-    <span>الكمية</span>
-    <span>السعر</span>
-  </div>
+<div class="table-header">
+  <span>الصنف</span>
+  <span>الكمية</span>
+  <span>السعر</span>
+  <span>المجموع</span>
+</div>
 
   <div id="printItems"></div>
 
   <div class="divider"></div>
 
-  <div class="totals">
-    <div>المجموع: <span id="printSubtotal"></span></div>
-    <div>الضريبة: <span id="printVat"></span></div>
-    <div class="grand">الإجمالي: <span id="printTotal"></span></div>
+  <div class="totals-box">
+
+  <div class="totals-row">
+    <span>المجموع الفرعي</span>
+    <span id="printSubtotal"></span>
   </div>
+
+  <div class="totals-row">
+    <span>الضريبة (15%)</span>
+    <span id="printVat"></span>
+  </div>
+
+  <div class="grand-box">
+    <span>الإجمالي</span>
+    <span id="printTotal"></span>
+  </div>
+
+</div>
 
   <div class="divider"></div>
 
   <div class="thanks">
-    🌿 شكراً لزيارتكم 🌿  
-    <br>
-    🖤 نسعد بخدمتكم دائماً
-  </div>
+  ☕ شكراً لزيارتكم ☕  
+  <br><br>
+  كل فنجان نقدمه بعناية...  
+  لأن القهوة ليست مجرد مشروب،  
+  بل لحظة هدوء وطاقة ليوم أجمل 🤍
+</div>
 
   <div class="footer">
     📅 <span id="printDate"></span>
