@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.js";
-
+let currentAdminTab = "products";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
 
 // تحديث آخر نشاط
