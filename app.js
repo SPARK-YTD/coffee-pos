@@ -751,24 +751,53 @@ actionOverlay.innerHTML = `
 
 document.body.appendChild(actionOverlay);
 
-// 🖨 طباعة
-// 🖨 طباعة
+
 actionOverlay.querySelector("#printBtn").onclick = () => {
+
   const printArea = document.getElementById("printArea");
 
   printArea.style.display = "block";
-  printArea.offsetHeight;
 
-  setTimeout(() => {
-    window.print();
+  html2canvas(printArea, {
+    backgroundColor: "#ffffff",
+    scale: 2
+  }).then(canvas => {
+
+    const img = canvas.toDataURL("image/png");
+
+    const win = window.open("");
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>Print</title>
+          <style>
+            body {
+              margin: 0;
+              text-align: center;
+            }
+            img {
+              width: 100%;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${img}" />
+        </body>
+      </html>
+    `);
+
+    win.document.close();
 
     setTimeout(() => {
-      printArea.style.display = "none";
-      actionOverlay.remove(); // 🔥 هنا
+      win.print();
+      win.close();
     }, 300);
-  }, 300);
-};
 
+    printArea.style.display = "none";
+    actionOverlay.remove();
+  });
+};
 
 // 📱 واتساب
 actionOverlay.querySelector("#waBtn").onclick = () => {
