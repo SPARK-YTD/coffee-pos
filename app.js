@@ -901,52 +901,42 @@ window.editOrder = async function(orderId) {
   renderCart();
 };
 
-function prepareReceipt(order, cart, cash, card, method) {
+  function prepareReceipt(order, cart, cash, card, method) {
 
   // رقم الطلب
   document.getElementById("printOrderId").textContent =
-  order.invoice_number || order.id.slice(0,6);
-  // التاريخ
+    order.invoice_number || order.id.slice(0,6);
+
+  // التاريخ (تنسيق سعودي مرتب)
   document.getElementById("printDate").textContent =
-    new Date().toLocaleString();
+    new Date().toLocaleString("ar-SA");
 
-  // العناصر
+  // ===============================
+  // 🧾 العناصر (مرتب + احترافي)
+  // ===============================
   document.getElementById("printItems").innerHTML =
-cart.map(i => `
-  <div class="receipt-row">
-    <span>${i.name}</span>
-    <span>${i.qty}</span>
-    <span>${formatMoney(i.price * i.qty)}</span>
-  </div>
-`).join("");
+    cart.map(i => `
+      <div class="receipt-row">
+        <span>${i.name}</span>
+        <span>${i.qty}</span>
+        <span>${formatMoney(i.price)}</span>
+        <span>${formatMoney(i.price * i.qty)}</span>
+      </div>
+    `).join("");
 
-// 🔥 الضريبة
-document.getElementById("printItems").innerHTML += `
-  <div class="receipt-row">
-    <span>الضريبة</span>
-    <span></span>
-    <span>${order.vat?.toFixed(2) || "0.00"}</span>
-  </div>
-`;
+  // ===============================
+  // 💰 المجاميع (هنا الصح)
+  // ===============================
+  document.getElementById("printSubtotal").textContent =
+    formatMoney(order.subtotal);
 
-  // الإجمالي
+  document.getElementById("printVat").textContent =
+    formatMoney(order.vat);
+
   document.getElementById("printTotal").textContent =
     formatMoney(order.total);
-
-  // الدفع
-  let paymentText =
-    method === "cash" ? "💵 كاش" :
-    method === "card" ? "💳 بطاقة" :
-    "💰 مختلط";
-
-  let extra = "";
-
-  if ((cash + card) > order.total) {
-    const change = (cash + card) - order.total;
-    extra = `<br>الباقي: ${change.toFixed(2)} ريال`;
-  }
-
 }
+
 loadActiveOrders();
 
 // 🔥 كاش (ما يمس البطاقة)
