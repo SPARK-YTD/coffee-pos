@@ -142,6 +142,7 @@ if (error) {
 }
 
 currentShiftId = shift.id;
+loadItems("drinks");
 
 localStorage.setItem("shiftId", shift.id);
 
@@ -212,10 +213,15 @@ function renderItems() {
    الضغط على المنتج
 ================================ */
 async function handleItem(item) {
+  
+  if (!currentShiftId) {
+  alert("❌ لازم تفتح شفت أول");
+  return;
+}
 
   const existingPopup = document.querySelector(".popup-overlay");
 if (existingPopup) {
-  existingPopup.remove(); // 🔥 يحذف أي popup عالق
+  existingPopup.remove();
 }
 
   if (item.has_variants) {
@@ -458,6 +464,11 @@ loadCancelledOrders(currentShiftId);
 })();
 
 window.completeOrder = async function () {
+  
+  if (!currentShiftId) {
+  alert("❌ لازم تفتح شفت أول");
+  return;
+}
 
   if (!cart.length) {
     alert("السلة فاضية");
@@ -1059,14 +1070,9 @@ window.completeWithCash = function(total) {
 
   cashInput.dispatchEvent(new Event("input"));
 };
+
 window.closeShift = async function (autoAsk = true) {
 
-  if (autoAsk) {
-  const reopen = confirm("هل تبي تفتح شفت جديد؟");
-  if (reopen) {
-    await openShiftPrompt();
-  }
-}
 
   // 🔴 يمنع الإغلاق إذا فيه طلبات مفتوحة
   const { data: active } = await supabase
@@ -1132,20 +1138,31 @@ window.closeShift = async function (autoAsk = true) {
     })
     .eq("id", currentShiftId);
 
-  // 🧹 تصفير
-  currentShiftId = null;
-  localStorage.removeItem("shiftId"); // 🔥 هذا المهم
-  cart = [];
-  renderCart();
+    // 🧹 تصفير
+currentShiftId = null;
+localStorage.removeItem("shiftId");
+cart = [];
+renderCart();
 
-  alert("✅ تم إغلاق الشفت");
+// 🔒 قفل الكاشير
+document.getElementById("items").innerHTML = `
+  <div style="text-align:center;padding:40px;font-size:18px;">
+    🔒 الكاشير مغلق<br><br>
+    افتح شفت عشان تبدأ
+  </div>
+`;
 
+document.getElementById("cart").innerHTML = "";
+document.getElementById("total").textContent = "0.00 ﷼";
 
-// 🔁 بعدها تسأله يفتح شفت جديد
-const reopen = confirm("هل تبي تفتح شفت جديد؟");
+alert("✅ تم إغلاق الشفت");
 
-if (reopen) {
-  await openShiftPrompt();
+// 🔁 خيار فتح شفت جديد
+if (autoAsk) {
+  const reopen = confirm("هل تبي تفتح شفت جديد؟");
+  if (reopen) {
+    await openShiftPrompt();
+  }
 }
 };
 // ===============================
@@ -1314,14 +1331,20 @@ window.closeDay = async function () {
     .select("id")
     .eq("is_open", true);
 
-  if (openShifts && openShifts.length > 0) {
+if (openShifts && openShifts.length > 0) {
+  alert("❌ لازم تقفل كل الشفتات أول");
+  return;
+}
 
-  const ok = confirm("فيه شفتات مفتوحة، نقفلهم تلقائي؟");
-  if (!ok) return;
+    // 🔴 يمنع الإغلاق إذا فيه طلبات شغالة بأي شفت
+const { data: activeOrders } = await supabase
+  .from("orders")
+  .select("id")
+  .eq("status", "active");
 
-  for (let s of openShifts) {
-    await window.closeShift(false); // 🔥 بدون ما يفتح شفت جديد
-  }
+if (activeOrders && activeOrders.length > 0) {
+  alert("❌ فيه طلبات مفتوحة! لازم تخلصها أول");
+  return;
 }
 
     const start = new Date(day.day_date);
