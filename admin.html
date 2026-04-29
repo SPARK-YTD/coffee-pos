@@ -67,15 +67,17 @@
 <div id="adminApp" style="display:none;">
 
   <h2 style="text-align:center">⚙️ لوحة الإدارة</h2>
+  <div id="openShiftsWarning" style="text-align:center; color:red; margin-bottom:10px;"></div>
   
 
   <!-- 🔘 التبويبات -->
   <div class="admin-tabs">
-    <button class="tab active" onclick="showAdminTab('products')">📦 الأصناف</button>
-    <button class="tab" onclick="showAdminTab('employees')">👥 الموظفين</button>
-    <button class="tab" onclick="showAdminTab('sales')">💰 المبيعات</button>
-    <button class="tab" onclick="showAdminTab('reports')">📊 التقارير</button>
-  </div>
+  <button class="tab active" data-tab="products" onclick="showAdminTab('products')">📦 الأصناف</button>
+  <button class="tab" data-tab="employees" onclick="showAdminTab('employees')">👥 الموظفين</button>
+  <button class="tab" data-tab="sales" onclick="showAdminTab('sales')">💰 المبيعات</button>
+  <button class="tab" data-tab="reports" onclick="showAdminTab('reports')">📊 التقارير</button>
+  <button class="tab" data-tab="shifts" onclick="showAdminTab('shifts')">🟢 الشفتات</button>
+</div>
 
   <!-- 📦 الأصناف -->
   <div id="productsTab" class="admin-section">
@@ -124,22 +126,32 @@
 
 </div>
 
-  <!-- 📊 التقارير -->
-  <div id="reportsTab" class="admin-section" style="display:none;">
+ 
+<!-- 📊 التقارير -->
+<div id="reportsTab" class="admin-section" style="display:none;">
 
   <h3>📊 التقارير</h3>
 
   <div style="margin-bottom:10px;">
-  من: <input type="date" id="fromDate">
-  إلى: <input type="date" id="toDate">
-  <button onclick="loadRangeReport()">عرض</button>
-</div>
+    من: <input type="date" id="fromDate">
+    إلى: <input type="date" id="toDate">
+    <button onclick="loadRangeReport()">عرض</button>
+  </div>
 
-<div style="margin-top:10px;">
-  <button onclick="loadEmployeeReport()">📊 تقرير الموظفين</button>
-</div>
+  <div style="margin-top:10px;">
+    <button onclick="loadEmployeeReport()">📊 تقرير الموظفين</button>
+  </div>
 
   <div id="reportBox"></div>
+
+</div>
+
+<!-- 🟢 الشفتات -->
+<div id="shiftsTab" class="admin-section" style="display:none;">
+
+  <h3>🟢 الشفتات المفتوحة</h3>
+
+  <div id="adminShifts"></div>
 
 </div>
 
