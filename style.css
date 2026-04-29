@@ -266,16 +266,13 @@ body {
 @media print {
 
   @page {
-    size: 80mm auto;
+    size: auto;
     margin: 0;
   }
 
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 80mm;
-    height: auto !important;
-    overflow: hidden;
   }
 
   /* اخفاء كل الصفحة */
@@ -293,56 +290,17 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 80mm;
-    padding: 10px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    width: 100% !important;
+    height: auto !important;
+
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .receipt {
-    width: 100%;
+    width: 100% !important;
+    page-break-inside: avoid;
   }
-
-  .receipt-header {
-    text-align: center;
-  }
-
-  .title {
-    font-weight: bold;
-    font-size: 14px;
-  }
-
-  .receipt-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    margin: 2px 0;
-  }
-
-  .receipt-row span:first-child {
-    max-width: 60%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .line {
-    border-top: 1px dashed #000;
-    margin: 6px 0;
-  }
-
-  .receipt-total {
-    text-align: center;
-    font-weight: bold;
-    margin: 6px 0;
-  }
-
-  .receipt-footer {
-    text-align: center;
-    margin-top: 8px;
-    font-size: 11px;
-  }
-
 }
 
 /* ===============================
