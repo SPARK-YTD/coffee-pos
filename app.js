@@ -909,7 +909,13 @@ window.editOrder = async function(orderId) {
 
   // التاريخ (تنسيق سعودي مرتب)
   document.getElementById("printDate").textContent =
-    new Date().toLocaleString("ar-SA");
+    new Date().toLocaleString("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
+});
 
   // ===============================
   // 🧾 العناصر (مرتب + احترافي)
