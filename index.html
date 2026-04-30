@@ -21,9 +21,13 @@
     <div id="menuDropdown" class="menu-dropdown">
     <button onclick="closeShift()">🔒 إغلاق الشفت</button>
     <button onclick="closeDay()">📅 إغلاق اليوم</button> <!-- 🔥 جديد -->
-    <button onclick="openShiftPrompt()">🟢 فتح شفت</button>
+    <button onclick="currentShiftId ? showShiftInfo() : openShiftPrompt()">
+  🟢 الشفت
+</button>
     <button onclick="showReport()">📊 تقرير الشفت</button>
-    <button onclick="showShiftInfo()">🟢 الشفت المفتوح</button>
+    <button id="shiftInfoBtn" onclick="showShiftInfo()" style="display:none">
+  🟢 الشفت المفتوح
+</button>
 </div>
   </div>
 </header>
@@ -59,7 +63,7 @@
     </table>
 
 <div class="total-box">
-  الإجمالي: <span id="total">0.000 ر.س</span>
+  الإجمالي: <span id="total">0.00 ر.س</span>
 </div>
 
 <!-- 🔥 رقم العميل (اختياري) -->
