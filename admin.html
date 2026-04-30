@@ -124,8 +124,8 @@
 <br><br>
 
 <div id="dateRange" style="display:none;">
-  من: <input type="date" id="fromDate">
-  إلى: <input type="date" id="toDate">
+  من: <input type="date" id="salesFromDate">
+  إلى: <input type="date" id="salesToDate">
   <button onclick="loadSales()">عرض</button>
 </div>
 
@@ -162,8 +162,22 @@
 
 </div>
 
+
+
 <!-- 🔥 JS -->
 <script type="module" src="admin.js"></script>
 
 </body>
 </html>
+
+window.handleSalesFilter = function() {
+  const mode = document.getElementById("salesMode").value;
+  const rangeBox = document.getElementById("dateRange");
+
+  if (mode === "range") {
+    rangeBox.style.display = "block";
+  } else {
+    rangeBox.style.display = "none";
+    loadSales();
+  }
+};
