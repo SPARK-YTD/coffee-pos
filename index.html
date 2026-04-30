@@ -20,17 +20,17 @@
 
 <div id="menuDropdown" class="menu-dropdown">
 
-  <button onclick="toggleShiftAction()">
-    🟢 الشفت
-  </button>
+ <button id="shiftBtn" onclick="toggleShiftAction()">
+  🟢 الشفت
+</button>
 
   <button onclick="showReport()">
     📊 تقرير الشفت
   </button>
 
-  <button onclick="currentShiftId ? closeShift() : alert('❌ ما فيه شفت')">
+  <button onclick="closeShift()">
   🔒 إغلاق الشفت
-  </button>
+</button>
 
   <button onclick="closeDay()">
     📅 إغلاق اليوم
