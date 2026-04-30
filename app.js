@@ -1411,3 +1411,67 @@ if (activeOrders && activeOrders.length > 0) {
 
   alert("📅 تم إغلاق يوم العمل");
 };
+
+window.showShiftInfo = async function () {
+
+  if (!currentShiftId) {
+    alert("❌ ما فيه شفت مفتوح");
+    return;
+  }
+
+  // 🔥 نجيب بيانات الشفت
+  const { data: shift } = await supabase
+    .from("shifts")
+    .select(`
+      opened_at,
+      employees ( name )
+    `)
+    .eq("id", currentShiftId)
+    .single();
+
+  if (!shift) {
+    alert("❌ ما قدرنا نجيب بيانات الشفت");
+    return;
+  }
+
+  const name = shift.employees?.name || "غير معروف";
+
+  const start = new Date(shift.opened_at);
+  const now = new Date();
+
+  const diff = Math.floor((now - start) / 60000);
+  const hours = Math.floor(diff / 60);
+  const mins = diff % 60;
+
+  // 🔥 Popup
+  const overlay = document.createElement("div");
+  overlay.className = "popup-overlay";
+
+  overlay.innerHTML = `
+    <div class="popup-box" style="text-align:center">
+
+      <h3>🟢 الشفت المفتوح</h3>
+
+      👤 الموظف: <strong>${name}</strong><br><br>
+
+      🕒 وقت الفتح:<br>
+      ${start.toLocaleString()}<br><br>
+
+      ⏱ المدة:<br>
+      ${hours} ساعة ${mins} دقيقة<br><br>
+
+      <button onclick="closeShift()">🔒 إغلاق الشفت</button>
+      <button class="cancel-btn">إغلاق</button>
+
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // ❌ إغلاق
+  overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
+
+  overlay.onclick = (e) => {
+    if (e.target === overlay) overlay.remove();
+  };
+};
