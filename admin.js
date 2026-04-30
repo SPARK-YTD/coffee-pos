@@ -224,8 +224,8 @@ if (mode === "month") {
 
 // 🟢 مدى تاريخ
 if (mode === "range") {
-  const from = document.getElementById("salesFromDate").value;
-  const to = document.getElementById("salesToDate").value;
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
 
   if (!from || !to) {
     alert("حدد التاريخ");
@@ -238,6 +238,8 @@ if (mode === "range") {
 }
   // ✅ الطلبات المدفوعة
 const { data, error } = await query.eq("status", "completed");
+console.log("DATA:", data);
+
 
   if (error) {
     document.getElementById("salesBox").innerHTML = "❌ خطأ في جلب البيانات";
@@ -274,8 +276,8 @@ if (mode === "month") {
 }
 
 if (mode === "range") {
-  const from = document.getElementById("salesFromDate").value;
-  const to = document.getElementById("salesToDate").value;
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
 
   cancelledQuery = cancelledQuery
     .gte("created_at", from + " 00:00:00")
@@ -599,7 +601,7 @@ const { data: allOrders } = await supabase
   .from("orders")
   .select("shift_id, total, cash_amount, card_amount")
   .in("shift_id", shiftIds)
-  .eq("is_paid", true);
+  .eq("status", "completed");
 
 const ordersMap = {};
 
