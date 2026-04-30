@@ -26,9 +26,7 @@ function updateShiftButton() {
 }
 
 window.toggleShiftAction = function () {
-  if (currentShiftId) {
-    showShiftInfo();
-  } else {
+  if (!currentShiftId) {
     openShiftPrompt();
   }
 };
@@ -1482,11 +1480,15 @@ window.showShiftInfo = async function () {
   const name = shift.employees?.name || "غير معروف";
 
   const start = new Date(shift.opened_at);
-  const now = new Date();
+const now = new Date();
 
-  const diff = Math.floor((now - start) / 60000);
-  const hours = Math.floor(diff / 60);
-  const mins = diff % 60;
+// 🔥 حساب أدق
+let diff = Math.floor((now - start) / 1000); // بالثواني
+
+const hours = Math.floor(diff / 3600);
+diff %= 3600;
+
+const mins = Math.floor(diff / 60);
 
   // 🔥 Popup
   const overlay = document.createElement("div");
