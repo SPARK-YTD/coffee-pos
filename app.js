@@ -57,97 +57,110 @@ function formatMoney(amount) {
     });
 }
 
-window.openShiftPrompt = async function () {
+window.openShiftPrompt = function () {
+  document.getElementById("shiftPopup").style.display = "flex";
+};
 
-  const pin = prompt("ادخل رقم الموظف (PIN)");
+window.closeShiftPopup = function () {
+  document.getElementById("shiftPopup").style.display = "none";
+};
+
+window.confirmOpenShift = async function () {
+
+  const pin = document.getElementById("shiftPin").value.trim();
+  const errorBox = document.getElementById("shiftError");
 
   if (!pin) {
-  alert("❌ لازم تدخل PIN");
-  return;
-}
-
- const { data: emp } = await supabase
-  .from("employees")
-  .select("id, name, pin")
-  .eq("pin", pin.trim())
-  .maybeSingle();
-
-console.log("EMP:", emp);
-
-if (!emp) {
-  alert("❌ PIN خطأ");
-  return;
-}
-
-  currentEmployee = emp;
-  
-  // ===============================
-// 🔥 تأكد فيه يوم عمل مفتوح
-// ===============================
-const { data: openDay } = await supabase
-  .from("business_days")
-  .select("*")
-  .eq("is_open", true)
-  .maybeSingle();
-
-if (!openDay) {
-
-  const { error: dayError } = await supabase
-    .from("business_days")
-    .insert({
-     day_date: new Date().toISOString().split("T")[0],
-      is_open: true,
-      invoice_counter: 0
-    });
-
-  if (dayError) {
-    console.error("DAY ERROR:", dayError);
-    alert("❌ خطأ في فتح يوم العمل");
+    errorBox.textContent = "❌ أدخل PIN";
+    errorBox.style.display = "block";
     return;
   }
 
-  console.log("📅 تم فتح يوم عمل جديد");
-}
+  const { data: emp } = await supabase
+    .from("employees")
+    .select("id, name, pin")
+    .eq("pin", pin)
+    .maybeSingle();
 
-  // 🔍 نتحقق هل فيه شفت مفتوح
-const { data: existingShift } = await supabase
-  .from("shifts")
-  .select("*")
-  .eq("employee_id", emp.id)
-  .eq("is_open", true)
-  .maybeSingle();
+  if (!emp) {
+    errorBox.textContent = "❌ PIN خطأ";
+    errorBox.style.display = "block";
+    return;
+  }
 
-if (existingShift) {
+  errorBox.style.display = "none";
+  currentEmployee = emp;
+
+  // ===============================
+  // 🔥 تأكد فيه يوم عمل مفتوح
+  // ===============================
+  const { data: openDay } = await supabase
+    .from("business_days")
+    .select("*")
+    .eq("is_open", true)
+    .maybeSingle();
+
+  if (!openDay) {
+    const { error: dayError } = await supabase
+      .from("business_days")
+      .insert({
+        day_date: new Date().toISOString().split("T")[0],
+        is_open: true,
+        invoice_counter: 0
+      });
+
+    if (dayError) {
+      alert("❌ خطأ في فتح يوم العمل");
+      return;
+    }
+  }
+
+  // 🔍 شفت موجود؟
+  const { data: existingShift } = await supabase
+    .from("shifts")
+    .select("*")
+    .eq("employee_id", emp.id)
+    .eq("is_open", true)
+    .maybeSingle();
+
+  if (existingShift) {
   currentShiftId = existingShift.id;
-
   localStorage.setItem("shiftId", existingShift.id);
 
+  loadItems("drinks");
+  loadActiveOrders();
+  loadCancelledOrders(currentShiftId);
+
   alert(`📂 تم استرجاع الشفت - ${emp.name}`);
+  closeShiftPopup();
   return;
 }
 
-// ➕ إنشاء شفت جديد
-const { data: shift, error } = await supabase
-  .from("shifts")
-  .insert({
-  employee_id: emp.id
-})
-  .select()
-  .single();
+  // ➕ إنشاء شفت
+  const { data: shift, error } = await supabase
+    .from("shifts")
+    .insert({
+      employee_id: emp.id
+    })
+    .select()
+    .single();
 
-if (error) {
-  console.error("SHIFT ERROR:", error);
-  alert(error.message);
-  return;
-}
+  if (error) {
+    alert("❌ خطأ في فتح الشفت");
+    return;
+  }
 
-currentShiftId = shift.id;
-loadItems("drinks");
+  currentShiftId = shift.id;
+  localStorage.setItem("shiftId", shift.id);
 
-localStorage.setItem("shiftId", shift.id);
+  loadItems("drinks");
+  loadActiveOrders();
+  loadCancelledOrders(currentShiftId);
 
-alert(`✅ تم فتح الشفت - ${emp.name}`);
-}
+  alert(`✅ تم فتح الشفت - ${emp.name}`);
+
+  closeShiftPopup();
+};
 
 /* ===============================
    تحميل المنتجات
@@ -432,34 +445,34 @@ window.filterCategory = function (category, btn) {
   listenToTaxChanges();
 
   const savedShift = localStorage.getItem("shiftId");
-  
+
   if (savedShift) {
 
-  const { data } = await supabase
-    .from("shifts")
-    .select("id, is_open")
-    .eq("id", savedShift)
-    .single();
+    const { data } = await supabase
+      .from("shifts")
+      .select("id, is_open")
+      .eq("id", savedShift)
+      .single();
 
-  if (data && data.is_open) {
-    currentShiftId = savedShift;
-    localStorage.setItem("shiftId", savedShift);
-    console.log("📂 تم استرجاع الشفت");
+    if (data && data.is_open) {
+      currentShiftId = savedShift;
+      console.log("📂 تم استرجاع الشفت");
+
+    } else {
+      localStorage.removeItem("shiftId");
+      openShiftPrompt();
+      return;
+    }
+
   } else {
-    localStorage.removeItem("shiftId");
-    await openShiftPrompt();
+    openShiftPrompt();
+    return;
   }
 
-} else {
-  await openShiftPrompt();
-  if (currentShiftId) {
-    localStorage.setItem("shiftId", currentShiftId);
-  }
-}
-loadItems("drinks");
-
-loadActiveOrders();
-loadCancelledOrders(currentShiftId);  
+  // ✅ هنا فقط إذا فيه شفت شغال
+  loadItems("drinks");
+  loadActiveOrders();
+  loadCancelledOrders(currentShiftId);
 
 })();
 
@@ -612,8 +625,8 @@ updateRemain();
   overlay.querySelector("#confirmPay").onclick = async () => {
     
   if (!currentShiftId) {
-      await openShiftPrompt();
-      if (!currentShiftId) return;
+      openShiftPrompt();
+      return;
   }
     const cash = parseFloat(cashInput.value || "0");
     const card = parseFloat(cardInput.value || "0");
@@ -983,7 +996,6 @@ window.editOrder = async function(orderId) {
     formatMoney(order.total);
 }
 
-loadActiveOrders();
 
 // 🔥 كاش (ما يمس البطاقة)
 window.setCash = function(total) {
@@ -1161,7 +1173,7 @@ alert("✅ تم إغلاق الشفت");
 if (autoAsk) {
   const reopen = confirm("هل تبي تفتح شفت جديد؟");
   if (reopen) {
-    await openShiftPrompt();
+    openShiftPrompt();
   }
 }
 };
