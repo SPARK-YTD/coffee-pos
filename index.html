@@ -24,17 +24,21 @@
   🟢 الشفت
 </button>
 
-  <button onclick="showReport()">
-    📊 تقرير الشفت
-  </button>
+<button id="shiftInfoBtn" onclick="showShiftInfo()" style="display:none">
+  📊 بيانات الشفت
+</button>
 
-  <button onclick="closeShift()">
+<button id="closeShiftBtn" onclick="closeShift()" style="display:none">
   🔒 إغلاق الشفت
 </button>
 
-  <button onclick="closeDay()">
-    📅 إغلاق اليوم
-  </button>
+<button onclick="showReport()">
+  📊 تقرير الشفت
+</button>
+
+<button onclick="closeDay()">
+  📅 إغلاق اليوم
+</button>
 
 </div>
   </div>
@@ -177,6 +181,27 @@
 
 <script type="module" src="app.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
+
+<div id="shiftPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:9999;">
+
+  <div style="background:#fff;padding:20px;border-radius:10px;text-align:center; width:300px">
+
+    <h3>🔐 فتح الشفت</h3>
+
+    <input 
+      id="shiftPin" 
+      placeholder="أدخل PIN" 
+      style="width:100%;padding:10px;margin:10px 0;border-radius:8px;border:1px solid #ccc"
+    >
+
+    <div id="shiftError" style="color:red;display:none;margin-bottom:10px;"></div>
+
+    <button onclick="confirmOpenShift()" style="margin:5px">فتح</button>
+    <button onclick="closeShiftPopup()" class="cancel-btn">إلغاء</button>
+
+  </div>
+
+</div>
 
 </body>
 </html>
