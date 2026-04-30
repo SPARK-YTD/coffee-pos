@@ -195,19 +195,47 @@ window.loadSales = async function() {
       )
     `);
 
-  // 🟢 فلترة اليوم
-  if (mode === "today") {
-    const start = new Date();
-    start.setHours(0,0,0,0);
 
-    const end = new Date();
-    end.setHours(23,59,59,999);
+  // 🟢 اليوم
+if (mode === "today") {
+  const start = new Date();
+  start.setHours(0,0,0,0);
 
-    query = query
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString());
+  const end = new Date();
+  end.setHours(23,59,59,999);
+
+  query = query
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
+}
+
+// 🟢 الشهر
+if (mode === "month") {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0,0,0,0);
+
+  const end = new Date();
+
+  query = query
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
+}
+
+// 🟢 مدى تاريخ
+if (mode === "range") {
+  const from = document.getElementById("salesFromDate").value;
+  const to = document.getElementById("salesToDate").value;
+
+  if (!from || !to) {
+    alert("حدد التاريخ");
+    return;
   }
 
+  query = query
+    .gte("created_at", from + " 00:00:00")
+    .lte("created_at", to + " 23:59:59");
+}
   // ✅ الطلبات المدفوعة
   const { data, error } = await query.eq("is_paid", true);
 
@@ -222,17 +250,37 @@ window.loadSales = async function() {
     .select("id");
 
   if (mode === "today") {
-    const start = new Date();
-    start.setHours(0,0,0,0);
+  const start = new Date();
+  start.setHours(0,0,0,0);
 
-    const end = new Date();
-    end.setHours(23,59,59,999);
+  const end = new Date();
+  end.setHours(23,59,59,999);
 
-    cancelledQuery = cancelledQuery
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString());
-  }
+  cancelledQuery = cancelledQuery
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
+}
 
+if (mode === "month") {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0,0,0,0);
+
+  const end = new Date();
+
+  cancelledQuery = cancelledQuery
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
+}
+
+if (mode === "range") {
+  const from = document.getElementById("salesFromDate").value;
+  const to = document.getElementById("salesToDate").value;
+
+  cancelledQuery = cancelledQuery
+    .gte("created_at", from + " 00:00:00")
+    .lte("created_at", to + " 23:59:59");
+}
   const { data: cancelled } = await cancelledQuery.eq("status", "cancelled");
 
   // ===============================
@@ -602,4 +650,16 @@ const ordersMap = {};
 }
 
   box.innerHTML = html;
+};
+
+window.handleSalesFilter = function() {
+  const mode = document.getElementById("salesMode").value;
+  const rangeBox = document.getElementById("dateRange");
+
+  if (mode === "range") {
+    rangeBox.style.display = "block";
+  } else {
+    rangeBox.style.display = "none";
+    loadSales();
+  }
 };
