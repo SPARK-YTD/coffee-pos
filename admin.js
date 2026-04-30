@@ -328,15 +328,22 @@ setInterval(() => {
   }
 }, 60000);
 
+let lastShiftsLog = null;
+
 setInterval(async () => {
+
+  if (currentAdminTab !== "shifts") return; // 🔥 مهم
 
   const { data: shifts } = await supabase
     .from("shifts")
     .select("employees(name)")
     .eq("is_open", true);
 
-  if (shifts && shifts.length > 0) {
-    console.log("⚠️ شفتات مفتوحة:", shifts.map(s => s.employees?.name));
+  const names = shifts?.map(s => s.employees?.name) || [];
+
+  if (JSON.stringify(names) !== JSON.stringify(lastShiftsLog)) {
+    lastShiftsLog = names;
+    console.log("⚠️ شفتات مفتوحة:", names);
   }
 
 }, 15000);
@@ -559,52 +566,62 @@ window.loadAdminShifts = async function () {
 
   let html = "";
 
-  for (const s of shifts) {
+  // 🔥 نجيب كل الطلبات مرة وحدة
+const shiftIds = shifts.map(s => s.id);
 
-    // 🔥 نجيب المبيعات الحقيقية
-    const { data: orders } = await supabase
-      .from("orders")
-      .select("total, cash_amount, card_amount")
-      .eq("shift_id", s.id)
-      .eq("is_paid", true);
+const { data: allOrders } = await supabase
+  .from("orders")
+  .select("shift_id, total, cash_amount, card_amount")
+  .in("shift_id", shiftIds)
+  .eq("is_paid", true);
 
-    let total = 0, cash = 0, card = 0;
+const ordersMap = {};
 
-    (orders || []).forEach(o => {
-      total += Number(o.total || 0);
-      cash += Number(o.cash_amount || 0);
-      card += Number(o.card_amount || 0);
-    });
-
-    const start = new Date(s.opened_at);
-    const now = new Date();
-
-    const diff = Math.floor((now - start) / 60000);
-    const hours = Math.floor(diff / 60);
-    const mins = diff % 60;
-
-    const isLong = hours >= 8;
-
-    html += `
-      <div class="card">
-
-        <h3 style="color:${isLong ? 'red' : 'green'}">
-          ${isLong ? "⚠️ شفت طويل" : "🟢 شفت مفتوح"}
-        </h3>
-
-        👤 الموظف: <strong>${s.employees?.name || "غير معروف"}</strong><br><br>
-
-        ⏱ المدة: ${hours} ساعة ${mins} دقيقة<br><br>
-
-        💰 المبيعات: ${total.toFixed(2)}<br>
-        💵 كاش: ${cash.toFixed(2)}<br>
-        💳 بطاقة: ${card.toFixed(2)}<br><br>
-
-        🧾 الطلبات: ${(orders || []).length}
-
-      </div>
-    `;
+(allOrders || []).forEach(o => {
+  if (!ordersMap[o.shift_id]) {
+    ordersMap[o.shift_id] = [];
   }
+  ordersMap[o.shift_id].push(o);
+});
+    for (const s of shifts) {
+
+  const orders = ordersMap[s.id] || [];
+
+  let total = 0, cash = 0, card = 0;
+
+  orders.forEach(o => {
+    total += Number(o.total || 0);
+    cash += Number(o.cash_amount || 0);
+    card += Number(o.card_amount || 0);
+  });
+
+  const start = new Date(s.opened_at);
+  const now = new Date();
+
+  const diff = Math.floor((now - start) / 60000);
+  const hours = Math.floor(diff / 60);
+  const mins = diff % 60;
+
+  const isLong = hours >= 8;
+
+  html += `
+    <div class="card">
+      <h3 style="color:${isLong ? 'red' : 'green'}">
+        ${isLong ? "⚠️ شفت طويل" : "🟢 شفت مفتوح"}
+      </h3>
+
+      👤 الموظف: <strong>${s.employees?.name || "غير معروف"}</strong><br><br>
+
+      ⏱ المدة: ${hours} ساعة ${mins} دقيقة<br><br>
+
+      💰 المبيعات: ${total.toFixed(2)}<br>
+      💵 كاش: ${cash.toFixed(2)}<br>
+      💳 بطاقة: ${card.toFixed(2)}<br><br>
+
+      🧾 الطلبات: ${orders.length}
+    </div>
+  `;
+}
 
   box.innerHTML = html;
 };
