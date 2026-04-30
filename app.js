@@ -4,6 +4,26 @@ import { supabase } from "./supabase.js";
 let currentShiftId = null;
 let currentEmployee = null;
 
+function updateShiftButton() {
+  const btn = document.getElementById("shiftBtn");
+
+  if (!btn) return;
+
+  if (currentShiftId && currentEmployee?.name) {
+    btn.textContent = `🟢 ${currentEmployee.name}`;
+  } else {
+    btn.textContent = "➕ فتح شفت";
+  }
+}
+
+window.toggleShiftAction = function () {
+  if (currentShiftId) {
+    showShiftInfo();
+  } else {
+    openShiftPrompt();
+  }
+};
+
 let TAX_RATE = 0;
 
 async function loadTax() {
@@ -140,6 +160,7 @@ window.confirmOpenShift = async function () {
   loadCancelledOrders(currentShiftId);
 
   alert(`📂 تم استرجاع الشفت - ${emp.name}`);
+  updateShiftButton();
   closeShiftPopup();
   return;
 }
@@ -166,7 +187,7 @@ window.confirmOpenShift = async function () {
   loadCancelledOrders(currentShiftId);
 
   alert(`✅ تم فتح الشفت - ${emp.name}`);
-
+  updateShiftButton();
   closeShiftPopup();
 };
 
@@ -464,9 +485,12 @@ if (savedShift) {
 
   if (data && data.is_open) {
     currentShiftId = savedShift;
-    currentEmployee = data.employees;
+    currentEmployee = {
+  name: data.employees?.name || "غير معروف"
+};
 
     console.log("📂 تم استرجاع الشفت");
+    updateShiftButton();
 
   } else {
     localStorage.removeItem("shiftId");
@@ -1162,6 +1186,7 @@ window.closeShift = async function (autoAsk = true) {
 
     // 🧹 تصفير
 currentShiftId = null;
+updateShiftButton();
 localStorage.removeItem("shiftId");
 cart = [];
 renderCart();
