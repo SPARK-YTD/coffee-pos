@@ -550,10 +550,11 @@ let activeOrders = [];
 async function loadActiveOrders() {
 
   const { data } = await supabase
-    .from("orders")
-    .select("id, invoice_number, total, is_paid, is_prepared, created_at")
-    .eq("status", "active")
-    .order("created_at", { ascending: false });
+  .from("orders")
+  .select("id, invoice_number, total, is_paid, is_prepared, created_at")
+  .eq("status", "active")
+  .eq("shift_id", currentShiftId) 
+  .order("created_at", { ascending: false });
 
   activeOrders = data || [];
   renderActiveOrders();
