@@ -178,7 +178,7 @@ window.deleteEmployee = async function(id) {
 
 window.loadSales = async function() {
 
-  const mode = document.getElementById("salesMode")?.value || "current";
+  const mode = document.getElementById("salesMode")?.value || "today";
 
   let query = supabase
     .from("orders")
@@ -191,60 +191,53 @@ window.loadSales = async function() {
       created_at,
       shift_id,
       shifts (
-        employee_id,
-        employees (
-          name
-        )
+        employees ( name )
       )
     `);
 
-  // 🟢 فلترة الشفت
-  if (mode === "current") {
-    const shiftId = localStorage.getItem("shiftId");
-
-    if (!shiftId) {
-      document.getElementById("salesBox").innerHTML = "❌ لا يوجد شفت مفتوح";
-      return;
-    }
-
-    query = query.eq("shift_id", shiftId);
-  }
-
   // 🟢 فلترة اليوم
   if (mode === "today") {
-    const today = new Date().toISOString().split("T")[0];
+    const start = new Date();
+    start.setHours(0,0,0,0);
+
+    const end = new Date();
+    end.setHours(23,59,59,999);
+
     query = query
-      .gte("created_at", today + " 00:00:00")
-      .lte("created_at", today + " 23:59:59");
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
   }
 
-  // ✅ المكتملة
-  const { data, error } = await query.eq("status", "completed");
+  // ✅ الطلبات المدفوعة
+  const { data, error } = await query.eq("is_paid", true);
 
   if (error) {
     document.getElementById("salesBox").innerHTML = "❌ خطأ في جلب البيانات";
     return;
   }
 
-  // ❌ الملغية
+  // 🔴 الطلبات الملغية
   let cancelledQuery = supabase
     .from("orders")
     .select("id");
 
-  if (mode === "current") {
-    const shiftId = localStorage.getItem("shiftId");
-    cancelledQuery = cancelledQuery.eq("shift_id", shiftId);
-  }
-
   if (mode === "today") {
-    const today = new Date().toISOString().split("T")[0];
+    const start = new Date();
+    start.setHours(0,0,0,0);
+
+    const end = new Date();
+    end.setHours(23,59,59,999);
+
     cancelledQuery = cancelledQuery
-      .gte("created_at", today + " 00:00:00")
-      .lte("created_at", today + " 23:59:59");
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
   }
 
   const { data: cancelled } = await cancelledQuery.eq("status", "cancelled");
 
+  // ===============================
+  // الحسابات
+  // ===============================
   let total = 0, cash = 0, card = 0;
 
   const employeeSales = {};
@@ -256,16 +249,20 @@ window.loadSales = async function() {
     card += Number(o.card_amount || 0);
 
     const empName = o.shifts?.employees?.name || "غير معروف";
-    employeeSales[empName] = (employeeSales[empName] || 0) + Number(o.total || 0);
+
+    if (!employeeSales[empName]) {
+      employeeSales[empName] = 0;
+    }
+
+    employeeSales[empName] += Number(o.total || 0);
   });
 
-  // 🔥 أفضل موظف
   const topEmployee = Object.entries(employeeSales)
     .sort((a, b) => b[1] - a[1])[0];
 
-  let topProductText = "-";
-
-
+  // ===============================
+  // العرض
+  // ===============================
   document.getElementById("salesBox").innerHTML = `
     <div class="card">
 
@@ -278,12 +275,11 @@ window.loadSales = async function() {
       🧾 الطلبات: ${(data || []).length}<br>
       ❌ الملغية: ${(cancelled || []).length}<br><br>
 
-      🔥 أكثر صنف: ${topProductText}<br>
-👑 أفضل موظف: ${
-  topEmployee 
-  ? topEmployee[0] + " (" + topEmployee[1].toFixed(2) + " ر.س)"
-  : "-"
-}
+      👑 أفضل موظف: ${
+        topEmployee 
+        ? topEmployee[0] + " (" + topEmployee[1].toFixed(2) + " ر.س)"
+        : "-"
+      }
     </div>
   `;
 };
