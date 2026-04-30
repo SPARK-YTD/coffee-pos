@@ -18,16 +18,24 @@
   <div class="menu-container">
     <button id="menuBtn" class="menu-btn">☰</button>
 
-    <div id="menuDropdown" class="menu-dropdown">
-    <button onclick="closeShift()">🔒 إغلاق الشفت</button>
-    <button onclick="closeDay()">📅 إغلاق اليوم</button> <!-- 🔥 جديد -->
-    <button onclick="currentShiftId ? showShiftInfo() : openShiftPrompt()">
-  🟢 الشفت
-</button>
-    <button onclick="showReport()">📊 تقرير الشفت</button>
-    <button id="shiftInfoBtn" onclick="showShiftInfo()" style="display:none">
-  🟢 الشفت المفتوح
-</button>
+<div id="menuDropdown" class="menu-dropdown">
+
+  <button onclick="toggleShiftAction()">
+    🟢 الشفت
+  </button>
+
+  <button onclick="showReport()">
+    📊 تقرير الشفت
+  </button>
+
+  <button onclick="currentShiftId ? closeShift() : alert('❌ ما فيه شفت')">
+  🔒 إغلاق الشفت
+  </button>
+
+  <button onclick="closeDay()">
+    📅 إغلاق اليوم
+  </button>
+
 </div>
   </div>
 </header>
