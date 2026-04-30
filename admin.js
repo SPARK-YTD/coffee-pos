@@ -237,7 +237,7 @@ if (mode === "range") {
     .lte("created_at", to + " 23:59:59");
 }
   // ✅ الطلبات المدفوعة
-  const { data, error } = await query.eq("is_paid", true);
+const { data, error } = await query.eq("status", "completed");
 
   if (error) {
     document.getElementById("salesBox").innerHTML = "❌ خطأ في جلب البيانات";
