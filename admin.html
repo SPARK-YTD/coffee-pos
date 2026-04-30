@@ -115,12 +115,19 @@
   <h3>💰 المبيعات</h3>
 
   <div style="margin-bottom:10px;">
-    <select id="salesMode" onchange="loadSales()">
-      <option value="current">🟢 الشفت الحالي</option>
-      <option value="today">📅 اليوم</option>
-      <option value="all">📊 كل المبيعات</option>
-    </select>
-  </div>
+    <select id="salesMode" onchange="handleSalesFilter()">
+  <option value="today">📅 اليوم</option>
+  <option value="month">🗓 هذا الشهر</option>
+  <option value="range">📆 تحديد تاريخ</option>
+</select>
+
+<br><br>
+
+<div id="dateRange" style="display:none;">
+  من: <input type="date" id="fromDate">
+  إلى: <input type="date" id="toDate">
+  <button onclick="loadSales()">عرض</button>
+</div>
 
   <div id="salesBox"></div>
 
