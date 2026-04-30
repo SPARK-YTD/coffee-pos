@@ -58,11 +58,19 @@ function formatMoney(amount) {
 }
 
 window.openShiftPrompt = function () {
-  document.getElementById("shiftPopup").style.display = "flex";
+  const popup = document.getElementById("shiftPopup");
+
+  if (!popup) {
+    console.error("❌ shiftPopup غير موجود في الصفحة");
+    return;
+  }
+
+  popup.style.display = "flex";
 };
 
 window.closeShiftPopup = function () {
-  document.getElementById("shiftPopup").style.display = "none";
+  const popup = document.getElementById("shiftPopup");
+  if (popup) popup.style.display = "none";
 };
 
 window.confirmOpenShift = async function () {
@@ -446,28 +454,30 @@ window.filterCategory = function (category, btn) {
 
   const savedShift = localStorage.getItem("shiftId");
 
-  if (savedShift) {
+if (savedShift) {
 
-    const { data } = await supabase
-      .from("shifts")
-      .select("id, is_open")
-      .eq("id", savedShift)
-      .single();
+  const { data } = await supabase
+    .from("shifts")
+    .select("id, is_open, employees(name)")
+    .eq("id", savedShift)
+    .single();
 
-    if (data && data.is_open) {
-      currentShiftId = savedShift;
-      console.log("📂 تم استرجاع الشفت");
+  if (data && data.is_open) {
+    currentShiftId = savedShift;
+    currentEmployee = data.employees;
 
-    } else {
-      localStorage.removeItem("shiftId");
-      openShiftPrompt();
-      return;
-    }
+    console.log("📂 تم استرجاع الشفت");
 
   } else {
+    localStorage.removeItem("shiftId");
     openShiftPrompt();
     return;
   }
+
+} else {
+  openShiftPrompt();
+  return;
+}
 
   // ✅ هنا فقط إذا فيه شفت شغال
   loadItems("drinks");
