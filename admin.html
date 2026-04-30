@@ -169,15 +169,3 @@
 
 </body>
 </html>
-
-window.handleSalesFilter = function() {
-  const mode = document.getElementById("salesMode").value;
-  const rangeBox = document.getElementById("dateRange");
-
-  if (mode === "range") {
-    rangeBox.style.display = "block";
-  } else {
-    rangeBox.style.display = "none";
-    loadSales();
-  }
-};
