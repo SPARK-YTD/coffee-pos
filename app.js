@@ -57,13 +57,13 @@ function formatMoney(amount) {
     });
 }
 
-  async function openShiftPrompt() {
+window.openShiftPrompt = async function () {
 
   const pin = prompt("ادخل رقم الموظف (PIN)");
 
   if (!pin) {
-  alert("لازم تفتح شفت أول");
-  return openShiftPrompt();
+  alert("❌ لازم تدخل PIN");
+  return;
 }
 
  const { data: emp } = await supabase
@@ -76,7 +76,7 @@ console.log("EMP:", emp);
 
 if (!emp) {
   alert("❌ PIN خطأ");
-  return openShiftPrompt();
+  return;
 }
 
   currentEmployee = emp;
