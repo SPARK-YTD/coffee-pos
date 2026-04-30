@@ -330,24 +330,6 @@ setInterval(() => {
 
 let lastShiftsLog = null;
 
-setInterval(async () => {
-
-  if (currentAdminTab !== "shifts") return; // 🔥 مهم
-
-  const { data: shifts } = await supabase
-    .from("shifts")
-    .select("employees(name)")
-    .eq("is_open", true);
-
-  const names = shifts?.map(s => s.employees?.name) || [];
-
-  if (JSON.stringify(names) !== JSON.stringify(lastShiftsLog)) {
-    lastShiftsLog = names;
-    console.log("⚠️ شفتات مفتوحة:", names);
-  }
-
-}, 15000);
-
 window.loadDailyReport = async function() {
 
   const date = document.getElementById("reportDate").value;
