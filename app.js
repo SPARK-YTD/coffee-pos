@@ -5,14 +5,23 @@ let currentShiftId = null;
 let currentEmployee = null;
 
 function updateShiftButton() {
-  const btn = document.getElementById("shiftBtn");
+  const shiftBtn = document.getElementById("shiftBtn");
+  const infoBtn = document.getElementById("shiftInfoBtn");
+  const closeBtn = document.getElementById("closeShiftBtn");
 
-  if (!btn) return;
+  if (!shiftBtn) return;
 
   if (currentShiftId && currentEmployee?.name) {
-    btn.textContent = `🟢 ${currentEmployee.name}`;
+    shiftBtn.textContent = `🟢 ${currentEmployee.name}`;
+
+    if (infoBtn) infoBtn.style.display = "block";
+    if (closeBtn) closeBtn.style.display = "block";
+
   } else {
-    btn.textContent = "➕ فتح شفت";
+    shiftBtn.textContent = "➕ فتح شفت";
+
+    if (infoBtn) infoBtn.style.display = "none";
+    if (closeBtn) closeBtn.style.display = "none";
   }
 }
 
@@ -107,7 +116,7 @@ window.confirmOpenShift = async function () {
   const { data: emp } = await supabase
     .from("employees")
     .select("id, name, pin")
-    .eq("pin", pin)
+    .eq("pin", pin.trim())
     .maybeSingle();
 
   if (!emp) {
@@ -475,35 +484,36 @@ window.filterCategory = function (category, btn) {
 
   const savedShift = localStorage.getItem("shiftId");
 
-if (savedShift) {
+  if (savedShift) {
 
-  const { data } = await supabase
-    .from("shifts")
-    .select("id, is_open, employees(name)")
-    .eq("id", savedShift)
-    .single();
+    const { data } = await supabase
+      .from("shifts")
+      .select("id, is_open, employees(name)")
+      .eq("id", savedShift)
+      .single();
 
-  if (data && data.is_open) {
-    currentShiftId = savedShift;
-    currentEmployee = {
-  name: data.employees?.name || "غير معروف"
-};
+    if (data && data.is_open) {
 
-    console.log("📂 تم استرجاع الشفت");
-    updateShiftButton();
+      currentShiftId = savedShift;
+      currentEmployee = {
+        name: data.employees?.name || "غير معروف"
+      };
+
+      console.log("📂 تم استرجاع الشفت");
+      updateShiftButton();
+
+    } else {
+      localStorage.removeItem("shiftId");
+      openShiftPrompt();
+      return; 
+    }
 
   } else {
-    localStorage.removeItem("shiftId");
     openShiftPrompt();
-    return;
+    return; 
   }
 
-} else {
-  openShiftPrompt();
-  return;
-}
 
-  // ✅ هنا فقط إذا فيه شفت شغال
   loadItems("drinks");
   loadActiveOrders();
   loadCancelledOrders(currentShiftId);
