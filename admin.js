@@ -300,25 +300,44 @@ const totalQty = products.reduce((sum, p) => sum + p.qty, 0);
 // 🎨 عرض النتائج
 document.getElementById("salesBox").innerHTML = `
 
-<div class="card">
-  💰 الإجمالي: ${total.toFixed(2)}<br>
-  💵 كاش: ${cash.toFixed(2)}<br>
-  💳 بطاقة: ${card.toFixed(2)}<br><br>
-  🧾 الطلبات: ${(data || []).length}
+<div class="stats-grid">
+
+  <div class="stat-box">
+    <span>💰 الإجمالي</span>
+    <strong>${total.toFixed(2)}</strong>
+  </div>
+
+  <div class="stat-box">
+    <span>💵 كاش</span>
+    <strong>${cash.toFixed(2)}</strong>
+  </div>
+
+  <div class="stat-box">
+    <span>💳 بطاقة</span>
+    <strong>${card.toFixed(2)}</strong>
+  </div>
+
+  <div class="stat-box">
+    <span>🧾 الطلبات</span>
+    <strong>${(data || []).length}</strong>
+  </div>
+
 </div>
 
+
 <div class="card">
-  🏆 الأكثر مبيعاً:<br>
-  <strong>
-${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
-</strong>
+  🏆 الأكثر مبيعاً<br><br>
+  <strong style="font-size:18px">
+    ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
+  </strong>
 </div>
 
-<div class="card">
-  <h4>📊 تفاصيل الأصناف</h4>
 
-  <table style="width:100%; text-align:center; margin-top:10px;">
-    <tr>
+<div class="card">
+  <h3 style="margin-bottom:10px">📊 تفاصيل الأصناف</h3>
+
+  <table style="width:100%; text-align:center;">
+    <tr style="background:#f5f5f5">
       <th>الصنف</th>
       <th>الكمية</th>
       <th>الإجمالي</th>
@@ -326,19 +345,20 @@ ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
     </tr>
 
     ${products.length === 0 ? `
-  <tr>
-    <td colspan="4">❌ لا يوجد مبيعات</td>
-  </tr>
-` : products.map(p => `
-  <tr>
-    <td>${p.name}</td>
-    <td>${p.qty}</td>
-    <td>${p.total.toFixed(2)}</td>
-<td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
-  </tr>
-`).join("")}
+      <tr>
+        <td colspan="4">❌ لا يوجد مبيعات</td>
+      </tr>
+    ` : products.map(p => `
+      <tr style="border-bottom:1px solid #eee">
+        <td>${p.name}</td>
+        <td>${p.qty}</td>
+        <td>${p.total.toFixed(2)}</td>
+        <td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
+      </tr>
+    `).join("")}
 
   </table>
+
 </div>
 `;
 
