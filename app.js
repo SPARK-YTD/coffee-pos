@@ -1415,17 +1415,42 @@ window.sendReceiptWhatsApp = function () {
 
   phone = phone.replace(/\D/g, "").trim();
 
-// 🇸🇦 رقم سعودي يبدأ بـ 05
-if (phone.startsWith("05")) {
-  phone = "966" + phone.substring(1);
+// إذا فيه كود دولة نخليه
+if (
+  phone.startsWith("966") ||
+  phone.startsWith("973") ||
+  phone.startsWith("971") ||
+  phone.startsWith("965") ||
+  phone.startsWith("974") ||
+  phone.startsWith("968")
+) {
+  // تمام
 }
 
-// 🇸🇦 رقم بدون 0 (مثل 5xxxxxxxx)
+// 🇸🇦 السعودية (أولوية)
+else if (phone.startsWith("05")) {
+  phone = "966" + phone.substring(1);
+}
 else if (phone.startsWith("5") && phone.length === 9) {
   phone = "966" + phone;
 }
 
-// 🇧🇭 رقم بحريني
+// 🇰🇼 الكويت
+else if (phone.length === 9 && phone.startsWith("5")) {
+  phone = "965" + phone;
+}
+
+// 🇶🇦 قطر
+else if (phone.length === 8 && /^[3567]/.test(phone)) {
+  phone = "974" + phone;
+}
+
+// 🇴🇲 عمان
+else if (phone.length === 8 && /^[79]/.test(phone)) {
+  phone = "968" + phone;
+}
+
+// 🇧🇭 البحرين
 else if (phone.length === 8) {
   phone = "973" + phone;
 }
