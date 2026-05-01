@@ -206,6 +206,7 @@ async function loadItems(category = "drinks") {
   const { data, error } = await supabase
     .from("products")
     .select("*")
+    .eq("is_active", true)
     .eq("category", category)
     .eq("active", true);
 
