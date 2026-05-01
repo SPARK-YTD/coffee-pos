@@ -4,7 +4,7 @@
 body {
   margin: 0;
   font-family: "Segoe UI", Arial;
-  background: #f5efe6;
+  background: #f3f4f6;
 }
 
 /* ===============================
@@ -49,10 +49,41 @@ body {
    Card
 ================================ */
 .card {
-  background: #fffaf3;
-  border-radius: 18px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, #6d4c41, #8d6e63);
+  color: white;
+  border-radius: 14px;
   padding: 15px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.stat-box span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.stat-box strong {
+  font-size: 18px;
 }
 
 /* ===============================
@@ -392,16 +423,17 @@ body {
 
 .tab {
   flex: 1;
-  padding: 8px;
+  padding: 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  background: #ddd;
+  background: #e5e7eb;
   font-weight: bold;
+  transition: 0.2s;
 }
 
 .tab.active {
-  background: #6d4c41;
+  background: linear-gradient(135deg, #6d4c41, #8d6e63);
   color: white;
 }
 
@@ -487,4 +519,27 @@ body {
   text-align: center;
   margin-top: 15px;
   color: #6b4f3f;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th {
+  background: #f3f4f6;
+  padding: 10px;
+  font-size: 13px;
+}
+
+td {
+  padding: 8px;
+  font-size: 13px;
+}
+
+tr {
+  border-bottom: 1px solid #eee;
+}
+
+h3 {
+  margin: 0 0 10px;
 }
