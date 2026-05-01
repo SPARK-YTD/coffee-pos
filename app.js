@@ -1413,11 +1413,22 @@ window.sendReceiptWhatsApp = function () {
     return;
   }
 
-  phone = phone.replace(/\D/g, "");
+  phone = phone.replace(/\D/g, "").trim();
 
-  if (phone.length === 8) {
-    phone = "973" + phone;
-  }
+// 🇸🇦 رقم سعودي يبدأ بـ 05
+if (phone.startsWith("05")) {
+  phone = "966" + phone.substring(1);
+}
+
+// 🇸🇦 رقم بدون 0 (مثل 5xxxxxxxx)
+else if (phone.startsWith("5") && phone.length === 9) {
+  phone = "966" + phone;
+}
+
+// 🇧🇭 رقم بحريني
+else if (phone.length === 8) {
+  phone = "973" + phone;
+}
 
   const itemsText = lastCart.map(i =>
     `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
