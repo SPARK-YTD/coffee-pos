@@ -1,27 +1,14 @@
 import { supabase } from "./supabase.js";
 
-// عرض الصورة
-document.getElementById("image").onchange = function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const url = URL.createObjectURL(file);
-  const img = document.getElementById("preview");
-  img.src = url;
-  img.style.display = "block";
-};
-
-// إظهار الأحجام
-document.getElementById("hasVariants").onchange = function() {
-  document.getElementById("variantsBox").style.display =
-    this.checked ? "block" : "none";
-};
-
-// تحميل المنتجات
+/* ===============================
+   تحميل المنتجات
+================================ */
 async function loadProducts() {
   const { data } = await supabase.from("products").select("*");
 
   const tbody = document.getElementById("productsList");
+  if (!tbody) return;
+
   tbody.innerHTML = "";
 
   (data || []).forEach(p => {
@@ -47,6 +34,9 @@ async function loadProducts() {
   });
 }
 
+/* ===============================
+   تفعيل / تعطيل
+================================ */
 window.toggleProduct = async function(id, current) {
 
   const { error } = await supabase
@@ -62,8 +52,9 @@ window.toggleProduct = async function(id, current) {
   loadProducts();
 };
 
-
-// حذف
+/* ===============================
+   حذف
+================================ */
 window.deleteProduct = async function(id) {
   if (!confirm("حذف المنتج؟")) return;
 
@@ -71,102 +62,12 @@ window.deleteProduct = async function(id) {
   loadProducts();
 };
 
-// إضافة
-document.getElementById("submitBtn").onclick = async () => {
-
-  const name = document.getElementById("name").value;
-  const price = document.getElementById("price").value;
-  const category = document.getElementById("category").value;
-  const extras = document.getElementById("extras").value;
-  
-  if (!name) {
-  alert("❌ اكتب اسم المنتج");
-  return;
-}
-
-  const hasVariants = document.getElementById("hasVariants").checked;
-
-  let imageUrl = null;
-
-  // رفع الصورة
-  const file = document.getElementById("image").files[0];
-  if (file) {
-    const fileName = Date.now() + "_" + file.name;
-
-    const { data, error } = await supabase.storage
-  .from("products")
-  .upload(fileName, file);
-
-if (error) {
-  console.error("❌ IMAGE UPLOAD ERROR:", error);
-  alert("فشل رفع الصورة");
-} else {
-  const { data: urlData } = supabase.storage
-    .from("products")
-    .getPublicUrl(fileName);
-
-  imageUrl = urlData.publicUrl;
-}
-  }
-
-  // إدخال المنتج
-    const { data: product, error } = await supabase
-  .from("products")
-  .insert({
-    name,
-    price: hasVariants ? null : price,
-    category,
-    extras_text: extras,
-    has_variants: hasVariants,
-    image_url: imageUrl
-  })
-  .select()
-  .single();
-
-if (error) {
-  console.error(error);
-  alert("❌ خطأ في إضافة المنتج");
-  return;
-}
-
-  // الأحجام
-  if (hasVariants && product) {
-
-    const variants = [
-      { label: "Small", price: document.getElementById("smallPrice").value },
-      { label: "Medium", price: document.getElementById("mediumPrice").value },
-      { label: "Large", price: document.getElementById("largePrice").value },
-    ].filter(v => v.price);
-
-    const rows = variants.map(v => ({
-      product_id: product.id,
-      label: v.label,
-      price: v.price
-    }));
-
-    if (rows.length > 0) {
-      await supabase.from("product_variants").insert(rows);
-    }
-  }
-
-  alert("✅ تم إضافة المنتج");
-  
-  document.getElementById("name").value = "";
-  document.getElementById("price").value = "";
-  document.getElementById("extras").value = "";
-  document.getElementById("image").value = "";
-  document.getElementById("preview").style.display = "none";
-
-  loadProducts();
-};
-
-// تشغيل
-loadProducts();
-
+/* ===============================
+   الضريبة
+================================ */
 window.saveTax = async function() {
 
   const pin = prompt("🔐 أدخل رقم المدير");
-
   if (!pin) return;
 
   const { data: manager } = await supabase
@@ -196,7 +97,6 @@ window.saveTax = async function() {
     });
 
   if (error) {
-    console.error(error);
     alert("❌ خطأ في الحفظ");
     return;
   }
@@ -205,21 +105,128 @@ window.saveTax = async function() {
 };
 
 async function loadTax() {
-
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("settings")
     .select("tax_rate")
     .eq("id", 1)
     .single();
-
-  if (error) {
-    console.error("❌ TAX LOAD ERROR:", error);
-    return;
-  }
 
   if (data) {
     document.getElementById("taxRate").value = data.tax_rate;
   }
 }
 
-loadTax();
+/* ===============================
+   تشغيل بعد تحميل الصفحة
+================================ */
+window.addEventListener("DOMContentLoaded", () => {
+
+  // عرض الصورة
+  document.getElementById("image").onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    const img = document.getElementById("preview");
+    img.src = url;
+    img.style.display = "block";
+  };
+
+  // الأحجام
+  document.getElementById("hasVariants").onchange = function() {
+    document.getElementById("variantsBox").style.display =
+      this.checked ? "block" : "none";
+  };
+
+  // إضافة منتج
+  document.getElementById("submitBtn").onclick = async () => {
+
+    const name = document.getElementById("name").value;
+    const price = document.getElementById("price").value;
+    const category = document.getElementById("category").value;
+    const extras = document.getElementById("extras").value;
+
+    if (!name) {
+      alert("❌ اكتب اسم المنتج");
+      return;
+    }
+
+    const hasVariants = document.getElementById("hasVariants").checked;
+
+    let imageUrl = null;
+
+    // رفع الصورة
+    const file = document.getElementById("image").files[0];
+    if (file) {
+      const fileName = Date.now() + "_" + file.name;
+
+      const { error } = await supabase.storage
+        .from("products")
+        .upload(fileName, file);
+
+      if (error) {
+        alert("فشل رفع الصورة");
+      } else {
+        const { data } = supabase.storage
+          .from("products")
+          .getPublicUrl(fileName);
+
+        imageUrl = data.publicUrl;
+      }
+    }
+
+    // إضافة المنتج
+    const { data: product, error } = await supabase
+      .from("products")
+      .insert({
+        name,
+        price: hasVariants ? null : price,
+        category,
+        extras_text: extras,
+        has_variants: hasVariants,
+        image_url: imageUrl
+      })
+      .select()
+      .single();
+
+    if (error) {
+      alert("❌ خطأ في إضافة المنتج");
+      return;
+    }
+
+    // الأحجام
+    if (hasVariants && product) {
+      const variants = [
+        { label: "Small", price: document.getElementById("smallPrice").value },
+        { label: "Medium", price: document.getElementById("mediumPrice").value },
+        { label: "Large", price: document.getElementById("largePrice").value },
+      ].filter(v => v.price);
+
+      const rows = variants.map(v => ({
+        product_id: product.id,
+        label: v.label,
+        price: v.price
+      }));
+
+      if (rows.length > 0) {
+        await supabase.from("product_variants").insert(rows);
+      }
+    }
+
+    alert("✅ تم إضافة المنتج");
+
+    // تنظيف
+    document.getElementById("name").value = "";
+    document.getElementById("price").value = "";
+    document.getElementById("extras").value = "";
+    document.getElementById("image").value = "";
+    document.getElementById("preview").style.display = "none";
+
+    loadProducts();
+  };
+
+  // تشغيل
+  loadProducts();
+  loadTax();
+
+});
