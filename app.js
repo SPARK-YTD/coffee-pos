@@ -798,88 +798,11 @@ if (error || !newCounter) {
     
     loadActiveOrders();
     
-    
 
     overlay.remove();
-
-const actionOverlay = document.createElement("div");
-actionOverlay.className = "popup-overlay";
-
-actionOverlay.innerHTML = `
-  <div class="popup-box" style="text-align:center">
-    <h3>✅ تم الدفع بنجاح</h3>
-    <p>اختر الإجراء</p>
-
-    <button id="printBtn" style="margin:5px">🖨 طباعة الفاتورة</button>
-    <button id="waBtn" style="margin:5px">📱 إرسال واتساب</button>
-    <button id="closeBtn" class="cancel-btn">❌ إغلاق</button>
-  </div>
-`;
-
-document.body.appendChild(actionOverlay);
-
-
-actionOverlay.querySelector("#printBtn").onclick = () => {
-
-  const printArea = document.getElementById("printArea");
-
-  printArea.style.display = "block";
-
-  html2canvas(printArea, {
-    backgroundColor: "#ffffff",
-    scale: 2
-  }).then(canvas => {
-
-    const img = canvas.toDataURL("image/png");
-
-    const win = window.open("");
-
-    win.document.write(`
-      <html>
-        <head>
-          <title>Print</title>
-          <style>
-            body {
-              margin: 0;
-              text-align: center;
-            }
-            img {
-              width: 100%;
-            }
-          </style>
-        </head>
-        <body>
-          <img src="${img}" />
-        </body>
-      </html>
-    `);
-
-    win.document.close();
-
-    setTimeout(() => {
-      win.print();
-      win.close();
-    }, 300);
-
-    printArea.style.display = "none";
-    actionOverlay.remove();
-  });
-};
-
-// 📱 واتساب
-actionOverlay.querySelector("#waBtn").onclick = () => {
-  window.sendReceiptWhatsApp();
-  actionOverlay.remove(); 
-};
-
-// ❌ إغلاق
-actionOverlay.querySelector("#closeBtn").onclick = () => {
-  actionOverlay.remove();
-};
-
-actionOverlay.onclick = (e) => {
-  if (e.target === actionOverlay) actionOverlay.remove();
-};
+    window.sendReceiptWhatsApp();
+    
+  
 
 }; // يقفل onclick
 
@@ -1320,90 +1243,6 @@ window.showReport = async function () {
   `);
 };
 
-window.sendReceiptWhatsApp = async function () {
-
-  let phone = document.getElementById("customerPhone")?.value;
-
-  if (!phone) {
-    phone = prompt("📱 أدخل رقم العميل");
-    if (!phone) return;
-  }
-
-  if (!lastOrder || !lastCart) {
-    alert("❌ سو عملية الدفع أول");
-    return;
-  }
-
-  // تنظيف الرقم
-  phone = phone.replace(/\D/g, "");
-
-  if (phone.startsWith("05")) {
-    phone = "966" + phone.substring(1);
-  } else if (phone.length === 8) {
-    phone = "973" + phone;
-  }
-
-  prepareReceipt(lastOrder, lastCart, 0, 0, "cash");
-
-const printArea = document.getElementById("printArea");
-
-printArea.style.display = "block";
-
-await new Promise(r => setTimeout(r, 300));
-
-window.sendReceiptWhatsApp = async function () {
-
-  let phone = document.getElementById("customerPhone")?.value;
-
-  if (!phone) {
-    phone = prompt("📱 أدخل رقم العميل");
-    if (!phone) return;
-  }
-
-  if (!lastOrder || !lastCart) {
-    alert("❌ سو عملية الدفع أول");
-    return;
-  }
-
-  // تنظيف الرقم
-  phone = phone.replace(/\D/g, "");
-
-  if (phone.startsWith("05")) {
-    phone = "966" + phone.substring(1);
-  } else if (phone.length === 8) {
-    phone = "973" + phone;
-  }
-
-  // 🧾 المنتجات
-  const itemsText = lastCart.map(i =>
-    `• ${i.name} ×${i.qty} = ${formatMoney(i.price * i.qty)}`
-  ).join("\n");
-
-  // 🔥 رسالة فخمة
-  const message = `
-✨ *تم تنفيذ طلبك بنجاح!*
-
-━━━━━━━━━━━━━━━
-☕ *IRIVANA CAFE*
-━━━━━━━━━━━━━━━
-
-🧾 رقم الفاتورة: ${lastOrder.invoice_number || lastOrder.id}
-
-📦 الطلب:
-${itemsText}
-
-━━━━━━━━━━━━━━━
-💰 الإجمالي: ${formatMoney(lastOrder.total)}
-━━━━━━━━━━━━━━━
-
-💙 شكراً لزيارتك  
-بانتظارك دائماً ☕✨
-`;
-
-  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-  window.open(url, "_blank");
-};
-};
 
 window.closeDay = async function () {
 
@@ -1558,4 +1397,52 @@ const mins = Math.floor(diff / 60);
   overlay.onclick = (e) => {
     if (e.target === overlay) overlay.remove();
   };
+};
+
+window.sendReceiptWhatsApp = async function () {
+
+  let phone = document.getElementById("customerPhone")?.value;
+
+  if (!phone) {
+    phone = prompt("📱 أدخل رقم العميل");
+    if (!phone) return;
+  }
+
+  if (!lastOrder || !lastCart) {
+    alert("❌ سو عملية الدفع أول");
+    return;
+  }
+
+  phone = phone.replace(/\D/g, "");
+
+  if (phone.length === 8) {
+    phone = "973" + phone;
+  }
+
+  const itemsText = lastCart.map(i =>
+    `• ${i.name} ×${i.qty} = ${formatMoney(i.price * i.qty)}`
+  ).join("\n");
+
+  const message = `
+✨ *تم تنفيذ طلبك بنجاح!*
+
+━━━━━━━━━━━━━━━
+☕ *Tranqila CAFE*
+━━━━━━━━━━━━━━━
+
+🧾 رقم الفاتورة: ${lastOrder.invoice_number}
+
+📦 الطلب:
+${itemsText}
+
+━━━━━━━━━━━━━━━
+💰 الإجمالي: ${formatMoney(lastOrder.total)}
+━━━━━━━━━━━━━━━
+
+💙 شكراً لزيارتك  
+بانتظارك دائماً ☕✨
+`;
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank");
 };
