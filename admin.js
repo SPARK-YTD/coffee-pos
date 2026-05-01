@@ -91,7 +91,8 @@ window.showAdminTab = function (type) {
   document.querySelectorAll(".tab").forEach(btn => {
     if (btn.dataset.tab === type) btn.classList.add("active");
   });
-
+  
+  if (type === "products") loadProducts();
   if (type === "sales") loadSales();
   if (type === "employees") loadEmployees();
   if (type === "shifts") loadAdminShifts();
@@ -149,6 +150,46 @@ window.deleteEmployee = async function (id) {
 
   await supabase.from("employees").delete().eq("id", id);
   loadEmployees();
+};
+
+async function loadProducts() {
+  const { data } = await supabase.from("products").select("*");
+
+  const box = document.getElementById("productsList");
+  box.innerHTML = "";
+
+  (data || []).forEach(p => {
+
+    const status = p.is_active ? "🟢 مفعل" : "🔴 معطل";
+
+    box.innerHTML += `
+      <div class="product-row">
+        <div>
+          <strong>${p.name}</strong><br>
+          <small>${Number(p.price).toFixed(2)} ر.س</small><br>
+          ${status}
+        </div>
+
+        <div>
+          <button onclick="toggleProduct('${p.id}', ${p.is_active})">
+            ${p.is_active ? "تعطيل" : "تفعيل"}
+          </button>
+
+          <button onclick="deleteProduct('${p.id}')">🗑</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+window.toggleProduct = async function (id, current) {
+
+  await supabase
+    .from("products")
+    .update({ is_active: !current })
+    .eq("id", id);
+
+  loadProducts();
 };
 
 /* ===============================
