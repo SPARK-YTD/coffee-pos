@@ -1448,7 +1448,8 @@ ${itemsText}
   window.open(url, "_blank");
 
 
-  document.querySelector(".popup-overlay")?.remove();
+const overlays = document.querySelectorAll(".popup-overlay");
+overlays.forEach(o => o.remove());
 };
 
 function showAfterPaymentOptions() {
