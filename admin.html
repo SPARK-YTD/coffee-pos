@@ -75,7 +75,6 @@
   <button class="tab active" data-tab="products" onclick="showAdminTab('products')">📦 الأصناف</button>
   <button class="tab" data-tab="employees" onclick="showAdminTab('employees')">👥 الموظفين</button>
   <button class="tab" data-tab="sales" onclick="showAdminTab('sales')">💰 المبيعات</button>
-  <button class="tab" data-tab="reports" onclick="showAdminTab('reports')">📊 التقارير</button>
   <button class="tab" data-tab="shifts" onclick="showAdminTab('shifts')">🟢 الشفتات</button>
 </div>
 
@@ -110,46 +109,27 @@
 
   </div>
 
- <div id="salesTab" class="admin-section" style="display:none;">
+<div id="salesTab" class="admin-section" style="display:none;">
 
   <h3>💰 المبيعات</h3>
 
-  <div style="margin-bottom:10px;">
+  <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+    
     <select id="salesMode" onchange="handleSalesFilter()">
-  <option value="today">📅 اليوم</option>
-  <option value="month">🗓 هذا الشهر</option>
-  <option value="range">📆 تحديد تاريخ</option>
-</select>
+      <option value="today">📅 اليوم</option>
+      <option value="month">🗓 هذا الشهر</option>
+      <option value="range">📆 تحديد تاريخ</option>
+    </select>
 
-<br><br>
+    <div id="dateRange" style="display:none;">
+      من: <input type="date" id="salesFromDate">
+      إلى: <input type="date" id="salesToDate">
+      <button onclick="loadSales()">عرض</button>
+    </div>
 
-<div id="dateRange" style="display:none;">
-  من: <input type="date" id="salesFromDate">
-  إلى: <input type="date" id="salesToDate">
-  <button onclick="loadSales()">عرض</button>
-</div>
+  </div>
 
   <div id="salesBox"></div>
-
-</div>
-
- 
-<!-- 📊 التقارير -->
-<div id="reportsTab" class="admin-section" style="display:none;">
-
-  <h3>📊 التقارير</h3>
-
-  <div style="margin-bottom:10px;">
-    من: <input type="date" id="fromDate">
-    إلى: <input type="date" id="toDate">
-    <button onclick="loadRangeReport()">عرض</button>
-  </div>
-
-  <div style="margin-top:10px;">
-    <button onclick="loadEmployeeReport()">📊 تقرير الموظفين</button>
-  </div>
-
-  <div id="reportBox"></div>
 
 </div>
 
