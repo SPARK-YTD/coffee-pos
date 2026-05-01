@@ -206,35 +206,121 @@ window.loadSales = async function () {
   const { data } = await query.eq("is_paid", true);
 
   let total = 0, cash = 0, card = 0;
-  const employeeSales = {};
+  // 🔢 حساب الإجمالي
+let total = 0, cash = 0, card = 0;
 
-  (data || []).forEach(o => {
-    total += Number(o.total || 0);
-    cash += Number(o.cash_amount || 0);
-    card += Number(o.card_amount || 0);
+(data || []).forEach(o => {
+  total += Number(o.total || 0);
+  cash += Number(o.cash_amount || 0);
+  card += Number(o.card_amount || 0);
+});
 
-    const name = o.shifts?.employees?.name || "غير معروف";
+// 🔥 جلب تفاصيل الأصناف
+const { data: itemsData } = await supabase
+  .from("order_items")
+  .select(`
+    item_name,
+    qty,
+    price,
+    orders!inner (
+      created_at,
+      is_paid,
+      status
+    )
+  `);
 
-    if (!employeeSales[name]) employeeSales[name] = 0;
-    employeeSales[name] += Number(o.total || 0);
-  });
+// فلترة حسب التاريخ
+const filteredItems = (itemsData || []).filter(i => {
 
-  const topEmployee = Object.entries(employeeSales)
-    .sort((a, b) => b[1] - a[1])[0];
+  if (!i.orders.is_paid || i.orders.status === "cancelled") return false;
 
-  document.getElementById("salesBox").innerHTML = `
-    <div class="card">
-      💰 الإجمالي: ${total.toFixed(2)}<br>
-      💵 كاش: ${cash.toFixed(2)}<br>
-      💳 بطاقة: ${card.toFixed(2)}<br><br>
+  const date = new Date(i.orders.created_at);
 
-      🧾 الطلبات: ${(data || []).length}<br><br>
+  if (mode === "today") {
+    const start = new Date(); start.setHours(0,0,0,0);
+    const end = new Date(); end.setHours(23,59,59,999);
+    return date >= start && date <= end;
+  }
 
-      👑 أفضل موظف:
-      ${topEmployee ? topEmployee[0] : "-"}
-    </div>
-  `;
-};
+  if (mode === "month") {
+    const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
+    return date >= start;
+  }
+
+  if (mode === "range") {
+    const from = new Date(document.getElementById("salesFromDate").value);
+    const to = new Date(document.getElementById("salesToDate").value);
+    to.setHours(23,59,59,999);
+    return date >= from && date <= to;
+  }
+
+  return true;
+});
+
+// 🔢 تجميع المنتجات
+const map = {};
+
+filteredItems.forEach(i => {
+
+  if (!map[i.item_name]) {
+    map[i.item_name] = {
+      qty: 0,
+      total: 0
+    };
+  }
+
+  map[i.item_name].qty += i.qty;
+  map[i.item_name].total += i.qty * i.price;
+});
+
+const products = Object.entries(map).map(([name, val]) => ({
+  name,
+  qty: val.qty,
+  total: val.total
+}));
+
+// ترتيب
+products.sort((a, b) => b.qty - a.qty);
+
+// الأفضل
+const bestProduct = products[0];
+
+// 🎨 عرض النتائج
+document.getElementById("salesBox").innerHTML = `
+
+<div class="card">
+  💰 الإجمالي: ${total.toFixed(2)}<br>
+  💵 كاش: ${cash.toFixed(2)}<br>
+  💳 بطاقة: ${card.toFixed(2)}<br><br>
+  🧾 الطلبات: ${(data || []).length}
+</div>
+
+<div class="card">
+  🏆 الأكثر مبيعاً:<br>
+  <strong>${bestProduct ? bestProduct.name : "-"}</strong>
+</div>
+
+<div class="card">
+  <h4>📊 تفاصيل الأصناف</h4>
+
+  <table style="width:100%; text-align:center; margin-top:10px;">
+    <tr>
+      <th>الصنف</th>
+      <th>الكمية</th>
+      <th>الإجمالي</th>
+    </tr>
+
+    ${products.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.qty}</td>
+        <td>${p.total.toFixed(2)}</td>
+      </tr>
+    `).join("")}
+
+  </table>
+</div>
+`;
 
 /* ===============================
    الشفتات
