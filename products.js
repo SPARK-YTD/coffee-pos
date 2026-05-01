@@ -25,17 +25,43 @@ async function loadProducts() {
   tbody.innerHTML = "";
 
   (data || []).forEach(p => {
+
+    const status = p.is_active ? "🟢 مفعل" : "🔴 معطل";
+
     tbody.innerHTML += `
-      <tr>
+      <tr style="${!p.is_active ? 'opacity:0.5' : ''}">
         <td>${p.name}</td>
         <td>${p.price || "-"}</td>
+        <td>${status}</td>
         <td>
-          <button onclick="deleteProduct('${p.id}')">🗑 حذف</button>
+
+          <button onclick="toggleProduct('${p.id}', ${p.is_active})">
+            ${p.is_active ? "تعطيل" : "تفعيل"}
+          </button>
+
+          <button onclick="deleteProduct('${p.id}')">🗑</button>
+
         </td>
       </tr>
     `;
   });
 }
+
+window.toggleProduct = async function(id, current) {
+
+  const { error } = await supabase
+    .from("products")
+    .update({ is_active: !current })
+    .eq("id", id);
+
+  if (error) {
+    alert("❌ خطأ");
+    return;
+  }
+
+  loadProducts();
+};
+
 
 // حذف
 window.deleteProduct = async function(id) {
