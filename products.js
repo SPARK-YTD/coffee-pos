@@ -1,6 +1,11 @@
 import { supabase } from "./supabase.js";
 
 /* ===============================
+   حالة التعديل
+================================ */
+let editingProductId = null;
+
+/* ===============================
    تحميل المنتجات
 ================================ */
 async function loadProducts() {
@@ -13,32 +18,32 @@ async function loadProducts() {
 
   (data || []).forEach(p => {
 
-    const status = p.is_active 
-  ? "<span style='color:#16a34a;font-weight:bold'>● مفعل</span>" 
-  : "<span style='color:#dc2626;font-weight:bold'>● معطل</span>";
+    const status = p.is_active
+      ? "<span style='color:#16a34a;font-weight:bold'>● مفعل</span>"
+      : "<span style='color:#dc2626;font-weight:bold'>● معطل</span>";
 
     tbody.innerHTML += `
       <tr style="${!p.is_active ? 'opacity:0.5' : ''}">
         <td>${p.name}</td>
         <td>
-  ${p.has_variants 
-  ? "☕ متعدد الأحجام" 
-  : (p.price ? p.price + " ر.س" : "-")}
-</td>
+          ${p.has_variants 
+            ? "☕ متعدد الأحجام" 
+            : (p.price ? p.price + " ر.س" : "-")}
+        </td>
         <td>${status}</td>
         <td>
 
-      <button onclick="toggleProduct('${p.id}', ${p.is_active})">
-  ${p.is_active ? "🔴 تعطيل" : "🟢 تفعيل"}
-</button>
+          <button onclick="toggleProduct('${p.id}', ${p.is_active})">
+            ${p.is_active ? "🔴 تعطيل" : "🟢 تفعيل"}
+          </button>
 
-      <button onclick="editProduct('${p.id}', \`${p.name}\`, \`${p.price || ""}\`, ${p.has_variants})">
-      ✏️ تعديل
-      </button>
+          <button onclick="startEditProduct('${p.id}')">
+            ✏️ تعديل
+          </button>
 
-      <button onclick="deleteProduct('${p.id}')">🗑</button>
+          <button onclick="deleteProduct('${p.id}')">🗑</button>
 
-      </td>
+        </td>
       </tr>
     `;
   });
@@ -48,7 +53,6 @@ async function loadProducts() {
    تفعيل / تعطيل
 ================================ */
 window.toggleProduct = async function(id, current) {
-
   const { error } = await supabase
     .from("products")
     .update({ is_active: !current })
@@ -72,32 +76,32 @@ window.deleteProduct = async function(id) {
   loadProducts();
 };
 
-window.editProduct = async function(id, name, price, hasVariants) {
+/* ===============================
+   بدء التعديل
+================================ */
+window.startEditProduct = async function(id) {
 
-  const newName = prompt("اسم المنتج", name);
-  if (!newName) return;
-
-  let newPrice = price;
-
-  if (!hasVariants) {
-    newPrice = prompt("السعر", price || "");
-  }
-
-  const { error } = await supabase
+  const { data: p } = await supabase
     .from("products")
-    .update({
-      name: newName,
-      price: hasVariants ? null : (newPrice || null)
-    })
-    .eq("id", id);
+    .select("*")
+    .eq("id", id)
+    .single();
 
-  if (error) {
-    alert("❌ فشل التعديل");
-    return;
-  }
+  if (!p) return;
 
-  alert("✅ تم التعديل");
-  loadProducts();
+  editingProductId = id;
+
+  document.getElementById("name").value = p.name;
+  document.getElementById("price").value = p.price || "";
+  document.getElementById("category").value = p.category;
+  document.getElementById("extras").value = p.extras_text || "";
+
+  document.getElementById("hasVariants").checked = p.has_variants;
+
+  document.getElementById("variantsBox").style.display =
+    p.has_variants ? "block" : "none";
+
+  alert("✏️ عدل المنتج ثم اضغط حفظ");
 };
 
 /* ===============================
@@ -155,115 +159,131 @@ async function loadTax() {
 }
 
 /* ===============================
-   تشغيل بعد تحميل الصفحة
+   تشغيل الصفحة
 ================================ */
 window.addEventListener("DOMContentLoaded", () => {
 
   // عرض الصورة
-  document.getElementById("image").onchange = function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  const imageInput = document.getElementById("image");
+  if (imageInput) {
+    imageInput.onchange = function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    const url = URL.createObjectURL(file);
-    const img = document.getElementById("preview");
-    img.src = url;
-    img.style.display = "block";
-  };
+      const url = URL.createObjectURL(file);
+      const img = document.getElementById("preview");
+      img.src = url;
+      img.style.display = "block";
+    };
+  }
 
   // الأحجام
-  document.getElementById("hasVariants").onchange = function() {
-    document.getElementById("variantsBox").style.display =
-      this.checked ? "block" : "none";
-  };
+  const variantsCheck = document.getElementById("hasVariants");
+  if (variantsCheck) {
+    variantsCheck.onchange = function() {
+      document.getElementById("variantsBox").style.display =
+        this.checked ? "block" : "none";
+    };
+  }
 
-  // إضافة منتج
-  document.getElementById("submitBtn").onclick = async () => {
+  // زر الحفظ (إضافة + تعديل)
+  const submitBtn = document.getElementById("submitBtn");
+  if (submitBtn) {
+    submitBtn.onclick = async () => {
 
-    const name = document.getElementById("name").value;
-    const price = document.getElementById("price").value;
-    const category = document.getElementById("category").value;
-    const extras = document.getElementById("extras").value;
+      const name = document.getElementById("name").value;
+      const price = document.getElementById("price").value;
+      const category = document.getElementById("category").value;
+      const extras = document.getElementById("extras").value;
 
-    if (!name) {
-      alert("❌ اكتب اسم المنتج");
-      return;
-    }
+      if (!name) {
+        alert("❌ اكتب اسم المنتج");
+        return;
+      }
 
-    const hasVariants = document.getElementById("hasVariants").checked;
+      const hasVariants = document.getElementById("hasVariants").checked;
 
-    let imageUrl = null;
+      let imageUrl = null;
 
-    // رفع الصورة
-    const file = document.getElementById("image").files[0];
-    if (file) {
-      const fileName = Date.now() + "_" + file.name;
+      const file = document.getElementById("image").files[0];
+      if (file) {
+        const fileName = Date.now() + "_" + file.name;
 
-      const { error } = await supabase.storage
-        .from("products")
-        .upload(fileName, file);
-
-      if (error) {
-        alert("فشل رفع الصورة");
-      } else {
-        const { data } = supabase.storage
+        const { error } = await supabase.storage
           .from("products")
-          .getPublicUrl(fileName);
+          .upload(fileName, file);
 
-        imageUrl = data.publicUrl;
+        if (!error) {
+          const { data } = supabase.storage
+            .from("products")
+            .getPublicUrl(fileName);
+
+          imageUrl = data.publicUrl;
+        }
       }
-    }
 
-    // إضافة المنتج
-    const { data: product, error } = await supabase
-      .from("products")
-      .insert({
-        name,
-        price: hasVariants ? null : price,
-        category,
-        extras_text: extras,
-        has_variants: hasVariants,
-        image_url: imageUrl
-      })
-      .select()
-      .single();
+      let product;
 
-    if (error) {
-      alert("❌ خطأ في إضافة المنتج");
-      return;
-    }
+      if (editingProductId) {
 
-    // الأحجام
-    if (hasVariants && product) {
-      const variants = [
-        { label: "Small", price: document.getElementById("smallPrice").value },
-        { label: "Medium", price: document.getElementById("mediumPrice").value },
-        { label: "Large", price: document.getElementById("largePrice").value },
-      ].filter(v => v.price);
+        const { data, error } = await supabase
+          .from("products")
+          .update({
+            name,
+            price: hasVariants ? null : price,
+            category,
+            extras_text: extras,
+            has_variants: hasVariants
+          })
+          .eq("id", editingProductId)
+          .select()
+          .single();
 
-      const rows = variants.map(v => ({
-        product_id: product.id,
-        label: v.label,
-        price: v.price
-      }));
+        if (error) {
+          alert("❌ فشل التعديل");
+          return;
+        }
 
-      if (rows.length > 0) {
-        await supabase.from("product_variants").insert(rows);
+        product = data;
+
+      } else {
+
+        const { data, error } = await supabase
+          .from("products")
+          .insert({
+            name,
+            price: hasVariants ? null : price,
+            category,
+            extras_text: extras,
+            has_variants: hasVariants,
+            image_url: imageUrl
+          })
+          .select()
+          .single();
+
+        if (error) {
+          alert("❌ خطأ في الإضافة");
+          return;
+        }
+
+        product = data;
       }
-    }
 
-    alert("✅ تم إضافة المنتج");
+      alert(editingProductId ? "✅ تم تعديل المنتج" : "✅ تم إضافة المنتج");
 
-    // تنظيف
-    document.getElementById("name").value = "";
-    document.getElementById("price").value = "";
-    document.getElementById("extras").value = "";
-    document.getElementById("image").value = "";
-    document.getElementById("preview").style.display = "none";
+      editingProductId = null;
 
-    loadProducts();
-  };
+      // تنظيف
+      document.getElementById("name").value = "";
+      document.getElementById("price").value = "";
+      document.getElementById("extras").value = "";
+      document.getElementById("image").value = "";
+      document.getElementById("preview").style.display = "none";
 
-  // تشغيل
+      loadProducts();
+    };
+  }
+
   loadProducts();
   loadTax();
 
