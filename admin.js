@@ -155,7 +155,12 @@ window.deleteEmployee = async function (id) {
    المبيعات
 ================================ */
 
+function money(val) {
+  return Number(val || 0).toFixed(2) + " ر.س";
+}
+
 window.loadSales = async function () {
+
   const mode = document.getElementById("salesMode")?.value || "today";
 
   let query = supabase
@@ -164,21 +169,16 @@ window.loadSales = async function () {
       total,
       cash_amount,
       card_amount,
-      created_at,
-      shifts (
-        employees ( name )
-      )
+      created_at
     `);
 
   // فلترة التاريخ
   if (mode === "today") {
-    const start = new Date();
-    start.setHours(0,0,0,0);
+    const start = new Date(); start.setHours(0,0,0,0);
+    const end = new Date(); end.setHours(23,59,59,999);
 
-    const end = new Date();
-    end.setHours(23,59,59,999);
-
-    query = query.gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
+    query = query.gte("created_at", start.toISOString())
+                 .lte("created_at", end.toISOString());
   }
 
   if (mode === "month") {
@@ -203,165 +203,147 @@ window.loadSales = async function () {
       .lte("created_at", to + " 23:59:59");
   }
 
-  const { data } = await query.eq("is_paid", true);
+  const { data = [] } = await query.eq("is_paid", true);
 
+  // الحسابات
+  let total = 0, cash = 0, card = 0;
 
-// 🔢 حساب الإجمالي
-let total = 0, cash = 0, card = 0;
+  data.forEach(o => {
+    total += Number(o.total || 0);
+    cash += Number(o.cash_amount || 0);
+    card += Number(o.card_amount || 0);
+  });
 
-(data || []).forEach(o => {
-  total += Number(o.total || 0);
-  cash += Number(o.cash_amount || 0);
-  card += Number(o.card_amount || 0);
-});
+  // ===== المنتجات =====
+  let itemsQuery = supabase
+    .from("order_items")
+    .select(`
+      item_name,
+      qty,
+      price,
+      orders!inner (
+        created_at,
+        is_paid,
+        status
+      )
+    `)
+    .eq("orders.is_paid", true)
+    .neq("orders.status", "cancelled");
 
+  // نفس الفلترة
+  if (mode === "today") {
+    const start = new Date(); start.setHours(0,0,0,0);
+    const end = new Date(); end.setHours(23,59,59,999);
 
-let itemsQuery = supabase
-  .from("order_items")
-  .select(`
-    item_name,
-    qty,
-    price,
-    orders!inner (
-      created_at,
-      is_paid,
-      status
-    )
-  `)
-  .eq("orders.is_paid", true)
-  .neq("orders.status", "cancelled");
-
-// فلترة التاريخ من الداتابيس (أسرع 🔥)
-if (mode === "today") {
-  const start = new Date(); start.setHours(0,0,0,0);
-  const end = new Date(); end.setHours(23,59,59,999);
-
-  itemsQuery = itemsQuery
-    .gte("orders.created_at", start.toISOString())
-    .lte("orders.created_at", end.toISOString());
-}
-
-if (mode === "month") {
-  const start = new Date();
-  start.setDate(1);
-  start.setHours(0,0,0,0);
-
-  itemsQuery = itemsQuery
-    .gte("orders.created_at", start.toISOString());
-}
-
-if (mode === "range") {
-  const from = document.getElementById("salesFromDate").value;
-  const to = document.getElementById("salesToDate").value;
-
-  if (!from || !to) {
-    alert("حدد التاريخ");
-    return;
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", start.toISOString())
+      .lte("orders.created_at", end.toISOString());
   }
 
-  itemsQuery = itemsQuery
-    .gte("orders.created_at", from + " 00:00:00")
-    .lte("orders.created_at", to + " 23:59:59");
-}
+  if (mode === "month") {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0,0,0,0);
 
-// 🔥 هنا نجيب البيانات الصح
-const { data: filteredItems = [] } = await itemsQuery;
-
-
-// 🔢 تجميع المنتجات
-const map = {};
-
-(filteredItems || []).forEach(i => {
-
-  if (!map[i.item_name]) {
-    map[i.item_name] = {
-      qty: 0,
-      total: 0
-    };
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", start.toISOString());
   }
 
-  map[i.item_name].qty += i.qty;
-  map[i.item_name].total += i.qty * i.price;
-});
+  if (mode === "range") {
+    const from = document.getElementById("salesFromDate").value;
+    const to = document.getElementById("salesToDate").value;
 
-const products = Object.entries(map).map(([name, val]) => ({
-  name,
-  qty: val.qty,
-  total: val.total
-}));
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", from + " 00:00:00")
+      .lte("orders.created_at", to + " 23:59:59");
+  }
 
-// ترتيب
-products.sort((a, b) => b.qty - a.qty);
+const { data: items } = await itemsQuery;
+const safeItems = items || [];
 
-// الأفضل
-const bestProduct = products[0] || null;
-const totalQty = products.reduce((sum, p) => sum + p.qty, 0);
+  // تجميع
+  const map = {};
 
-// 🎨 عرض النتائج
-document.getElementById("salesBox").innerHTML = `
+  safeItems.forEach(i => {
+    if (!map[i.item_name]) {
+      map[i.item_name] = { qty: 0, total: 0 };
+    }
 
-<div class="stats-grid">
+    map[i.item_name].qty += i.qty;
+    map[i.item_name].total += i.qty * i.price;
+  });
 
-  <div class="stat-box">
-    <span>💰 الإجمالي</span>
-    <strong>${total.toFixed(2)}</strong>
+  const products = Object.entries(map).map(([name, val]) => ({
+    name,
+    qty: val.qty,
+    total: val.total
+  }));
+
+  products.sort((a, b) => b.qty - a.qty);
+
+  const bestProduct = products[0] || null;
+  const totalQty = products.length
+  ? products.reduce((sum, p) => sum + p.qty, 0)
+  : 0;
+
+  // ===== الإحصائيات =====
+  document.getElementById("salesStats").innerHTML = `
+    <div class="stat-box">
+      <span>💰 الإجمالي</span>
+      <strong>${money(total)}</strong>
+    </div>
+
+    <div class="stat-box">
+      <span>💵 كاش</span>
+      <strong>${money(cash)}</strong>
+    </div>
+
+    <div class="stat-box">
+      <span>💳 بطاقة</span>
+      <strong>${money(card)}</strong>
+    </div>
+
+    <div class="stat-box">
+      <span>🧾 الطلبات</span>
+      <strong>${data.length}</strong>
+    </div>
+  `;
+
+  // ===== التفاصيل =====
+  document.getElementById("salesBox").innerHTML = `
+
+  <div class="card">
+    🏆 الأكثر مبيعاً<br><br>
+    <strong style="font-size:18px">
+      ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
+    </strong>
   </div>
 
-  <div class="stat-box">
-    <span>💵 كاش</span>
-    <strong>${cash.toFixed(2)}</strong>
-  </div>
+  <div class="card">
+    <h3>📊 تفاصيل الأصناف</h3>
 
-  <div class="stat-box">
-    <span>💳 بطاقة</span>
-    <strong>${card.toFixed(2)}</strong>
-  </div>
-
-  <div class="stat-box">
-    <span>🧾 الطلبات</span>
-    <strong>${(data || []).length}</strong>
-  </div>
-
-</div>
-
-
-<div class="card">
-  🏆 الأكثر مبيعاً<br><br>
-  <strong style="font-size:18px">
-    ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
-  </strong>
-</div>
-
-
-<div class="card">
-  <h3 style="margin-bottom:10px">📊 تفاصيل الأصناف</h3>
-
-  <table style="width:100%; text-align:center;">
-    <tr style="background:#f5f5f5">
-      <th>الصنف</th>
-      <th>الكمية</th>
-      <th>الإجمالي</th>
-      <th>%</th>
-    </tr>
-
-    ${products.length === 0 ? `
+    <table style="width:100%; text-align:center;">
       <tr>
-        <td colspan="4">❌ لا يوجد مبيعات</td>
+        <th>الصنف</th>
+        <th>الكمية</th>
+        <th>الإجمالي</th>
+        <th>%</th>
       </tr>
-    ` : products.map(p => `
-      <tr style="border-bottom:1px solid #eee">
-        <td>${p.name}</td>
-        <td>${p.qty}</td>
-        <td>${p.total.toFixed(2)}</td>
-        <td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
-      </tr>
-    `).join("")}
 
-  </table>
+      ${products.length === 0 ? `
+        <tr><td colspan="4">❌ لا يوجد مبيعات</td></tr>
+      ` : products.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td>${p.qty}</td>
+          <td>${money(p.total)}</td>
+          <td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
+        </tr>
+      `).join("")}
 
-</div>
-`;
-
+    </table>
+  </div>
+  `;
 };  
 
 /* ===============================
@@ -404,11 +386,21 @@ window.loadAdminShifts = async function () {
 
   shifts.forEach(s => {
     html += `
-      <div class="card">
-        👤 ${s.employees?.name || "غير معروف"}<br>
-        💰 ${map[s.id] || 0}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      
+      <div>
+        <strong>👤 ${s.employees?.name || "غير معروف"}</strong><br>
+        <small style="color:#666">شفت مفتوح</small>
       </div>
-    `;
+
+      <div style="font-weight:bold; font-size:16px; color:#4caf50">
+        ${money(map[s.id])}
+      </div>
+
+    </div>
+  </div>
+`;
   });
 
   box.innerHTML = html;
