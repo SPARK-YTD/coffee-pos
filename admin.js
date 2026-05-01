@@ -205,8 +205,8 @@ window.loadSales = async function () {
 
   const { data } = await query.eq("is_paid", true);
 
-  let total = 0, cash = 0, card = 0;
-  // 🔢 حساب الإجمالي
+
+// 🔢 حساب الإجمالي
 let total = 0, cash = 0, card = 0;
 
 (data || []).forEach(o => {
@@ -283,7 +283,7 @@ const products = Object.entries(map).map(([name, val]) => ({
 products.sort((a, b) => b.qty - a.qty);
 
 // الأفضل
-const bestProduct = products[0];
+const bestProduct = products.length > 0 ? products[0] : null;
 
 // 🎨 عرض النتائج
 document.getElementById("salesBox").innerHTML = `
@@ -310,17 +310,23 @@ document.getElementById("salesBox").innerHTML = `
       <th>الإجمالي</th>
     </tr>
 
-    ${products.map(p => `
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.qty}</td>
-        <td>${p.total.toFixed(2)}</td>
-      </tr>
-    `).join("")}
+    ${products.length === 0 ? `
+  <tr>
+    <td colspan="3">❌ لا يوجد مبيعات</td>
+  </tr>
+` : products.map(p => `
+  <tr>
+    <td>${p.name}</td>
+    <td>${p.qty}</td>
+    <td>${p.total.toFixed(2)}</td>
+  </tr>
+`).join("")}
 
   </table>
 </div>
 `;
+
+};  
 
 /* ===============================
    الشفتات
