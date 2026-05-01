@@ -800,7 +800,7 @@ if (error || !newCounter) {
     
 
     overlay.remove();
-    window.sendReceiptWhatsApp();
+    showAfterPaymentOptions();
     
   
 
@@ -1399,7 +1399,7 @@ const mins = Math.floor(diff / 60);
   };
 };
 
-window.sendReceiptWhatsApp = async function () {
+window.sendReceiptWhatsApp = function () {
 
   let phone = document.getElementById("customerPhone")?.value;
 
@@ -1420,29 +1420,69 @@ window.sendReceiptWhatsApp = async function () {
   }
 
   const itemsText = lastCart.map(i =>
-    `• ${i.name} ×${i.qty} = ${formatMoney(i.price * i.qty)}`
+    `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
   ).join("\n");
 
   const message = `
-✨ *تم تنفيذ طلبك بنجاح!*
+✨ *شكراً لزيارتك Tranqila Cafe* ✨
 
 ━━━━━━━━━━━━━━━
-☕ *Tranqila CAFE*
+🧾 *تفاصيل الفاتورة*
 ━━━━━━━━━━━━━━━
 
-🧾 رقم الفاتورة: ${lastOrder.invoice_number}
+🔢 رقم الطلب: ${lastOrder.invoice_number}
 
 📦 الطلب:
 ${itemsText}
 
 ━━━━━━━━━━━━━━━
-💰 الإجمالي: ${formatMoney(lastOrder.total)}
+💰 الإجمالي: *${formatMoney(lastOrder.total)}*
 ━━━━━━━━━━━━━━━
 
-💙 شكراً لزيارتك  
-بانتظارك دائماً ☕✨
+☕ نتمنى لك تجربة رائعة  
+💙 بانتظارك مرة أخرى
 `;
 
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-window.location.href = url;
+
+  window.open(url, "_blank");
+
+
+  document.querySelector(".popup-overlay")?.remove();
 };
+
+function showAfterPaymentOptions() {
+
+  const overlay = document.createElement("div");
+
+  overlay.className = "popup-overlay";
+
+  overlay.innerHTML = `
+
+    <div class="popup-box" style="text-align:center">
+
+      <h3>✅ تم الدفع بنجاح</h3>
+
+      <p style="margin:10px 0;">وش تبي تسوي؟</p>
+
+      <button onclick="printReceipt()">🖨 طباعة الفاتورة</button>
+
+      <button onclick="sendReceiptWhatsApp()">📤 إرسال واتساب</button>
+
+      <button class="cancel-btn">إغلاق</button>
+
+    </div>
+
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
+
+  overlay.onclick = (e) => {
+
+    if (e.target === overlay) overlay.remove();
+
+  };
+
+}
