@@ -13,22 +13,32 @@ async function loadProducts() {
 
   (data || []).forEach(p => {
 
-    const status = p.is_active ? "🟢 مفعل" : "🔴 معطل";
+    const status = p.is_active 
+  ? "<span style='color:#16a34a;font-weight:bold'>● مفعل</span>" 
+  : "<span style='color:#dc2626;font-weight:bold'>● معطل</span>";
 
     tbody.innerHTML += `
       <tr style="${!p.is_active ? 'opacity:0.5' : ''}">
         <td>${p.name}</td>
-        <td>${p.price || "-"}</td>
+        <td>
+  ${p.has_variants 
+  ? "☕ متعدد الأحجام" 
+  : (p.price ? p.price + " ر.س" : "-")}
+</td>
         <td>${status}</td>
         <td>
 
-          <button onclick="toggleProduct('${p.id}', ${p.is_active})">
-            ${p.is_active ? "تعطيل" : "تفعيل"}
-          </button>
+      <button onclick="toggleProduct('${p.id}', ${p.is_active})">
+  ${p.is_active ? "🔴 تعطيل" : "🟢 تفعيل"}
+</button>
 
-          <button onclick="deleteProduct('${p.id}')">🗑</button>
+      <button onclick="editProduct('${p.id}', \`${p.name}\`, \`${p.price || ""}\`, ${p.has_variants})">
+      ✏️ تعديل
+      </button>
 
-        </td>
+      <button onclick="deleteProduct('${p.id}')">🗑</button>
+
+      </td>
       </tr>
     `;
   });
@@ -59,6 +69,34 @@ window.deleteProduct = async function(id) {
   if (!confirm("حذف المنتج؟")) return;
 
   await supabase.from("products").delete().eq("id", id);
+  loadProducts();
+};
+
+window.editProduct = async function(id, name, price, hasVariants) {
+
+  const newName = prompt("اسم المنتج", name);
+  if (!newName) return;
+
+  let newPrice = price;
+
+  if (!hasVariants) {
+    newPrice = prompt("السعر", price || "");
+  }
+
+  const { error } = await supabase
+    .from("products")
+    .update({
+      name: newName,
+      price: hasVariants ? null : (newPrice || null)
+    })
+    .eq("id", id);
+
+  if (error) {
+    alert("❌ فشل التعديل");
+    return;
+  }
+
+  alert("✅ تم التعديل");
   loadProducts();
 };
 
