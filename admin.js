@@ -215,8 +215,8 @@ let total = 0, cash = 0, card = 0;
   card += Number(o.card_amount || 0);
 });
 
-// 🔥 جلب تفاصيل الأصناف
-const { data: itemsData } = await supabase
+
+let itemsQuery = supabase
   .from("order_items")
   .select(`
     item_name,
@@ -227,40 +227,51 @@ const { data: itemsData } = await supabase
       is_paid,
       status
     )
-  `);
+  `)
+  .eq("orders.is_paid", true)
+  .neq("orders.status", "cancelled");
 
-// فلترة حسب التاريخ
-const filteredItems = (itemsData || []).filter(i => {
+// فلترة التاريخ من الداتابيس (أسرع 🔥)
+if (mode === "today") {
+  const start = new Date(); start.setHours(0,0,0,0);
+  const end = new Date(); end.setHours(23,59,59,999);
 
-  if (!i.orders.is_paid || i.orders.status === "cancelled") return false;
+  itemsQuery = itemsQuery
+    .gte("orders.created_at", start.toISOString())
+    .lte("orders.created_at", end.toISOString());
+}
 
-  const date = new Date(i.orders.created_at);
+if (mode === "month") {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0,0,0,0);
 
-  if (mode === "today") {
-    const start = new Date(); start.setHours(0,0,0,0);
-    const end = new Date(); end.setHours(23,59,59,999);
-    return date >= start && date <= end;
+  itemsQuery = itemsQuery
+    .gte("orders.created_at", start.toISOString());
+}
+
+if (mode === "range") {
+  const from = document.getElementById("salesFromDate").value;
+  const to = document.getElementById("salesToDate").value;
+
+  if (!from || !to) {
+    alert("حدد التاريخ");
+    return;
   }
 
-  if (mode === "month") {
-    const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
-    return date >= start;
-  }
+  itemsQuery = itemsQuery
+    .gte("orders.created_at", from + " 00:00:00")
+    .lte("orders.created_at", to + " 23:59:59");
+}
 
-  if (mode === "range") {
-    const from = new Date(document.getElementById("salesFromDate").value);
-    const to = new Date(document.getElementById("salesToDate").value);
-    to.setHours(23,59,59,999);
-    return date >= from && date <= to;
-  }
+// 🔥 هنا نجيب البيانات الصح
+const { data: filteredItems = [] } = await itemsQuery;
 
-  return true;
-});
 
 // 🔢 تجميع المنتجات
 const map = {};
 
-filteredItems.forEach(i => {
+(filteredItems || []).forEach(i => {
 
   if (!map[i.item_name]) {
     map[i.item_name] = {
@@ -283,7 +294,8 @@ const products = Object.entries(map).map(([name, val]) => ({
 products.sort((a, b) => b.qty - a.qty);
 
 // الأفضل
-const bestProduct = products.length > 0 ? products[0] : null;
+const bestProduct = products[0] || null;
+const totalQty = products.reduce((sum, p) => sum + p.qty, 0);
 
 // 🎨 عرض النتائج
 document.getElementById("salesBox").innerHTML = `
@@ -297,7 +309,9 @@ document.getElementById("salesBox").innerHTML = `
 
 <div class="card">
   🏆 الأكثر مبيعاً:<br>
-  <strong>${bestProduct ? bestProduct.name : "-"}</strong>
+  <strong>
+${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
+</strong>
 </div>
 
 <div class="card">
@@ -308,17 +322,19 @@ document.getElementById("salesBox").innerHTML = `
       <th>الصنف</th>
       <th>الكمية</th>
       <th>الإجمالي</th>
+      <th>%</th>
     </tr>
 
     ${products.length === 0 ? `
   <tr>
-    <td colspan="3">❌ لا يوجد مبيعات</td>
+    <td colspan="4">❌ لا يوجد مبيعات</td>
   </tr>
 ` : products.map(p => `
   <tr>
     <td>${p.name}</td>
     <td>${p.qty}</td>
     <td>${p.total.toFixed(2)}</td>
+<td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
   </tr>
 `).join("")}
 
