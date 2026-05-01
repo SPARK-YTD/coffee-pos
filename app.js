@@ -1351,22 +1351,58 @@ printArea.style.display = "block";
 
 await new Promise(r => setTimeout(r, 300));
 
-html2canvas(printArea).then(canvas => {
+window.sendReceiptWhatsApp = async function () {
 
-  const image = canvas.toDataURL("image/png");
+  let phone = document.getElementById("customerPhone")?.value;
 
-  const link = document.createElement("a");
-  link.href = image;
-  link.download = `invoice-${lastOrder.invoice_number}.png`;
-  link.click();
+  if (!phone) {
+    phone = prompt("📱 أدخل رقم العميل");
+    if (!phone) return;
+  }
 
-  const url = `https://wa.me/${phone}`;
+  if (!lastOrder || !lastCart) {
+    alert("❌ سو عملية الدفع أول");
+    return;
+  }
+
+  // تنظيف الرقم
+  phone = phone.replace(/\D/g, "");
+
+  if (phone.startsWith("05")) {
+    phone = "966" + phone.substring(1);
+  } else if (phone.length === 8) {
+    phone = "973" + phone;
+  }
+
+  // 🧾 المنتجات
+  const itemsText = lastCart.map(i =>
+    `• ${i.name} ×${i.qty} = ${formatMoney(i.price * i.qty)}`
+  ).join("\n");
+
+  // 🔥 رسالة فخمة
+  const message = `
+✨ *تم تنفيذ طلبك بنجاح!*
+
+━━━━━━━━━━━━━━━
+☕ *IRIVANA CAFE*
+━━━━━━━━━━━━━━━
+
+🧾 رقم الفاتورة: ${lastOrder.invoice_number || lastOrder.id}
+
+📦 الطلب:
+${itemsText}
+
+━━━━━━━━━━━━━━━
+💰 الإجمالي: ${formatMoney(lastOrder.total)}
+━━━━━━━━━━━━━━━
+
+💙 شكراً لزيارتك  
+بانتظارك دائماً ☕✨
+`;
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
-
-  printArea.style.display = "none";
-
-  alert("✅ تم تحميل صورة الفاتورة\n📌 أرسلها من الواتساب");
-});
+};
 };
 
 window.closeDay = async function () {
