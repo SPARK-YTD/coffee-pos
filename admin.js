@@ -77,11 +77,12 @@ window.showAdminTab = function (type) {
   currentAdminTab = type;
 
   const sections = {
-    products: document.getElementById("productsTab"),
-    employees: document.getElementById("employeesTab"),
-    sales: document.getElementById("salesTab"),
-    shifts: document.getElementById("shiftsTab"),
-  };
+  products: document.getElementById("productsTab"),
+  employees: document.getElementById("employeesTab"),
+  sales: document.getElementById("salesTab"),
+  shifts: document.getElementById("shiftsTab"),
+  inventory: document.getElementById("inventoryTab"), // 🔥 الجديد
+};
 
   document.querySelectorAll(".admin-section").forEach(s => s.style.display = "none");
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -95,6 +96,9 @@ window.showAdminTab = function (type) {
   if (type === "sales") loadSales();
   if (type === "employees") loadEmployees();
   if (type === "shifts") loadAdminShifts();
+  if (type === "inventory") {
+
+}
 };
 
 /* ===============================
