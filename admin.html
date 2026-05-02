@@ -76,6 +76,7 @@
   <button class="tab" data-tab="employees" onclick="showAdminTab('employees')">👥 الموظفين</button>
   <button class="tab" data-tab="sales" onclick="showAdminTab('sales')">💰 المبيعات</button>
   <button class="tab" data-tab="shifts" onclick="showAdminTab('shifts')">🟢 الشفتات</button>
+  <button class="tab" data-tab="inventory" onclick="showAdminTab('inventory')">📦 المواد</button>
 </div>
 
   <!-- 📦 الأصناف -->
@@ -85,6 +86,16 @@
       style="width:100%; height:650px; border:none; border-radius:10px;">
     </iframe>
   </div>
+  
+  <!-- 📦 المواد الاستهلاكية -->
+<div id="inventoryTab" class="admin-section" style="display:none;">
+
+  <iframe 
+    src="inventory.html" 
+    style="width:100%; height:650px; border:none; border-radius:10px;">
+  </iframe>
+
+</div>
 
   <!-- 👥 الموظفين -->
   <div id="employeesTab" class="admin-section" style="display:none;">
