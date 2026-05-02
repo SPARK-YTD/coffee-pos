@@ -40,7 +40,7 @@ async function loadProducts() {
           <button onclick="startEditProduct('${p.id}')">
             ✏️ تعديل
           </button>
-
+          <button onclick="selectProduct('${p.id}')">📦 ربط مواد</button>
           <button onclick="deleteProduct('${p.id}')">🗑</button>
 
         </td>
@@ -288,3 +288,73 @@ window.addEventListener("DOMContentLoaded", () => {
   loadTax();
 
 });
+
+/* ===============================
+   ربط المواد (Inventory)
+================================ */
+
+let selectedProductId = null;
+
+// اختيار المنتج
+window.selectProduct = async function(productId) {
+
+  selectedProductId = productId;
+
+  const { data: items } = await supabase
+    .from("inventory")
+    .select("*");
+
+  const box = document.getElementById("ingredientsBox");
+
+  if (!box) return;
+
+  box.innerHTML = "<h4>📦 المواد:</h4>";
+
+  (items || []).forEach(item => {
+    box.innerHTML += `
+      <div style="margin-bottom:5px">
+        ${item.name} 
+        <input 
+          type="number" 
+          placeholder="الكمية" 
+          id="ing_${item.id}" 
+          style="width:80px"
+        >
+      </div>
+    `;
+  });
+
+  alert("اختر الكميات ثم اضغط حفظ المواد");
+};
+
+
+// حفظ الربط
+window.saveIngredients = async function() {
+
+  if (!selectedProductId) {
+    alert("اختر منتج أول");
+    return;
+  }
+
+  const { data: items } = await supabase
+    .from("inventory")
+    .select("*");
+
+  for (let item of items || []) {
+
+    const qty = document.getElementById(`ing_${item.id}`).value;
+
+    if (qty && Number(qty) > 0) {
+
+      await supabase
+        .from("product_ingredients")
+        .insert({
+          product_id: selectedProductId,
+          inventory_id: item.id,
+          quantity: qty
+        });
+    }
+  }
+
+  alert("✅ تم ربط المواد");
+};
