@@ -415,11 +415,12 @@ function addToCart(item) {
     existing.qty += 1;
   } else {
     cart.push({
-      id: item.id || null, // 🔥 مهم
-      name: item.name,
-      price: item.price,
-      qty: 1
-    });
+  id: item.id || null,
+  product_id: item.id || null,
+  name: item.name,
+  price: item.price,
+  qty: 1
+});
   }
 
   renderCart();
@@ -518,6 +519,31 @@ window.filterCategory = function (category, btn) {
   loadCancelledOrders(currentShiftId);
 
 })();
+
+async function deductInventory(cartItems) {
+
+  for (const item of cartItems) {
+
+    if (!item.product_id) continue;
+
+    const { data: ingredients } = await supabase
+      .from("product_ingredients")
+      .select("*")
+      .eq("product_id", item.product_id);
+
+    if (!ingredients || ingredients.length === 0) continue;
+
+    for (const ing of ingredients) {
+
+      const totalUsed = Number(ing.qty_used) * Number(item.qty);
+
+      await supabase.rpc("decrease_inventory", {
+        inv_id: ing.inventory_id,
+        amount: totalUsed
+      });
+    }
+  }
+}
 
 window.completeOrder = async function () {
   
@@ -786,6 +812,7 @@ if (error || !newCounter) {
     }));
 
     await supabase.from("order_items").insert(itemsToInsert);
+    await deductInventory(cart);
 
     prepareReceipt(order, cart, cash, card, method);
     
