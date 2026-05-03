@@ -370,20 +370,14 @@ window.selectProduct = async function(productId) {
     return;
   }
 
-  // حذف القديم
-  await supabase
-    .from("product_ingredients")
-    .delete()
-    .eq("product_id", productId)
-    .eq("inventory_id", selected.id);
-
-  // إضافة الجديد
   const { error } = await supabase
     .from("product_ingredients")
-    .insert({
+    .upsert({
       product_id: productId,
       inventory_id: selected.id,
       qty_used: Number(qty)
+    }, {
+      onConflict: "product_id,inventory_id"
     });
 
   if (error) {
@@ -392,6 +386,5 @@ window.selectProduct = async function(productId) {
   }
 
   alert("✅ تم الربط");
-
-  loadProducts(); // 🔥 تحديث مباشر
+  loadProducts();
 };
