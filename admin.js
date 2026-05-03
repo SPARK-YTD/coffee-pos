@@ -149,12 +149,42 @@ async function loadEmployees() {
 }
 
 window.deleteEmployee = async function (id) {
+
+  // 🔐 طلب PIN المدير
+  const pin = prompt("🔐 أدخل رقم المدير");
+  if (!pin) return;
+
+  // تحقق من المدير
+  const { data: manager } = await supabase
+    .from("employees")
+    .select("id, role")
+    .eq("pin", pin.trim())
+    .eq("role", "manager")
+    .maybeSingle();
+
+  if (!manager) {
+    alert("❌ غير مصرح");
+    return;
+  }
+
+  // تأكيد الحذف
   if (!confirm("حذف الموظف؟")) return;
 
-  await supabase.from("employees").delete().eq("id", id);
+  // حذف
+  const { error } = await supabase
+    .from("employees")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("❌ فشل الحذف");
+    return;
+  }
+
+  alert("✅ تم حذف الموظف");
+
   loadEmployees();
 };
-
 
 /* ===============================
    المبيعات
