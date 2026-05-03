@@ -295,66 +295,58 @@ window.addEventListener("DOMContentLoaded", () => {
 
 let selectedProductId = null;
 
-// اختيار المنتج
-window.selectProduct = async function(productId) {
 
-  selectedProductId = productId;
+window.selectProduct = async function (productId) {
 
-  const { data: items } = await supabase
+  // نجيب كل المواد
+  const { data: inventory } = await supabase
     .from("inventory")
     .select("*");
 
-  const box = document.getElementById("ingredientsBox");
-
-  if (!box) return;
-
-  box.innerHTML = "<h4>📦 المواد:</h4>";
-
-  (items || []).forEach(item => {
-    box.innerHTML += `
-      <div style="margin-bottom:5px">
-        ${item.name} 
-        <input 
-          type="number" 
-          placeholder="الكمية" 
-          id="ing_${item.id}" 
-          style="width:80px"
-        >
-      </div>
-    `;
-  });
-
-  alert("اختر الكميات ثم اضغط حفظ المواد");
-};
-
-
-// حفظ الربط
-window.saveIngredients = async function() {
-
-  if (!selectedProductId) {
-    alert("اختر منتج أول");
+  if (!inventory || inventory.length === 0) {
+    alert("❌ ما عندك مواد");
     return;
   }
 
-  const { data: items } = await supabase
-    .from("inventory")
-    .select("*");
+  // عرض المواد
+  let text = "اختر رقم المادة:\n\n";
+  inventory.forEach((i, index) => {
+    text += `${index + 1} - ${i.name} (المتوفر: ${i.quantity})\n`;
+  });
 
-  for (let item of items || []) {
+  const choice = prompt(text);
+  const selected = inventory[choice - 1];
 
-    const qty = document.getElementById(`ing_${item.id}`).value;
+  if (!selected) return;
 
-    if (qty && Number(qty) > 0) {
+  // كم يستهلك
+  const qty = prompt("كم يستهلك من هذه المادة لكل حبة؟");
 
-      await supabase
-        .from("product_ingredients")
-        .insert({
-          product_id: selectedProductId,
-          inventory_id: item.id,
-          quantity: qty
-        });
-    }
+  if (!qty || isNaN(qty) || Number(qty) <= 0) {
+    alert("❌ رقم غير صحيح");
+    return;
   }
 
-  alert("✅ تم ربط المواد");
+  // نحذف الربط القديم لنفس المنتج ونفس المادة
+await supabase
+  .from("product_ingredients")
+  .delete()
+  .eq("product_id", productId)
+  .eq("inventory_id", selected.id);
+
+// ثم نضيف الجديد
+const { error } = await supabase
+  .from("product_ingredients")
+  .insert({
+    product_id: productId,
+    inventory_id: selected.id,
+    qty_used: qty
+  });
+
+  if (error) {
+    alert("❌ فشل الربط");
+    return;
+  }
+
+  alert("✅ تم ربط المادة بالمنتج");
 };
