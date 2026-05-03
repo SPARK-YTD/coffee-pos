@@ -8,69 +8,75 @@
 
 <body>
 
+  <!-- ===============================
+       الضريبة
+  ================================ -->
   <div style="margin-bottom:10px;">
-  نسبة الضريبة (%):
-  <input type="number" id="taxRate" placeholder="10" step="0.01">
-  <button onclick="saveTax()">حفظ</button>
-</div>
-  
+    نسبة الضريبة (%):
+    <input type="number" id="taxRate" placeholder="10" step="0.01">
+    <button onclick="saveTax()">حفظ</button>
+  </div>
 
-<h2>➕ إضافة صنف</h2>
+  <!-- ===============================
+       إضافة صنف
+  ================================ -->
+  <h2>➕ إضافة صنف</h2>
 
-<input id="name" placeholder="اسم الصنف"><br><br>
+  <input id="name" placeholder="اسم الصنف"><br><br>
 
-<input id="price" type="number" step="0.001" placeholder="السعر الأساسي"><br><br>
+  <input id="price" type="number" step="0.001" placeholder="السعر الأساسي"><br><br>
 
-<input type="file" id="image" accept="image/*"><br><br> 
-<img id="preview" style="width:100px;display:none;margin-top:10px;"><br><br>
+  <input type="file" id="image" accept="image/*"><br><br> 
+  <img id="preview" style="width:100px;display:none;margin-top:10px;"><br><br>
 
-<select id="category">
-  <option value="drinks">مشروبات</option>
-  <option value="food">طعام</option>
-</select><br><br>
+  <select id="category">
+    <option value="drinks">مشروبات</option>
+    <option value="food">طعام</option>
+  </select><br><br>
 
-<label>
-  <input type="checkbox" id="hasVariants"> فيه أحجام؟
-</label>
+  <label>
+    <input type="checkbox" id="hasVariants"> فيه أحجام؟
+  </label>
 
-<div id="variantsBox" style="display:none">
-  <h4>الأحجام</h4>
+  <!-- الأحجام -->
+  <div id="variantsBox" style="display:none">
+    <h4>الأحجام</h4>
 
-  <div>Small: <input id="smallPrice" type="number"></div>
-  <div>Medium: <input id="mediumPrice" type="number"></div>
-  <div>Large: <input id="largePrice" type="number"></div>
-</div>
+    <div>Small: <input id="smallPrice" type="number"></div>
+    <div>Medium: <input id="mediumPrice" type="number"></div>
+    <div>Large: <input id="largePrice" type="number"></div>
+  </div>
 
-<br>
+  <br>
 
-<textarea id="extras" placeholder="الإضافات (كل سطر = خيار)"></textarea>
+  <textarea id="extras" placeholder="الإضافات (كل سطر = خيار)"></textarea>
 
-<br><br>
+  <br><br>
 
-<button id="submitBtn">➕ حفظ المنتج</button>
+  <button id="submitBtn">➕ حفظ المنتج</button>
 
-<h4>📦 ربط المواد</h4>
+  <hr>
 
-<div id="ingredientsBox"></div>
+  <!-- ===============================
+       المنتجات
+  ================================ -->
+  <h3>📦 المنتجات الحالية</h3>
 
-<button onclick="saveIngredients()">💾 حفظ المواد</button>
+  <table border="1" width="100%">
+    <thead>
+      <tr>
+        <th>الاسم</th>
+        <th>السعر</th>
+        <th>الحالة</th>
+        <th>المواد</th> <!-- 🔥 مهم -->
+        <th>الإجراءات</th>
+      </tr>
+    </thead>
 
-<hr>
+    <tbody id="productsList"></tbody>
+  </table>
 
-<h3>📦 المنتجات الحالية</h3>
-
-<table border="1" width="100%">
-  <thead>
-    <tr>
-      <th>الاسم</th>
-      <th>السعر</th>
-      <th>الإجراءات</th>
-    </tr>
-  </thead>
-  <tbody id="productsList"></tbody>
-</table>
-
-<script type="module" src="products.js"></script>
+  <script type="module" src="products.js"></script>
 
 </body>
 </html>
