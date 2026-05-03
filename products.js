@@ -14,12 +14,13 @@ async function loadProducts() {
   const { data, error } = await supabase
     .from("products")
     .select(`
-      *,
-      product_ingredients (
-        qty_used,
-        inventory ( name )
-      )
-    `);
+  *,
+  product_ingredients (
+    qty_used,
+    inventory_id,
+    inventory ( name )
+  )
+`);
 
   if (error) {
     console.error(error);
@@ -43,8 +44,15 @@ async function loadProducts() {
 
     if (p.product_ingredients && p.product_ingredients.length > 0) {
       ingredientsText = p.product_ingredients
-        .map(i => `${i.inventory?.name || "-"} (${i.qty_used})`)
-        .join(" + ");
+  .map(i => `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      ${i.inventory?.name || "-"} (${i.qty_used})
+      <button onclick="removeIngredient('${p.id}', '${i.inventory_id}')">
+        ❌
+      </button>
+    </div>
+  `)
+  .join("");
     }
 
     tbody.innerHTML += `
@@ -387,4 +395,26 @@ window.selectProduct = async function(productId) {
 
   alert("✅ تم الربط");
   loadProducts();
+};
+
+window.removeIngredient = async function (productId, inventoryId) {
+
+  const ok = confirm("حذف المادة من المنتج؟");
+  if (!ok) return;
+
+  const { error } = await supabase
+    .from("product_ingredients")
+    .delete()
+    .eq("product_id", productId)
+    .eq("inventory_id", inventoryId);
+
+  if (error) {
+    alert("❌ فشل الحذف");
+    console.error(error);
+    return;
+  }
+
+  alert("✅ تم حذف المادة");
+
+  loadProducts(); // تحديث الجدول
 };
