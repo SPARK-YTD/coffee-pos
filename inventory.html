@@ -1,12 +1,54 @@
-<h2>📦 المواد الاستهلاكية</h2>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>المواد الاستهلاكية</title>
+  <link rel="stylesheet" href="style.css">
 
-<input id="invName" placeholder="اسم المادة">
-<input id="invQty" type="number" placeholder="الكمية">
+  <style>
+    body {
+      padding: 20px;
+    }
 
-<button onclick="addItem()">➕ إضافة</button>
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+    }
+
+    .inv-box {
+      background: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .low {
+      background: #ffe5e5;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>📦 إدارة المواد</h2>
+
+<!-- إضافة -->
+<input id="invName" placeholder="اسم المادة (مثال: كوب)">
+<input id="invQty" type="number" placeholder="الكمية (مثال: 100)">
+
+<button onclick="addInventory()">➕ إضافة</button>
 
 <hr>
+
+<h3>📋 المواد الحالية</h3>
 
 <div id="inventoryList"></div>
 
 <script type="module" src="inventory.js"></script>
+
+</body>
+</html>
