@@ -1,15 +1,30 @@
 import { supabase } from "./supabase.js";
 
 /* ===============================
-   حالة التعديل
+   الحالة
 ================================ */
 let editingProductId = null;
+let currentImageUrl = null;
 
 /* ===============================
    تحميل المنتجات
 ================================ */
 async function loadProducts() {
-  const { data } = await supabase.from("products").select("*");
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(`
+      *,
+      product_ingredients (
+        qty_used,
+        inventory ( name )
+      )
+    `);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   const tbody = document.getElementById("productsList");
   if (!tbody) return;
@@ -18,21 +33,35 @@ async function loadProducts() {
 
   (data || []).forEach(p => {
 
+    // الحالة
     const status = p.is_active
       ? "<span style='color:#16a34a;font-weight:bold'>● مفعل</span>"
       : "<span style='color:#dc2626;font-weight:bold'>● معطل</span>";
 
+    // المواد
+    let ingredientsText = "❌ غير مربوط";
+
+    if (p.product_ingredients && p.product_ingredients.length > 0) {
+      ingredientsText = p.product_ingredients
+        .map(i => `${i.inventory?.name || "-"} (${i.qty_used})`)
+        .join(" + ");
+    }
+
     tbody.innerHTML += `
       <tr style="${!p.is_active ? 'opacity:0.5' : ''}">
         <td>${p.name}</td>
+
         <td>
           ${p.has_variants 
             ? "☕ متعدد الأحجام" 
             : (p.price ? p.price + " ر.س" : "-")}
         </td>
-        <td>${status}</td>
-        <td>
 
+        <td>${status}</td>
+
+        <td>${ingredientsText}</td>
+
+        <td>
           <button onclick="toggleProduct('${p.id}', ${p.is_active})">
             ${p.is_active ? "🔴 تعطيل" : "🟢 تفعيل"}
           </button>
@@ -40,9 +69,14 @@ async function loadProducts() {
           <button onclick="startEditProduct('${p.id}')">
             ✏️ تعديل
           </button>
-          <button onclick="selectProduct('${p.id}')">📦 ربط مواد</button>
-          <button onclick="deleteProduct('${p.id}')">🗑</button>
 
+          <button onclick="selectProduct('${p.id}')">
+            📦 تعديل المواد
+          </button>
+
+          <button onclick="deleteProduct('${p.id}')">
+            🗑
+          </button>
         </td>
       </tr>
     `;
@@ -53,6 +87,7 @@ async function loadProducts() {
    تفعيل / تعطيل
 ================================ */
 window.toggleProduct = async function(id, current) {
+
   const { error } = await supabase
     .from("products")
     .update({ is_active: !current })
@@ -70,6 +105,7 @@ window.toggleProduct = async function(id, current) {
    حذف
 ================================ */
 window.deleteProduct = async function(id) {
+
   if (!confirm("حذف المنتج؟")) return;
 
   await supabase.from("products").delete().eq("id", id);
@@ -81,15 +117,16 @@ window.deleteProduct = async function(id) {
 ================================ */
 window.startEditProduct = async function(id) {
 
-  const { data: p } = await supabase
+  const { data: p, error } = await supabase
     .from("products")
     .select("*")
     .eq("id", id)
     .single();
 
-  if (!p) return;
+  if (error || !p) return;
 
   editingProductId = id;
+  currentImageUrl = p.image_url;
 
   document.getElementById("name").value = p.name;
   document.getElementById("price").value = p.price || "";
@@ -100,6 +137,38 @@ window.startEditProduct = async function(id) {
 
   document.getElementById("variantsBox").style.display =
     p.has_variants ? "block" : "none";
+
+  // الصورة
+  if (p.image_url) {
+    const img = document.getElementById("preview");
+    img.src = p.image_url;
+    img.style.display = "block";
+  }
+
+  // الأحجام
+  if (p.has_variants) {
+
+    const { data: variants } = await supabase
+      .from("product_variants")
+      .select("*")
+      .eq("product_id", id);
+
+    (variants || []).forEach(v => {
+
+      if (v.label === "Small") {
+        document.getElementById("smallPrice").value = v.price;
+      }
+
+      if (v.label === "Medium") {
+        document.getElementById("mediumPrice").value = v.price;
+      }
+
+      if (v.label === "Large") {
+        document.getElementById("largePrice").value = v.price;
+      }
+
+    });
+  }
 
   alert("✏️ عدل المنتج ثم اضغط حفظ");
 };
@@ -127,26 +196,20 @@ window.saveTax = async function() {
   const rate = parseFloat(document.getElementById("taxRate").value);
 
   if (isNaN(rate)) {
-    alert("❌ اكتب رقم صحيح");
+    alert("❌ رقم غير صحيح");
     return;
   }
 
-  const { error } = await supabase
-    .from("settings")
-    .upsert({
-      id: 1,
-      tax_rate: rate
-    });
-
-  if (error) {
-    alert("❌ خطأ في الحفظ");
-    return;
-  }
+  await supabase.from("settings").upsert({
+    id: 1,
+    tax_rate: rate
+  });
 
   alert("✅ تم حفظ الضريبة");
 };
 
 async function loadTax() {
+
   const { data } = await supabase
     .from("settings")
     .select("tax_rate")
@@ -165,12 +228,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // عرض الصورة
   const imageInput = document.getElementById("image");
+
   if (imageInput) {
     imageInput.onchange = function(e) {
+
       const file = e.target.files[0];
       if (!file) return;
 
       const url = URL.createObjectURL(file);
+
       const img = document.getElementById("preview");
       img.src = url;
       img.style.display = "block";
@@ -179,6 +245,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // الأحجام
   const variantsCheck = document.getElementById("hasVariants");
+
   if (variantsCheck) {
     variantsCheck.onchange = function() {
       document.getElementById("variantsBox").style.display =
@@ -186,8 +253,9 @@ window.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // زر الحفظ (إضافة + تعديل)
+  // حفظ
   const submitBtn = document.getElementById("submitBtn");
+
   if (submitBtn) {
     submitBtn.onclick = async () => {
 
@@ -206,6 +274,7 @@ window.addEventListener("DOMContentLoaded", () => {
       let imageUrl = null;
 
       const file = document.getElementById("image").files[0];
+
       if (file) {
         const fileName = Date.now() + "_" + file.name;
 
@@ -222,33 +291,23 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      let product;
-
       if (editingProductId) {
 
-        const { data, error } = await supabase
+        await supabase
           .from("products")
           .update({
             name,
             price: hasVariants ? null : price,
             category,
             extras_text: extras,
-            has_variants: hasVariants
+            has_variants: hasVariants,
+            image_url: imageUrl || currentImageUrl
           })
-          .eq("id", editingProductId)
-          .select()
-          .single();
-
-        if (error) {
-          alert("❌ فشل التعديل");
-          return;
-        }
-
-        product = data;
+          .eq("id", editingProductId);
 
       } else {
 
-        const { data, error } = await supabase
+        await supabase
           .from("products")
           .insert({
             name,
@@ -257,23 +316,14 @@ window.addEventListener("DOMContentLoaded", () => {
             extras_text: extras,
             has_variants: hasVariants,
             image_url: imageUrl
-          })
-          .select()
-          .single();
-
-        if (error) {
-          alert("❌ خطأ في الإضافة");
-          return;
-        }
-
-        product = data;
+          });
       }
 
-      alert(editingProductId ? "✅ تم تعديل المنتج" : "✅ تم إضافة المنتج");
+      alert(editingProductId ? "✅ تم التعديل" : "✅ تم الإضافة");
 
       editingProductId = null;
+      currentImageUrl = null;
 
-      // تنظيف
       document.getElementById("name").value = "";
       document.getElementById("price").value = "";
       document.getElementById("extras").value = "";
@@ -286,19 +336,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   loadProducts();
   loadTax();
-
 });
 
 /* ===============================
-   ربط المواد (Inventory)
+   ربط المواد
 ================================ */
+window.selectProduct = async function(productId) {
 
-let selectedProductId = null;
-
-
-window.selectProduct = async function (productId) {
-
-  // نجيب كل المواد
   const { data: inventory } = await supabase
     .from("inventory")
     .select("*");
@@ -308,8 +352,8 @@ window.selectProduct = async function (productId) {
     return;
   }
 
-  // عرض المواد
   let text = "اختر رقم المادة:\n\n";
+
   inventory.forEach((i, index) => {
     text += `${index + 1} - ${i.name} (المتوفر: ${i.quantity})\n`;
   });
@@ -319,44 +363,35 @@ window.selectProduct = async function (productId) {
 
   if (!selected) return;
 
+  const qty = prompt("كم يستهلك لكل حبة؟");
 
-  // كم يستهلك
-const qty = prompt("كم يستهلك من هذه المادة لكل حبة؟");
+  if (!qty || isNaN(qty) || Number(qty) <= 0) {
+    alert("❌ رقم غير صحيح");
+    return;
+  }
 
-if (!qty || isNaN(qty) || Number(qty) <= 0) {
-  alert("❌ رقم غير صحيح");
-  return;
-}
+  // حذف القديم
+  await supabase
+    .from("product_ingredients")
+    .delete()
+    .eq("product_id", productId)
+    .eq("inventory_id", selected.id);
 
-console.log("DEBUG:", {
-  product_id: productId,
-  inventory_id: selected.id,
-  qty: qty
-});
+  // إضافة الجديد
+  const { error } = await supabase
+    .from("product_ingredients")
+    .insert({
+      product_id: productId,
+      inventory_id: selected.id,
+      qty_used: Number(qty)
+    });
 
-// نحذف القديم
-await supabase
-  .from("product_ingredients")
-  .delete()
-  .eq("product_id", productId)
-  .eq("inventory_id", selected.id);
+  if (error) {
+    alert("❌ فشل الربط: " + error.message);
+    return;
+  }
 
-// نضيف الجديد
-const { data, error } = await supabase
-  .from("product_ingredients")
-  .insert({
-    product_id: productId,
-    inventory_id: selected.id,
-    qty_used: Number(qty)
-  })
-  .select();
+  alert("✅ تم الربط");
 
-console.log("INSERT RESULT:", { data, error });
-
-if (error) {
-  alert("❌ فشل الربط: " + error.message);
-  return;
-}
-
-alert("✅ تم ربط المادة بالمنتج");
+  loadProducts(); // 🔥 تحديث مباشر
 };
