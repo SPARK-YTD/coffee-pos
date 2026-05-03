@@ -319,34 +319,44 @@ window.selectProduct = async function (productId) {
 
   if (!selected) return;
 
+
   // كم يستهلك
-  const qty = prompt("كم يستهلك من هذه المادة لكل حبة؟");
+const qty = prompt("كم يستهلك من هذه المادة لكل حبة؟");
 
-  if (!qty || isNaN(qty) || Number(qty) <= 0) {
-    alert("❌ رقم غير صحيح");
-    return;
-  }
+if (!qty || isNaN(qty) || Number(qty) <= 0) {
+  alert("❌ رقم غير صحيح");
+  return;
+}
 
-  // نحذف الربط القديم لنفس المنتج ونفس المادة
+console.log("DEBUG:", {
+  product_id: productId,
+  inventory_id: selected.id,
+  qty: qty
+});
+
+// نحذف القديم
 await supabase
   .from("product_ingredients")
   .delete()
   .eq("product_id", productId)
   .eq("inventory_id", selected.id);
 
-// ثم نضيف الجديد
-const { error } = await supabase
+// نضيف الجديد
+const { data, error } = await supabase
   .from("product_ingredients")
   .insert({
     product_id: productId,
     inventory_id: selected.id,
-    qty_used: qty
-  });
+    qty_used: Number(qty)
+  })
+  .select();
 
-  if (error) {
-    alert("❌ فشل الربط");
-    return;
-  }
+console.log("INSERT RESULT:", { data, error });
 
-  alert("✅ تم ربط المادة بالمنتج");
+if (error) {
+  alert("❌ فشل الربط: " + error.message);
+  return;
+}
+
+alert("✅ تم ربط المادة بالمنتج");
 };
