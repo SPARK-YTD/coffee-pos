@@ -1433,9 +1433,9 @@ window.sendReceiptWhatsApp = function () {
   const country = document.getElementById("countryCode")?.value || "966";
 
   if (!phone) {
-    phone = prompt("📱 أدخل رقم العميل");
-    if (!phone) return;
-  }
+  alert("❌ اكتب رقم العميل");
+  return;
+}
 
   if (!lastOrder || !lastCart) {
     alert("❌ سو عملية الدفع أول");
@@ -1486,12 +1486,13 @@ ${itemsText}
 
 function showAfterPaymentOptions() {
 
-  const overlay = document.createElement("div");
+  // 🔥 يقفل أي بوب قديم قبل يفتح الجديد
+  document.querySelectorAll(".popup-overlay").forEach(o => o.remove());
 
+  const overlay = document.createElement("div");
   overlay.className = "popup-overlay";
 
   overlay.innerHTML = `
-
     <div class="popup-box" style="text-align:center">
 
       <h3>✅ تم الدفع بنجاح</h3>
@@ -1500,12 +1501,32 @@ function showAfterPaymentOptions() {
 
       <button onclick="printReceipt()">🖨 طباعة الفاتورة</button>
 
-      <button onclick="sendReceiptWhatsApp()">📤 إرسال واتساب</button>
+      <hr style="margin:15px 0">
+
+      <h4>📤 إرسال واتساب</h4>
+
+      <select id="countryCode" style="width:100%;padding:8px;margin-bottom:8px">
+        <option value="966" selected>🇸🇦 السعودية</option>
+        <option value="973">🇧🇭 البحرين</option>
+        <option value="971">🇦🇪 الإمارات</option>
+        <option value="965">🇰🇼 الكويت</option>
+        <option value="974">🇶🇦 قطر</option>
+        <option value="968">🇴🇲 عمان</option>
+      </select>
+
+      <input 
+        id="customerPhone" 
+        placeholder="رقم العميل"
+        style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:10px"
+      >
+
+      <button onclick="sendReceiptWhatsApp()">📤 إرسال</button>
+
+      <br><br>
 
       <button class="cancel-btn">إغلاق</button>
 
     </div>
-
   `;
 
   document.body.appendChild(overlay);
@@ -1513,9 +1534,6 @@ function showAfterPaymentOptions() {
   overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
 
   overlay.onclick = (e) => {
-
     if (e.target === overlay) overlay.remove();
-
   };
-
 }
