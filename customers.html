@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>العملاء</title>
+</head>
+
+<body>
+
+<h2>📱 قائمة العملاء</h2>
+
+<table border="1" style="width:100%; text-align:center">
+  <thead>
+    <tr>
+      <th>📞 الرقم</th>
+      <th>🌍 الدولة</th>
+      <th>🕒 تاريخ الإضافة</th>
+    </tr>
+  </thead>
+
+  <tbody id="customersTable"></tbody>
+</table>
+
+<script type="module">
+import { supabase } from "./supabase.js";
+
+async function loadCustomers() {
+
+  const { data } = await supabase
+    .from("customers")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const table = document.getElementById("customersTable");
+
+  table.innerHTML = data.map(c => `
+    <tr>
+      <td>${c.phone}</td>
+      <td>${c.country_code}</td>
+      <td>${new Date(c.created_at).toLocaleString()}</td>
+    </tr>
+  `).join("");
+}
+
+loadCustomers();
+</script>
+
+</body>
+</html>
