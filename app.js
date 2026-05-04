@@ -1430,6 +1430,7 @@ const mins = Math.floor(diff / 60);
 window.sendReceiptWhatsApp = function () {
 
   let phone = document.getElementById("customerPhone")?.value;
+  const country = document.getElementById("countryCode")?.value || "966";
 
   if (!phone) {
     phone = prompt("📱 أدخل رقم العميل");
@@ -1441,47 +1442,16 @@ window.sendReceiptWhatsApp = function () {
     return;
   }
 
-  phone = phone.replace(/\D/g, "").trim();
+  // تنظيف الرقم
+  phone = phone.replace(/\D/g, "");
 
-// إذا فيه كود دولة نخليه
-if (
-  phone.startsWith("966") ||
-  phone.startsWith("973") ||
-  phone.startsWith("971") ||
-  phone.startsWith("965") ||
-  phone.startsWith("974") ||
-  phone.startsWith("968")
-) {
-  // تمام
-}
+  // حذف الصفر بالبداية
+  if (phone.startsWith("0")) {
+    phone = phone.substring(1);
+  }
 
-// 🇸🇦 السعودية (أولوية)
-else if (phone.startsWith("05")) {
-  phone = "966" + phone.substring(1);
-}
-else if (phone.startsWith("5") && phone.length === 9) {
-  phone = "966" + phone;
-}
-
-// 🇰🇼 الكويت
-else if (phone.length === 9 && phone.startsWith("5")) {
-  phone = "965" + phone;
-}
-
-// 🇶🇦 قطر
-else if (phone.length === 8 && /^[3567]/.test(phone)) {
-  phone = "974" + phone;
-}
-
-// 🇴🇲 عمان
-else if (phone.length === 8 && /^[79]/.test(phone)) {
-  phone = "968" + phone;
-}
-
-// 🇧🇭 البحرين
-else if (phone.length === 8) {
-  phone = "973" + phone;
-}
+  // دمج كود الدولة
+  phone = country + phone;
 
   const itemsText = lastCart.map(i =>
     `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
@@ -1511,9 +1481,7 @@ ${itemsText}
 
   window.open(url, "_blank");
 
-
-const overlays = document.querySelectorAll(".popup-overlay");
-overlays.forEach(o => o.remove());
+  document.querySelectorAll(".popup-overlay").forEach(o => o.remove());
 };
 
 function showAfterPaymentOptions() {
