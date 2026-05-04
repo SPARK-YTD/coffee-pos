@@ -55,7 +55,16 @@
 
 <div class="top">
   <h2>👥 العملاء</h2>
-  <span style="color:#777">📊 قائمة الأرقام</span>
+
+  <select id="countryFilter" onchange="loadCustomers()">
+    <option value="">🌍 كل الدول</option>
+    <option value="966">🇸🇦 السعودية</option>
+    <option value="973">🇧🇭 البحرين</option>
+    <option value="971">🇦🇪 الإمارات</option>
+    <option value="965">🇰🇼 الكويت</option>
+    <option value="974">🇶🇦 قطر</option>
+    <option value="968">🇴🇲 عمان</option>
+  </select>
 </div>
 
 <div class="card" id="customersList">
