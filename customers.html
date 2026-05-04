@@ -1,46 +1,115 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>العملاء</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .customer {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .back {
+      background: #333;
+      color: white;
+    }
+
+    .whatsapp {
+      background: #25D366;
+      color: white;
+    }
+  </style>
 </head>
 
 <body>
 
-<h2>📱 قائمة العملاء</h2>
+<div class="top">
+  <h2>👥 العملاء</h2>
+  <button class="back" onclick="window.location.href='index.html'">⬅ رجوع</button>
+</div>
 
-<table border="1" style="width:100%; text-align:center">
-  <thead>
-    <tr>
-      <th>📞 الرقم</th>
-      <th>🌍 الدولة</th>
-      <th>🕒 تاريخ الإضافة</th>
-    </tr>
-  </thead>
-
-  <tbody id="customersTable"></tbody>
-</table>
+<div class="card" id="customersList">
+  جاري التحميل...
+</div>
 
 <script type="module">
 import { supabase } from "./supabase.js";
 
 async function loadCustomers() {
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("customers")
     .select("*")
     .order("created_at", { ascending: false });
 
-  const table = document.getElementById("customersTable");
+  if (error) {
+    document.getElementById("customersList").innerHTML = "❌ خطأ";
+    console.error(error);
+    return;
+  }
 
-  table.innerHTML = data.map(c => `
-    <tr>
-      <td>${c.phone}</td>
-      <td>${c.country_code}</td>
-      <td>${new Date(c.created_at).toLocaleString()}</td>
-    </tr>
-  `).join("");
+  const box = document.getElementById("customersList");
+  box.innerHTML = "";
+
+  if (!data.length) {
+    box.innerHTML = "🚫 ما فيه عملاء بعد";
+    return;
+  }
+
+  data.forEach(c => {
+
+    const div = document.createElement("div");
+    div.className = "customer";
+
+    div.innerHTML = `
+      <div>
+        📱 ${c.phone}<br>
+        🌍 ${c.country_code}
+      </div>
+
+      <button class="whatsapp"
+        onclick="sendWhats('${c.phone}')">
+        واتساب
+      </button>
+    `;
+
+    box.appendChild(div);
+  });
 }
+
+window.sendWhats = function(phone) {
+  window.open(`https://wa.me/${phone}`, "_blank");
+};
 
 loadCustomers();
 </script>
