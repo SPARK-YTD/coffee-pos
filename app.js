@@ -1427,7 +1427,7 @@ const mins = Math.floor(diff / 60);
   };
 };
 
-window.sendReceiptWhatsApp = function () {
+window.sendReceiptWhatsApp = async function () {
 
   let phone = document.getElementById("customerPhone")?.value;
   const country = document.getElementById("countryCode")?.value || "966";
@@ -1452,6 +1452,17 @@ window.sendReceiptWhatsApp = function () {
 
   // دمج كود الدولة
   phone = country + phone;
+  
+  //  حفظ العميل في الداتابيس
+await supabase
+  .from("customers")
+  .upsert(
+    {
+      phone: phone,
+      country_code: country
+    },
+    { onConflict: "phone" }
+  );
 
   const itemsText = lastCart.map(i =>
     `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
