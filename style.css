@@ -557,3 +557,9 @@ h3 {
 #productsList tr:hover {
   background: #f9fafb;
 }
+
+#countryFilter {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
