@@ -81,7 +81,8 @@ window.showAdminTab = function (type) {
   employees: document.getElementById("employeesTab"),
   sales: document.getElementById("salesTab"),
   shifts: document.getElementById("shiftsTab"),
-  inventory: document.getElementById("inventoryTab"), // 🔥 الجديد
+  inventory: document.getElementById("inventoryTab"),
+  customers: document.getElementById("customersTab"), // 🔥 هذا الجديد
 };
 
   document.querySelectorAll(".admin-section").forEach(s => s.style.display = "none");
