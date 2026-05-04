@@ -76,10 +76,18 @@ import { supabase } from "./supabase.js";
 
 async function loadCustomers() {
 
-  const { data, error } = await supabase
-    .from("customers")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const selectedCountry = document.getElementById("countryFilter")?.value;
+
+let query = supabase
+  .from("customers")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+if (selectedCountry) {
+  query = query.eq("country_code", selectedCountry);
+}
+
+const { data, error } = await query;
 
   if (error) {
     document.getElementById("customersList").innerHTML = "❌ خطأ";
