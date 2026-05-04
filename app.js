@@ -1458,23 +1458,20 @@ window.sendReceiptWhatsApp = function () {
   ).join("\n");
 
   const message = `
-✨ *شكراً لزيارتك Tranqila Cafe* ✨
+☕ *Tranqila Cafe*
 
-━━━━━━━━━━━━━━━
-🧾 *تفاصيل الفاتورة*
-━━━━━━━━━━━━━━━
+✨ تم تسجيل طلبك ✨  
+ويتم تحضيره الآن بعناية خاصة
 
-🔢 رقم الطلب: ${lastOrder.invoice_number}
+رقم الطلب: *${lastOrder.invoice_number}*
 
-📦 الطلب:
 ${itemsText}
 
-━━━━━━━━━━━━━━━
-💰 الإجمالي: *${formatMoney(lastOrder.total)}*
-━━━━━━━━━━━━━━━
+الإجمالي: *${formatMoney(lastOrder.total)}*
 
-☕ نتمنى لك تجربة رائعة  
-💙 بانتظارك مرة أخرى
+—
+شكراً لثقتك بنا  
+نتمنى لك تجربة هادئة ومميزة 🤎
 `;
 
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
