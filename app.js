@@ -814,47 +814,6 @@ if (error || !newCounter) {
     await supabase.from("order_items").insert(itemsToInsert);
     await deductInventory(cart);
 
-// ===============================
-// 👤 حفظ العميل (DEBUG)
-// ===============================
-const phoneInput = document.getElementById("customerPhone");
-const countryInput = document.getElementById("countryCode");
-
-console.log("📱 input:", phoneInput);
-console.log("📱 value:", phoneInput?.value);
-
-if (phoneInput && phoneInput.value) {
-
-  let phone = phoneInput.value.replace(/\D/g, "");
-
-  if (phone.startsWith("0")) {
-    phone = phone.substring(1);
-  }
-
-  const country = countryInput?.value || "966";
-  const fullPhone = country + phone;
-
-  console.log("📞 FINAL PHONE:", fullPhone);
-
-  const { data, error } = await supabase
-    .from("customers")
-    .upsert(
-      {
-        phone: fullPhone,
-        country_code: country
-      },
-      { onConflict: "phone" }
-    );
-
-  console.log("🔥 RESULT:", data);
-  console.log("❌ ERROR:", error);
-
-  if (error) {
-    alert(error.message);
-  }
-
-  phoneInput.value = "";
-}
 
     prepareReceipt(order, cart, cash, card, method);
     
@@ -1475,9 +1434,9 @@ window.sendReceiptWhatsApp = async function () {
   const country = document.getElementById("countryCode")?.value || "966";
 
   if (!phone) {
-  alert("❌ اكتب رقم العميل");
-  return;
-}
+    alert("❌ اكتب رقم العميل");
+    return;
+  }
 
   if (!lastOrder || !lastCart) {
     alert("❌ سو عملية الدفع أول");
@@ -1487,15 +1446,33 @@ window.sendReceiptWhatsApp = async function () {
   // تنظيف الرقم
   phone = phone.replace(/\D/g, "");
 
-  // حذف الصفر بالبداية
   if (phone.startsWith("0")) {
     phone = phone.substring(1);
   }
 
-  // دمج كود الدولة
-  phone = country + phone;
-  
+  const fullPhone = country + phone;
 
+  // ===============================
+  // 👤 حفظ العميل (المكان الصحيح)
+  // ===============================
+  const { error } = await supabase
+    .from("customers")
+    .upsert(
+      {
+        phone: fullPhone,
+        country_code: country
+      },
+      { onConflict: "phone" }
+    );
+
+  if (error) {
+    console.error("❌ DB ERROR:", error);
+    alert(error.message);
+  }
+
+  // ===============================
+  // 📩 رسالة الواتساب
+  // ===============================
   const itemsText = lastCart.map(i =>
     `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
   ).join("\n");
@@ -1513,17 +1490,16 @@ ${itemsText}
 الإجمالي: *${formatMoney(lastOrder.total)}*
 
 —
-شكراً لثقتك بنا  
-نتمنى لك تجربة هادئة ومميزة 🤎
+شكراً لثقتك بنا 🤎
+ننتظرك في زيارة ثانية 😍🩵
 `;
 
-  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
 
   window.open(url, "_blank");
 
   document.querySelectorAll(".popup-overlay").forEach(o => o.remove());
 };
-
 function showAfterPaymentOptions() {
 
   // 🔥 يقفل أي بوب قديم قبل يفتح الجديد
