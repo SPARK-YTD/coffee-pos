@@ -814,6 +814,37 @@ if (error || !newCounter) {
     await supabase.from("order_items").insert(itemsToInsert);
     await deductInventory(cart);
 
+// ===============================
+// 👤 حفظ العميل (FINAL)
+// ===============================
+const phoneInput = document.getElementById("customerPhone");
+const countryInput = document.getElementById("countryCode");
+
+if (phoneInput && phoneInput.value) {
+
+  let phone = phoneInput.value.replace(/\D/g, "");
+
+  if (phone.startsWith("0")) {
+    phone = phone.substring(1);
+  }
+
+  const country = countryInput?.value || "966";
+  const fullPhone = country + phone;
+
+  await supabase
+    .from("customers")
+    .upsert(
+      {
+        phone: fullPhone,
+        country_code: country
+      },
+      { onConflict: "phone" }
+    );
+
+
+  phoneInput.value = "";
+}
+
     prepareReceipt(order, cart, cash, card, method);
     
     lastOrder = order;
@@ -821,8 +852,8 @@ if (error || !newCounter) {
     cart = [];
     renderCart();
     
-    const phoneInput = document.getElementById("customerPhone");
-    if (phoneInput) phoneInput.value = "";
+
+
     
     loadActiveOrders();
     
@@ -1453,16 +1484,6 @@ window.sendReceiptWhatsApp = async function () {
   // دمج كود الدولة
   phone = country + phone;
   
-  //  حفظ العميل في الداتابيس
-await supabase
-  .from("customers")
-  .upsert(
-    {
-      phone: phone,
-      country_code: country
-    },
-    { onConflict: "phone" }
-  );
 
   const itemsText = lastCart.map(i =>
     `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
