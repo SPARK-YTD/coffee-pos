@@ -815,10 +815,13 @@ if (error || !newCounter) {
     await deductInventory(cart);
 
 // ===============================
-// 👤 حفظ العميل (FINAL)
+// 👤 حفظ العميل (DEBUG)
 // ===============================
 const phoneInput = document.getElementById("customerPhone");
 const countryInput = document.getElementById("countryCode");
+
+console.log("📱 input:", phoneInput);
+console.log("📱 value:", phoneInput?.value);
 
 if (phoneInput && phoneInput.value) {
 
@@ -831,7 +834,9 @@ if (phoneInput && phoneInput.value) {
   const country = countryInput?.value || "966";
   const fullPhone = country + phone;
 
-  await supabase
+  console.log("📞 FINAL PHONE:", fullPhone);
+
+  const { data, error } = await supabase
     .from("customers")
     .upsert(
       {
@@ -841,6 +846,12 @@ if (phoneInput && phoneInput.value) {
       { onConflict: "phone" }
     );
 
+  console.log("🔥 RESULT:", data);
+  console.log("❌ ERROR:", error);
+
+  if (error) {
+    alert(error.message);
+  }
 
   phoneInput.value = "";
 }
