@@ -1,84 +1,141 @@
-export let cart = [];
+export const cart = [];
 
-export function addToCart(item, renderCart) {
+/* ===============================
+   تنسيق العملة
+================================ */
+function formatMoney(amount) {
+  return `${Number(amount).toFixed(2)} ﷼`;
+}
+
+/* ===============================
+   إضافة للسلة
+================================ */
+export function addToCart(item, callback = null) {
 
   const existing = cart.find(i =>
-    i.id === item.id &&
-    i.name === item.name
+    i.name === item.name &&
+    i.price === item.price
   );
 
   if (existing) {
     existing.qty += 1;
 
   } else {
-
     cart.push({
-      id: item.id || null,
-      product_id: item.id || null,
-      name: item.name,
-      price: item.price,
+      ...item,
       qty: 1
     });
   }
 
   renderCart();
+
+  if (callback) callback();
 }
 
-export function renderCart(formatMoney) {
+/* ===============================
+   حذف عنصر
+================================ */
+export function removeFromCart(index) {
 
-  const tbody = document.getElementById("cart");
+  cart.splice(index, 1);
 
-  if (!tbody) return;
+  renderCart();
+}
 
-  tbody.innerHTML = "";
+/* ===============================
+   تغيير الكمية
+================================ */
+export function changeQty(index, change) {
+
+  if (!cart[index]) return;
+
+  cart[index].qty += change;
+
+  if (cart[index].qty <= 0) {
+    cart.splice(index, 1);
+  }
+
+  renderCart();
+}
+
+/* ===============================
+   تفريغ السلة
+================================ */
+export function clearCart() {
+
+  cart.length = 0;
+
+  renderCart();
+}
+
+/* ===============================
+   رسم السلة
+================================ */
+export function renderCart() {
+
+  const cartBox = document.getElementById("cart");
+  const totalBox = document.getElementById("total");
+
+  if (!cartBox || !totalBox) return;
+
+  cartBox.innerHTML = "";
 
   let total = 0;
 
-  cart.forEach((item, i) => {
+  cart.forEach((item, index) => {
 
-    const sum = item.qty * item.price;
+    total += item.price * item.qty;
 
-    total += sum;
+    const div = document.createElement("div");
+    div.className = "cart-item";
 
-    tbody.innerHTML += `
-      <tr>
-        <td>${item.name}</td>
+    div.innerHTML = `
+      <div class="cart-top">
 
-        <td>
-          <button onclick="changeQty(${i},-1)">-</button>
+        <div class="cart-name">
+          ${item.name}
+        </div>
 
+        <div class="cart-price">
+          ${formatMoney(item.price * item.qty)}
+        </div>
+
+      </div>
+
+      <div class="cart-controls">
+
+        <button onclick="window.changeQty(${index}, -1)">
+          ➖
+        </button>
+
+        <span>
           ${item.qty}
+        </span>
 
-          <button onclick="changeQty(${i},1)">+</button>
-        </td>
+        <button onclick="window.changeQty(${index}, 1)">
+          ➕
+        </button>
 
-        <td>${formatMoney(sum)}</td>
+        <button 
+          onclick="window.removeFromCart(${index})"
+          class="remove-btn"
+        >
+          🗑
+        </button>
 
-        <td>
-          <button onclick="removeItem(${i})">🗑</button>
-        </td>
-      </tr>
+      </div>
     `;
+
+    cartBox.appendChild(div);
   });
 
-  document.getElementById("total").textContent =
-    formatMoney(total);
+  totalBox.textContent = formatMoney(total);
 }
 
-window.changeQty = function(i, d) {
-
-  cart[i].qty += d;
-
-  if (cart[i].qty <= 0) {
-    cart.splice(i, 1);
-  }
-
-  window.renderCart(window.formatMoney);
-};
-
-window.removeItem = function(i) {
-
-  cart.splice(i, 1);
-
-  window.renderCart(window.formatMoney);
-};
+/* ===============================
+   ربط مع window
+================================ */
+window.changeQty = changeQty;
+window.removeFromCart = removeFromCart;
+window.clearCart = clearCart;
+window.renderCart = renderCart;
