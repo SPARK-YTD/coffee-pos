@@ -58,7 +58,7 @@ async function loadTax() {
 
   TAX_RATE = Number(data?.tax_rate || 0) / 100;
 
-  console.log("🔥 TAX LOADED:", TAX_RATE);
+
 }
 
 function formatMoney(amount) {
@@ -90,7 +90,6 @@ window.lastCart = null;
 
         TAX_RATE = Number(payload.new.tax_rate || 0) / 100;
 
-        console.log("⚡ TAX UPDATED LIVE:", TAX_RATE);
 
         if (cart.length > 0) {
           renderCart();
@@ -120,7 +119,6 @@ window.closeShiftPopup = function () {
 
 window.confirmOpenShift = async function () {
 
-  console.log("🔥 OPEN SHIFT CLICKED");
 
   const pin = document.getElementById("shiftPin").value.trim();
   const errorBox = document.getElementById("shiftError");
@@ -137,7 +135,6 @@ window.confirmOpenShift = async function () {
     .eq("pin", pin.trim())
     .maybeSingle();
 
-  console.log("EMP:", emp);
 
   if (!emp) {
     errorBox.textContent = "❌ PIN خطأ";
@@ -151,7 +148,6 @@ window.confirmOpenShift = async function () {
     .eq("is_open", true)
     .maybeSingle();
 
-  console.log("OPEN DAY:", openDay);
 
   if (!openDay) {
     const { error: dayError } = await supabase
@@ -177,7 +173,10 @@ window.confirmOpenShift = async function () {
     .maybeSingle();
 
   if (existingShift) {
+
   currentShiftId = existingShift.id;
+  currentEmployee = emp;
+
   localStorage.setItem("shiftId", existingShift.id);
 
   loadItems("drinks");
@@ -205,6 +204,7 @@ window.confirmOpenShift = async function () {
   }
 
   currentShiftId = shift.id;
+  currentEmployee = emp;
   localStorage.setItem("shiftId", shift.id);
 
   loadItems("drinks");
@@ -227,8 +227,6 @@ async function loadItems(category = "drinks") {
   .eq("category", category)
   .eq("is_active", true);
   
-  console.log("PRODUCTS:", data);
-  console.log("ERROR:", error);
 
   if (error) {
     console.error(error);
@@ -448,15 +446,12 @@ window.filterCategory = function (category, btn) {
 
 window.addEventListener("DOMContentLoaded", async () => {
 
-  console.log("🔥 DOM LOADED");
 
   try {
 
-  console.log("🔥 BEFORE TAX");
 
   await loadTax();
 
-  console.log("🔥 AFTER TAX");
 
   listenToTaxChanges();
 
@@ -468,7 +463,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const savedShift = localStorage.getItem("shiftId");
 
-  console.log("🔥 SAVED SHIFT:", savedShift);
 
   if (savedShift) {
 
@@ -478,10 +472,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   .eq("id", savedShift)
   .single();
 
-console.log("SHIFT ERROR:", error);
-console.log("SHIFT DATA:", data);
-
-    console.log("🔥 SHIFT DATA:", data);
 
     if (data && data.is_open) {
 
@@ -504,21 +494,15 @@ console.log("SHIFT DATA:", data);
 
   } else {
 
-    console.log("❌ NO SHIFT");
 
     openShiftPrompt();
     return;
   }
 
-  console.log("🔥 BEFORE LOAD ITEMS");
 
 loadItems("drinks");
 
-console.log("🔥 BEFORE ACTIVE");
-
 loadActiveOrders(currentShiftId);
-
-console.log("🔥 BEFORE CANCELLED");
 
 loadCancelledOrders(currentShiftId);
 
