@@ -1,6 +1,10 @@
 import { supabase } from "./supabase.js";
 
-window.sendReceiptWhatsApp = async function () {
+export async function sendReceiptWhatsApp(
+  lastOrder,
+  lastCart,
+  formatMoney
+) {
 
   let phone = document.getElementById("customerPhone")?.value;
   const country = document.getElementById("countryCode")?.value || "966";
@@ -10,7 +14,7 @@ window.sendReceiptWhatsApp = async function () {
     return;
   }
 
-  if (!window.lastOrder || !window.lastCart) {
+  if (!lastOrder || !lastCart) {
     alert("❌ سو عملية الدفع أول");
     return;
   }
@@ -38,11 +42,12 @@ window.sendReceiptWhatsApp = async function () {
   if (error) {
     console.error("❌ DB ERROR:", error);
     alert(error.message);
+    return;
   }
 
   // تجهيز الأصناف
-  const itemsText = window.lastCart.map(i =>
-    `▫️ ${i.name}\n   ×${i.qty} = ${window.formatMoney(i.price * i.qty)}`
+  const itemsText = lastCart.map(i =>
+    `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
   ).join("\n");
 
   const message = `
@@ -51,11 +56,11 @@ window.sendReceiptWhatsApp = async function () {
 ✨ تم تسجيل طلبك ✨
 ويتم تحضيره الآن بعناية خاصة
 
-رقم الطلب: *${window.lastOrder.invoice_number}*
+رقم الطلب: *${lastOrder.invoice_number}*
 
 ${itemsText}
 
-الإجمالي: *${window.formatMoney(window.lastOrder.total)}*
+الإجمالي: *${formatMoney(lastOrder.total)}*
 
 —
 شكراً لثقتك بنا 🤎
@@ -70,4 +75,4 @@ ${itemsText}
   document
     .querySelectorAll(".popup-overlay")
     .forEach(o => o.remove());
-};
+}
