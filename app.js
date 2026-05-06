@@ -62,7 +62,6 @@ window.formatMoney = formatMoney;
 
   let items = [];
 
-window.renderCart = renderCart;
 window.editingOrderId = null;
 window.lastOrder = null;
 window.lastCart = null;
@@ -86,7 +85,7 @@ window.lastCart = null;
         console.log("⚡ TAX UPDATED LIVE:", TAX_RATE);
 
         if (cart.length > 0) {
-          renderCart(formatMoney);
+          renderCart();
         }
       }
     )
@@ -300,7 +299,10 @@ if (item.extras && item.extras.filter(e => e).length > 0) {    showExtrasPopup(i
     return;
   }
 
-  addToCart(item, () => renderCart(formatMoney));
+  addToCart({
+  ...item,
+  product_id: item.id
+}, renderCart);
 }
 
 /* ===============================
@@ -352,9 +354,10 @@ window.selectVariant = function (id, name, label, price) {
   } else {
     addToCart({
   id: id,
+  product_id: id,
   name: `${name} (${label})`,
   price: price
-}, () => renderCart(formatMoney));
+}, renderCart);
 
   }
 
@@ -405,9 +408,10 @@ function showExtrasPopup(item) {
 
     addToCart({
   id: item.id,
+  product_id: item.id,
   name,
   price: item.price
-}, () => renderCart(formatMoney));
+}, renderCart);
 
     overlay.remove();
   };
@@ -732,14 +736,13 @@ if (error || !newCounter) {
   order = data;
 }
 
-    // 🔥 العناصر
     const itemsToInsert = cart.map(i => ({
-      order_id: order.id,
-      product_id: i.id,
-      item_name: i.name,
-      qty: i.qty,
-      price: i.price
-    }));
+  order_id: order.id,
+  product_id: i.product_id,
+  item_name: i.name,
+  qty: i.qty,
+  price: i.price
+}));
 
     await supabase.from("order_items").insert(itemsToInsert);
     await deductInventory(cart);
@@ -750,7 +753,7 @@ if (error || !newCounter) {
     window.lastOrder = order;
     window.lastCart = [...cart];
     cart.length = 0;
-    renderCart(formatMoney);
+    renderCart();
     
 
 
@@ -967,7 +970,7 @@ currentShiftId = null;
 updateShiftButton();
 localStorage.removeItem("shiftId");
 cart.length = 0;
-renderCart(formatMoney);
+renderCart();
 
 // 🔒 قفل الكاشير
 document.getElementById("items").innerHTML = `
