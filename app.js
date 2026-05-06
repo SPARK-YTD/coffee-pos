@@ -444,10 +444,14 @@ window.filterCategory = function (category, btn) {
 
 window.addEventListener("DOMContentLoaded", async () => {
 
+  console.log("🔥 DOM LOADED");
+
   await loadTax();
   listenToTaxChanges();
 
   const savedShift = localStorage.getItem("shiftId");
+
+  console.log("🔥 SAVED SHIFT:", savedShift);
 
   if (savedShift) {
 
@@ -456,6 +460,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       .select("id, is_open, employees(name)")
       .eq("id", savedShift)
       .single();
+
+    console.log("🔥 SHIFT DATA:", data);
 
     if (data && data.is_open) {
 
@@ -478,11 +484,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   } else {
 
+    console.log("❌ NO SHIFT");
+
     openShiftPrompt();
     return;
   }
 
+  console.log("🔥 BEFORE LOAD ITEMS");
+
   loadItems("drinks");
+
   loadActiveOrders(currentShiftId);
   loadCancelledOrders(currentShiftId);
 
