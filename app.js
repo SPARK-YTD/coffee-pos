@@ -49,12 +49,13 @@ function formatMoney(amount) {
   return `${Number(amount).toFixed(2)} ﷼`;
 }
 
+window.formatMoney = formatMoney;
 
 
   let items = [];
   let cart = [];
-  let lastOrder = null;
-  let lastCart = null;
+  window.lastOrder = null;
+  window.lastCart = null;
 
   function listenToTaxChanges() {
 
@@ -1428,78 +1429,7 @@ const mins = Math.floor(diff / 60);
   };
 };
 
-window.sendReceiptWhatsApp = async function () {
 
-  let phone = document.getElementById("customerPhone")?.value;
-  const country = document.getElementById("countryCode")?.value || "966";
-
-  if (!phone) {
-    alert("❌ اكتب رقم العميل");
-    return;
-  }
-
-  if (!lastOrder || !lastCart) {
-    alert("❌ سو عملية الدفع أول");
-    return;
-  }
-
-  // تنظيف الرقم
-  phone = phone.replace(/\D/g, "");
-
-  if (phone.startsWith("0")) {
-    phone = phone.substring(1);
-  }
-
-  const fullPhone = country + phone;
-
-  // ===============================
-  // 👤 حفظ العميل (المكان الصحيح)
-  // ===============================
-  const { error } = await supabase
-    .from("customers")
-    .upsert(
-      {
-        phone: fullPhone,
-        country_code: country
-      },
-      { onConflict: "phone" }
-    );
-
-  if (error) {
-    console.error("❌ DB ERROR:", error);
-    alert(error.message);
-  }
-
-  // ===============================
-  // 📩 رسالة الواتساب
-  // ===============================
-  const itemsText = lastCart.map(i =>
-    `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
-  ).join("\n");
-
-  const message = `
-☕ *Tranqila Cafe*
-
-✨ تم تسجيل طلبك ✨  
-ويتم تحضيره الآن بعناية خاصة
-
-رقم الطلب: *${lastOrder.invoice_number}*
-
-${itemsText}
-
-الإجمالي: *${formatMoney(lastOrder.total)}*
-
-—
-شكراً لثقتك بنا 🤎
-ننتظرك في زيارة ثانية 😍🩵
-`;
-
-  const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
-
-  window.open(url, "_blank");
-
-  document.querySelectorAll(".popup-overlay").forEach(o => o.remove());
-};
 function showAfterPaymentOptions() {
 
   // 🔥 يقفل أي بوب قديم قبل يفتح الجديد
