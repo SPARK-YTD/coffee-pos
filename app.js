@@ -56,6 +56,7 @@ window.formatMoney = formatMoney;
 
   let items = [];
   let cart = [];
+
   window.cart = cart;
   window.renderCart = renderCart;
   window.editingOrderId = null;
@@ -809,9 +810,9 @@ if (error || !newCounter) {
 
     prepareReceipt(order, cart, cash, card, method);
     
-    lastOrder = order;
-    lastCart = [...cart];
-    cart = [];
+    window.lastOrder = order;
+    window.lastCart = [...cart];
+    cart.length = 0;
     renderCart();
     
 
@@ -1028,7 +1029,7 @@ window.closeShift = async function (autoAsk = true) {
 currentShiftId = null;
 updateShiftButton();
 localStorage.removeItem("shiftId");
-cart = [];
+cart.length = 0;
 renderCart();
 
 // 🔒 قفل الكاشير
