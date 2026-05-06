@@ -468,7 +468,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     const { data, error } = await supabase
   .from("shifts")
-  .select("*")
+  .select(`
+    *,
+    employees (
+      name
+    )
+  `)
   .eq("id", savedShift)
   .single();
 
