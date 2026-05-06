@@ -3,6 +3,12 @@ import { supabase } from "./supabase.js";
 import { sendReceiptWhatsApp } from "./customers.js";
 import { loadActiveOrders } from "./orders.js";
 
+import {
+  cart,
+  addToCart,
+  renderCart
+} from "./cart.js";
+
 let currentShiftId = null;
 let currentEmployee = null;
 
@@ -55,13 +61,11 @@ window.formatMoney = formatMoney;
 
 
   let items = [];
-  let cart = [];
 
-  window.cart = cart;
-  window.renderCart = renderCart;
-  window.editingOrderId = null;
-  window.lastOrder = null;
-  window.lastCart = null;
+window.renderCart = renderCart;
+window.editingOrderId = null;
+window.lastOrder = null;
+window.lastCart = null;
 
   function listenToTaxChanges() {
 
@@ -82,7 +86,7 @@ window.formatMoney = formatMoney;
         console.log("⚡ TAX UPDATED LIVE:", TAX_RATE);
 
         if (cart.length > 0) {
-          renderCart();
+          renderCart(formatMoney);
         }
       }
     )
@@ -296,7 +300,7 @@ if (item.extras && item.extras.filter(e => e).length > 0) {    showExtrasPopup(i
     return;
   }
 
-  addToCart(item);
+  addToCart(item, () => renderCart(formatMoney));
 }
 
 /* ===============================
@@ -347,10 +351,11 @@ window.selectVariant = function (id, name, label, price) {
     });
   } else {
     addToCart({
-  id: id, // 🔥 مهم
+  id: id,
   name: `${name} (${label})`,
   price: price
-});
+}, () => renderCart(formatMoney));
+
   }
 
   document.querySelector(".popup-overlay")?.remove();
@@ -402,81 +407,13 @@ function showExtrasPopup(item) {
   id: item.id,
   name,
   price: item.price
-});
+}, () => renderCart(formatMoney));
 
     overlay.remove();
   };
 }
 
-/* ===============================
-   السلة
-================================ */
-function addToCart(item) {
 
-  const existing = cart.find(i =>
-    i.id === item.id &&
-    i.name === item.name
-  );
-
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({
-  id: item.id || null,
-  product_id: item.id || null,
-  name: item.name,
-  price: item.price,
-  qty: 1
-});
-  }
-
-  renderCart();
-}
-
-function renderCart() {
-
-  const tbody = document.getElementById("cart");
-  tbody.innerHTML = "";
-
-  let total = 0;
-
-  cart.forEach((item, i) => {
-
-    const sum = item.qty * item.price;
-    total += sum;
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${item.name}</td>
-        <td>
-          <button onclick="changeQty(${i},-1)">-</button>
-          ${item.qty}
-          <button onclick="changeQty(${i},1)">+</button>
-        </td>
-        <td>${formatMoney(sum)}</td>
-        <td><button onclick="removeItem(${i})">🗑</button></td>
-      </tr>
-    `;
-  });
-
-  document.getElementById("total").textContent =
-  formatMoney(total);
-}
-
-window.changeQty = (i, d) => {
-  cart[i].qty += d;
-  if (cart[i].qty <= 0) cart.splice(i, 1);
-  renderCart();
-};
-
-window.removeItem = i => {
-  cart.splice(i, 1);
-  renderCart();
-};
-
-/* ===============================
-   تصنيف
-================================ */
 window.filterCategory = function (category, btn) {
   document.querySelectorAll(".cat").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
@@ -813,7 +750,7 @@ if (error || !newCounter) {
     window.lastOrder = order;
     window.lastCart = [...cart];
     cart.length = 0;
-    renderCart();
+    renderCart(formatMoney);
     
 
 
@@ -1030,7 +967,7 @@ currentShiftId = null;
 updateShiftButton();
 localStorage.removeItem("shiftId");
 cart.length = 0;
-renderCart();
+renderCart(formatMoney);
 
 // 🔒 قفل الكاشير
 document.getElementById("items").innerHTML = `
