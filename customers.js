@@ -14,21 +14,26 @@ export async function sendReceiptWhatsApp(
     return;
   }
 
-  if (!lastOrder || !lastCart) {
+  if (!lastOrder || !lastCart || lastCart.length === 0) {
     alert("❌ سو عملية الدفع أول");
     return;
   }
 
-  // تنظيف الرقم
+  // 🔥 تنظيف الرقم
   phone = phone.replace(/\D/g, "");
 
+  // حذف الصفر بالبداية
   if (phone.startsWith("0")) {
     phone = phone.substring(1);
   }
 
-  const fullPhone = country + phone;
+  const fullPhone = `${country}${phone}`;
 
-  // حفظ العميل
+  console.log("📞 PHONE:", fullPhone);
+  console.log("🧾 ORDER:", lastOrder);
+  console.log("🛒 CART:", lastCart);
+
+  // 🔥 حفظ العميل
   const { error } = await supabase
     .from("customers")
     .upsert(
@@ -45,7 +50,7 @@ export async function sendReceiptWhatsApp(
     return;
   }
 
-  // تجهيز الأصناف
+  // 🔥 تجهيز الأصناف
   const itemsText = lastCart.map(i =>
     `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
   ).join("\n");
@@ -56,11 +61,11 @@ export async function sendReceiptWhatsApp(
 ✨ تم تسجيل طلبك ✨
 ويتم تحضيره الآن بعناية خاصة
 
-رقم الطلب: *${lastOrder.invoice_number}*
+رقم الطلب: *${lastOrder.invoice_number || "-" }*
 
 ${itemsText}
 
-الإجمالي: *${formatMoney(lastOrder.total)}*
+الإجمالي: *${formatMoney(lastOrder.total || 0)}*
 
 —
 شكراً لثقتك بنا 🤎
@@ -70,8 +75,12 @@ ${itemsText}
   const url =
     `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
 
-  window.open(url, "_blank");
+  console.log("📤 WHATSAPP URL:", url);
 
+  // 🔥 مهم للآيفون
+  window.location.href = url;
+
+  // 🔥 إغلاق النوافذ
   document
     .querySelectorAll(".popup-overlay")
     .forEach(o => o.remove());
