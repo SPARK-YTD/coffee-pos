@@ -13,6 +13,10 @@ window.addEventListener("error", (e) => {
   console.error("🔥 GLOBAL ERROR:", e.error);
 });
 
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("🔥 PROMISE ERROR:", e.reason);
+});
+
 let currentShiftId = null;
 let currentEmployee = null;
 
@@ -446,8 +450,21 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   console.log("🔥 DOM LOADED");
 
+  try {
+
+  console.log("🔥 BEFORE TAX");
+
   await loadTax();
+
+  console.log("🔥 AFTER TAX");
+
   listenToTaxChanges();
+
+} catch (err) {
+
+  console.error("🔥 TAX ERROR:", err);
+
+}
 
   const savedShift = localStorage.getItem("shiftId");
 
@@ -455,11 +472,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   if (savedShift) {
 
-    const { data } = await supabase
-      .from("shifts")
-      .select("id, is_open, employees(name)")
-      .eq("id", savedShift)
-      .single();
+    const { data, error } = await supabase
+  .from("shifts")
+  .select("*")
+  .eq("id", savedShift)
+  .single();
+
+console.log("SHIFT ERROR:", error);
+console.log("SHIFT DATA:", data);
 
     console.log("🔥 SHIFT DATA:", data);
 
@@ -492,10 +512,15 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   console.log("🔥 BEFORE LOAD ITEMS");
 
-  loadItems("drinks");
+loadItems("drinks");
 
-  loadActiveOrders(currentShiftId);
-  loadCancelledOrders(currentShiftId);
+console.log("🔥 BEFORE ACTIVE");
+
+loadActiveOrders(currentShiftId);
+
+console.log("🔥 BEFORE CANCELLED");
+
+loadCancelledOrders(currentShiftId);
 
 });
 
