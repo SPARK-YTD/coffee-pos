@@ -1,5 +1,6 @@
 import { loadCancelledOrders } from "./reports.js";
 import { supabase } from "./supabase.js";
+import { sendReceiptWhatsApp } from "./customers.js";
 
 let currentShiftId = null;
 let currentEmployee = null;
@@ -1477,8 +1478,17 @@ function showAfterPaymentOptions() {
 
   document.body.appendChild(overlay);
 
-  overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
+overlay
+  .querySelector("#sendWhatsappBtn")
+  .onclick = () => {
+    sendReceiptWhatsApp(
+      window.lastOrder,
+      window.lastCart,
+      formatMoney
+    );
+  };
 
+overlay.querySelector(".cancel-btn").onclick = () => overlay.remove();
   overlay.onclick = (e) => {
     if (e.target === overlay) overlay.remove();
   };
