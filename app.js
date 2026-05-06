@@ -345,7 +345,7 @@ window.selectVariant = function (id, name, label, price) {
 
   const baseItem = items.find(i => i.id === id);
 
-  if (baseItem.extras.length > 0) {
+  if (baseItem.extras && baseItem.extras.length > 0) {
     showExtrasPopup({
       ...baseItem,
       name: `${name} (${label})`,
