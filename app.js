@@ -295,11 +295,17 @@ if (existingPopup) {
 
   if (item.has_variants) {
 
-    const { data: variants } = await supabase
-      .from("product_variants")
-      .select("*")
-      .eq("product_id", item.id);
+    const { data: variants, error } = await supabase
+  .from("product_variants")
+  .select("*")
+  .eq("product_id", item.id);
 
+if (error) {
+  console.error(error);
+  alert("❌ خطأ في تحميل الأحجام");
+  return;
+}
+     
     showVariantsPopup(item, variants);
     return;
   }
@@ -326,7 +332,7 @@ function showVariantsPopup(item, variants) {
     <div class="popup-box">
       <h3>${item.name}</h3>
 
-      ${variants.map(v => `
+      ${(variants || []).map(v => `
         <button class="variant-btn"
           onclick="selectVariant(
             '${item.id}',
