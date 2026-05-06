@@ -9,6 +9,10 @@ import {
   renderCart
 } from "./cart.js";
 
+window.addEventListener("error", (e) => {
+  console.error("🔥 GLOBAL ERROR:", e.error);
+});
+
 let currentShiftId = null;
 let currentEmployee = null;
 
@@ -214,18 +218,17 @@ window.confirmOpenShift = async function () {
 async function loadItems(category = "drinks") {
 
   const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("is_active", true)
-    .eq("category", category)
-    .eq("active", true);
+  .from("products")
+  .select("*")
+  .eq("category", category)
+  .eq("is_active", true);
 
   if (error) {
     console.error(error);
     return;
   }
 
-  items = data.map(p => ({
+  items = (data || []).map(p => ({
   ...p,
   extras: p.extras_text
     ? p.extras_text
@@ -243,7 +246,13 @@ async function loadItems(category = "drinks") {
 ================================ */
 function renderItems() {
   const box = document.getElementById("items");
-  box.innerHTML = "";
+
+if (!box) {
+  console.error("❌ items container مو موجود");
+  return;
+}
+
+box.innerHTML = "";
 
   items.forEach(item => {
     const div = document.createElement("div");
@@ -257,10 +266,10 @@ function renderItems() {
   <div class="item-name">${item.name}</div>
 
   <div class="item-price">
-    ${item.has_variants
-      ? "اختر الحجم"
-      : formatMoney(item.price)}
-  </div>
+  ${item.has_variants
+    ? "اختر الحجم"
+    : formatMoney(item.price || 0)}
+</div>
 `;
 
     div.onclick = () => handleItem(item);
@@ -343,9 +352,9 @@ function showVariantsPopup(item, variants) {
 
 window.selectVariant = function (id, name, label, price) {
 
-  const baseItem = items.find(i => i.id === id);
+  const baseItem = items.find(i => String(i.id) === String(id));
 
-  if (baseItem.extras && baseItem.extras.length > 0) {
+  if (baseItem?.extras && baseItem.extras.length > 0) {
     showExtrasPopup({
       ...baseItem,
       name: `${name} (${label})`,
@@ -377,7 +386,7 @@ function showExtrasPopup(item) {
       <h3>${item.name}</h3>
 
       <div>
-        ${item.extras.map(extra => `
+        ${(item.extras || []).map(extra => `
           <label>
             <input type="checkbox" value="${extra}" checked>
             ${extra}
@@ -424,8 +433,7 @@ window.filterCategory = function (category, btn) {
   loadItems(category);
 };
 
-/* =============================== */
-(async () => {
+window.addEventListener("DOMContentLoaded", async () => {
 
   await loadTax();
   listenToTaxChanges();
@@ -443,30 +451,33 @@ window.filterCategory = function (category, btn) {
     if (data && data.is_open) {
 
       currentShiftId = savedShift;
+
       currentEmployee = {
         name: data.employees?.name || "غير معروف"
       };
 
       console.log("📂 تم استرجاع الشفت");
+
       updateShiftButton();
 
     } else {
+
       localStorage.removeItem("shiftId");
       openShiftPrompt();
-      return; 
+      return;
     }
 
   } else {
-    openShiftPrompt();
-    return; 
-  }
 
+    openShiftPrompt();
+    return;
+  }
 
   loadItems("drinks");
   loadActiveOrders(currentShiftId);
   loadCancelledOrders(currentShiftId);
 
-})();
+});
 
 async function deductInventory(cartItems) {
 
