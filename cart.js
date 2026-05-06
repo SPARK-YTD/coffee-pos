@@ -27,9 +27,11 @@ export function addToCart(item, callback = null) {
     });
   }
 
+  if (callback) {
+  callback();
+} else {
   renderCart();
-
-  if (callback) callback();
+}
 }
 
 /* ===============================
