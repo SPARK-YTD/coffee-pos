@@ -222,6 +222,9 @@ async function loadItems(category = "drinks") {
   .select("*")
   .eq("category", category)
   .eq("is_active", true);
+  
+  console.log("PRODUCTS:", data);
+  console.log("ERROR:", error);
 
   if (error) {
     console.error(error);
