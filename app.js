@@ -120,6 +120,8 @@ window.closeShiftPopup = function () {
 
 window.confirmOpenShift = async function () {
 
+  console.log("🔥 OPEN SHIFT CLICKED");
+
   const pin = document.getElementById("shiftPin").value.trim();
   const errorBox = document.getElementById("shiftError");
 
@@ -135,23 +137,21 @@ window.confirmOpenShift = async function () {
     .eq("pin", pin.trim())
     .maybeSingle();
 
+  console.log("EMP:", emp);
+
   if (!emp) {
     errorBox.textContent = "❌ PIN خطأ";
     errorBox.style.display = "block";
     return;
   }
 
-  errorBox.style.display = "none";
-  currentEmployee = emp;
-
-  // ===============================
-  // 🔥 تأكد فيه يوم عمل مفتوح
-  // ===============================
   const { data: openDay } = await supabase
     .from("business_days")
     .select("*")
     .eq("is_open", true)
     .maybeSingle();
+
+  console.log("OPEN DAY:", openDay);
 
   if (!openDay) {
     const { error: dayError } = await supabase
