@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.js";
 
-export async function sendReceiptWhatsApp(
+export function sendReceiptWhatsApp(
   lastOrder,
   lastCart,
   formatMoney
@@ -14,43 +14,21 @@ export async function sendReceiptWhatsApp(
     return;
   }
 
-  if (!lastOrder || !lastCart || lastCart.length === 0) {
+  if (!lastOrder || !lastCart) {
     alert("❌ سو عملية الدفع أول");
     return;
   }
 
-  // 🔥 تنظيف الرقم
+  // تنظيف الرقم
   phone = phone.replace(/\D/g, "");
 
-  // حذف الصفر بالبداية
   if (phone.startsWith("0")) {
     phone = phone.substring(1);
   }
 
-  const fullPhone = `${country}${phone}`;
+  const fullPhone = country + phone;
 
-  console.log("📞 PHONE:", fullPhone);
-  console.log("🧾 ORDER:", lastOrder);
-  console.log("🛒 CART:", lastCart);
-
-  // 🔥 حفظ العميل
-  const { error } = await supabase
-    .from("customers")
-    .upsert(
-      {
-        phone: fullPhone,
-        country_code: country
-      },
-      { onConflict: "phone" }
-    );
-
-  if (error) {
-    console.error("❌ DB ERROR:", error);
-    alert(error.message);
-    return;
-  }
-
-  // 🔥 تجهيز الأصناف
+  // تجهيز الأصناف
   const itemsText = lastCart.map(i =>
     `▫️ ${i.name}\n   ×${i.qty} = ${formatMoney(i.price * i.qty)}`
   ).join("\n");
@@ -61,11 +39,11 @@ export async function sendReceiptWhatsApp(
 ✨ تم تسجيل طلبك ✨
 ويتم تحضيره الآن بعناية خاصة
 
-رقم الطلب: *${lastOrder.invoice_number || "-" }*
+رقم الطلب: *${lastOrder.invoice_number}*
 
 ${itemsText}
 
-الإجمالي: *${formatMoney(lastOrder.total || 0)}*
+الإجمالي: *${formatMoney(lastOrder.total)}*
 
 —
 شكراً لثقتك بنا 🤎
@@ -75,12 +53,25 @@ ${itemsText}
   const url =
     `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
 
-  console.log("📤 WHATSAPP URL:", url);
-
-  // 🔥 مهم للآيفون
+  // 🔥 هذا أهم تعديل
   window.location.href = url;
 
-  // 🔥 إغلاق النوافذ
+  // 🔥 حفظ العميل بالخلفية بدون انتظار
+  supabase
+    .from("customers")
+    .upsert(
+      {
+        phone: fullPhone,
+        country_code: country
+      },
+      { onConflict: "phone" }
+    )
+    .then(({ error }) => {
+      if (error) {
+        console.error("DB ERROR:", error);
+      }
+    });
+
   document
     .querySelectorAll(".popup-overlay")
     .forEach(o => o.remove());
