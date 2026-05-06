@@ -1,6 +1,7 @@
 import { loadCancelledOrders } from "./reports.js";
 import { supabase } from "./supabase.js";
 import { sendReceiptWhatsApp } from "./customers.js";
+import { loadActiveOrders } from "./orders.js";
 
 let currentShiftId = null;
 let currentEmployee = null;
@@ -55,6 +56,9 @@ window.formatMoney = formatMoney;
 
   let items = [];
   let cart = [];
+  window.cart = cart;
+  window.renderCart = renderCart;
+  window.editingOrderId = null;
   window.lastOrder = null;
   window.lastCart = null;
 
@@ -165,7 +169,7 @@ window.confirmOpenShift = async function () {
   localStorage.setItem("shiftId", existingShift.id);
 
   loadItems("drinks");
-  loadActiveOrders();
+  loadActiveOrders(currentShiftId);
   loadCancelledOrders(currentShiftId);
 
   alert(`📂 تم استرجاع الشفت - ${emp.name}`);
@@ -192,7 +196,7 @@ window.confirmOpenShift = async function () {
   localStorage.setItem("shiftId", shift.id);
 
   loadItems("drinks");
-  loadActiveOrders();
+  loadActiveOrders(currentShiftId);
   loadCancelledOrders(currentShiftId);
 
   alert(`✅ تم فتح الشفت - ${emp.name}`);
@@ -517,7 +521,7 @@ window.filterCategory = function (category, btn) {
 
 
   loadItems("drinks");
-  loadActiveOrders();
+  loadActiveOrders(currentShiftId);
   loadCancelledOrders(currentShiftId);
 
 })();
@@ -574,20 +578,6 @@ window.completeOrder = async function () {
 };
 
 
-let activeOrders = [];
-
-async function loadActiveOrders() {
-
-  const { data } = await supabase
-  .from("orders")
-  .select("id, invoice_number, total, is_paid, is_prepared, created_at")
-  .eq("status", "active")
-  .eq("shift_id", currentShiftId) 
-  .order("created_at", { ascending: false });
-
-  activeOrders = data || [];
-  renderActiveOrders();
-}
 
   function openPaymentAndSave(total, subtotal, vat) {
   
@@ -827,131 +817,18 @@ if (error || !newCounter) {
 
 
     
-    loadActiveOrders();
+    loadActiveOrders(currentShiftId);
     
 
     overlay.remove();
     showAfterPaymentOptions();
-    
-  
 
-}; // يقفل onclick
+};  
 
-}; // 🔥 يقفل openPaymentAndSave
-function renderActiveOrders() {
-
-  const box = document.getElementById("activeOrders");
-  box.innerHTML = "";
-
-  activeOrders.forEach(order => {
-
-    const div = document.createElement("div");
-    div.className = order.is_prepared
-      ? "order-box prepared"
-      : "order-box";
-
-    div.innerHTML = `
-      <strong>🧾 فاتورة رقم ${order.invoice_number || order.id.slice(0,6)}</strong><br>
-      💰 ${formatMoney(order.total)}<br>
-      ${order.is_paid ? "✅ مدفوع" : "❌ غير مدفوع"}<br>
-      ${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
-
-      <button onclick="viewOrder('${order.id}')">👁 عرض</button>
-      <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
-      <button onclick="cancelOrder('${order.id}')">❌ إلغاء</button>
-      <button onclick="markCompleted('${order.id}')">تم التسليم</button>
-    `;
-
-    box.appendChild(div);
-  });
-}
-
-window.markCompleted = async function (id) {
-
-  await supabase
-    .from("orders")
-    .update({ status: "completed" })
-    .eq("id", id);
-
-  loadActiveOrders();
-};
-
-window.cancelOrder = async function(id) {
-
-  const pin = prompt("🔐 أدخل رقم المدير");
-  if (!pin) return;
-
-  const { data: manager } = await supabase
-    .from("employees")
-    .select("id, role")
-    .eq("pin", pin.trim())
-    .eq("role", "manager")
-    .maybeSingle();
-
-  if (!manager) {
-    alert("❌ غير مصرح");
-    return;
-  }
-
-  if (!confirm("تأكيد إلغاء الطلب؟")) return;
-
-  await supabase
-    .from("orders")
-    .update({
-      status: "cancelled",
-      cancelled_by: manager.id,
-      cancelled_at: new Date().toISOString()
-    })
-    .eq("id", id);
-
-  loadActiveOrders();
-  loadCancelledOrders(currentShiftId);
-};
-
-let editingOrderId = null;
-
-/* ===============================
-   عرض الطلب 👁
-================================ */
-window.viewOrder = async function(orderId) {
-
-  const { data } = await supabase
-    .from("order_items")
-    .select("*")
-    .eq("order_id", orderId);
-
-  if (!data) return;
-
-  alert(
-    data.map(i => `${i.item_name} × ${i.qty}`).join("\n")
-  );
-};
-
-/* ===============================
-   تعديل الطلب ✏️
-================================ */
-window.editOrder = async function(orderId) {
-
-  const { data } = await supabase
-    .from("order_items")
-    .select("*")
-    .eq("order_id", orderId);
-
-  if (!data) return;
-
-  cart = data.map(i => ({
-    id: i.product_id,
-    name: i.item_name,
-    price: i.price,
-    qty: i.qty
-  }));
-
-  editingOrderId = orderId;
-
-  renderCart();
-};
+}; 
 
   function prepareReceipt(order, cart, cash, card, method) {
+  
 
   // رقم الطلب
   document.getElementById("printOrderId").textContent =
@@ -1467,7 +1344,7 @@ function showAfterPaymentOptions() {
         style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:10px"
       >
 
-      <button onclick="sendReceiptWhatsApp()">📤 إرسال</button>
+      <button id="sendWhatsappBtn">📤 إرسال</button>
 
       <br><br>
 
