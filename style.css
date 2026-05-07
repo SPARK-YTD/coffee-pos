@@ -400,17 +400,22 @@ body {
   background: #f3f4f6;
 }
 .menu-dropdown {
-  position: absolute;
-  top: 40px;
-  right: 0;
+  position: fixed;
+  top: 70px;
+  left: 10px;
+
   background: white;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+
   padding: 10px;
+
   display: none;
   flex-direction: column;
-  min-width: 150px;
-  z-index: 9999; /* 🔥 مهم */
+
+  min-width: 180px;
+
+  z-index: 99999;
 }
 .tabs {
   display: flex;
