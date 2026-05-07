@@ -358,7 +358,7 @@ function prepareReceipt(order) {
   document.getElementById(
     "printItems"
   ).innerHTML =
-    window.lastCart.map(i => `
+    (window.lastCart || []).map(i => `
       <div class="receipt-row">
         <span>${i.name}</span>
         <span>${i.qty}</span>
@@ -621,3 +621,81 @@ function showAfterPaymentOptions() {
     }
   };
 }
+
+/* ===============================
+   طباعة الفاتورة
+================================ */
+window.printReceipt = function () {
+
+  const area = document.getElementById("printArea");
+
+  if (!area) {
+    alert("❌ ما فيه فاتورة");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank");
+
+  printWindow.document.write(`
+    <html dir="rtl">
+      <head>
+        <title>فاتورة</title>
+
+        <style>
+          body{
+            font-family:sans-serif;
+            padding:20px;
+            direction:rtl;
+          }
+
+          .receipt{
+            width:300px;
+            margin:auto;
+          }
+
+          .receipt-row,
+          .table-header,
+          .totals-row,
+          .grand-box{
+            display:flex;
+            justify-content:space-between;
+            margin:5px 0;
+          }
+
+          .divider{
+            border-top:1px dashed #999;
+            margin:10px 0;
+          }
+
+          .grand-box{
+            font-weight:bold;
+            font-size:18px;
+          }
+
+          .thanks{
+            text-align:center;
+            margin-top:15px;
+          }
+
+          .footer{
+            text-align:center;
+            margin-top:10px;
+            font-size:12px;
+          }
+        </style>
+      </head>
+
+      <body>
+        ${area.innerHTML}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+
+  printWindow.focus();
+
+  setTimeout(() => {
+    printWindow.print();
+  }, 500);
+};
