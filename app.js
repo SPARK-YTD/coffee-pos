@@ -453,3 +453,38 @@ if (activeOrders && activeOrders.length > 0) {
 window.showReport = function () {
   alert("📊 التقارير قريباً");
 };
+
+// ===============================
+// MENU
+// ===============================
+
+const menuBtn = document.getElementById("menuBtn");
+const menuDropdown = document.getElementById("menuDropdown");
+
+if (menuBtn && menuDropdown) {
+
+  menuBtn.addEventListener("click", (e) => {
+
+    e.stopPropagation();
+
+    if (
+      menuDropdown.style.display === "flex"
+    ) {
+
+      menuDropdown.style.display = "none";
+
+    } else {
+
+      menuDropdown.style.display = "flex";
+    }
+  });
+
+  document.addEventListener("click", () => {
+
+    menuDropdown.style.display = "none";
+  });
+
+  menuDropdown.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+}
