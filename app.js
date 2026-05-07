@@ -359,7 +359,7 @@ window.completeOrder = async function () {
 
   const total = subtotal + vat;
 
-  openPaymentAndSave(total, subtotal, vat);
+ // openPaymentAndSave(total, subtotal, vat);
 };
 
 
