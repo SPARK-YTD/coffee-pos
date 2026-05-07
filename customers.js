@@ -34,7 +34,7 @@ export function sendReceiptWhatsApp(
   ).join("\n");
 
   const message = `
-☕ *Tranqila Cafe*
+☕ *سكوب لاب*
 
 ✨ تم تسجيل طلبك ✨
 ويتم تحضيره الآن بعناية خاصة
@@ -53,10 +53,8 @@ ${itemsText}
   const url =
     `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
 
-  // 🔥 هذا أهم تعديل
   window.location.href = url;
 
-  // 🔥 حفظ العميل بالخلفية بدون انتظار
   supabase
     .from("customers")
     .upsert(
