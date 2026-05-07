@@ -1,7 +1,7 @@
 import { loadCancelledOrders } from "./reports.js";
 import { supabase } from "./supabase.js";
 import { loadActiveOrders } from "./orders.js";
-//import { openPaymentAndSave } from "./payment.js";
+import { openPaymentAndSave } from "./payment.js";
 
 import {
   cart,
@@ -359,7 +359,7 @@ window.completeOrder = async function () {
 
   const total = subtotal + vat;
 
- // openPaymentAndSave(total, subtotal, vat);
+  openPaymentAndSave(total, subtotal, vat);
 };
 
 
