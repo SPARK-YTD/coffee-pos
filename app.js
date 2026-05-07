@@ -449,3 +449,7 @@ if (activeOrders && activeOrders.length > 0) {
 
   alert("📅 تم إغلاق يوم العمل");
 };
+
+window.showReport = function () {
+  alert("📊 التقارير قريباً");
+};
