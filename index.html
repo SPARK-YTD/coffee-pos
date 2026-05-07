@@ -5,6 +5,7 @@
   <title>الكاشير</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827">
 
 <link rel="stylesheet" href="style.css?v=10" />
 </head>
@@ -20,8 +21,8 @@
 
 <div id="menuDropdown" class="menu-dropdown">
 
- <button id="shiftBtn" onclick="toggleShiftAction()">
-  🟢 الشفت
+<button id="shiftBtn" onclick="toggleShiftAction()">
+  ➕ فتح شفت
 </button>
 
 <button id="shiftInfoBtn" onclick="showShiftInfo()" style="display:none">
@@ -111,7 +112,9 @@
 ================================ -->
 <div id="printArea" class="receipt">
 
-  <div class="header">قهوة ترانكيلا</div>
+  <div class="sub">
+  Coffee System
+  </div>
   <div class="sub">السعودية | الرياض 📍</div>
 
   <div class="divider"></div>
@@ -168,10 +171,11 @@
 
 </div>
 
-<script type="module" src="app.js?v=2"></script>
-<script type="module" src="customers.js?v=3"></script>
+<script type="module" src="app.js?v=10"></script>
+<script type="module" src="payment.js?v=10"></script>
+<script type="module" src="customers.js?v=10"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
 
 <div id="shiftPopup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:9999;">
 
@@ -180,7 +184,8 @@
     <h3>🔐 فتح الشفت</h3>
 
     <input 
-      id="shiftPin" 
+  type="password"
+  id="shiftPin" 
       placeholder="أدخل PIN" 
       style="width:100%;padding:10px;margin:10px 0;border-radius:8px;border:1px solid #ccc"
     >
