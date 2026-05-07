@@ -26,17 +26,19 @@ window.addEventListener("unhandledrejection", (e) => {
 
 
 let TAX_RATE = 0;
+let HIDE_TAX = false;
 
 async function loadTax() {
+
   const { data } = await supabase
     .from("settings")
-    .select("tax_rate")
+    .select("tax_rate, hide_tax")
     .eq("id", 1)
     .single();
 
   TAX_RATE = Number(data?.tax_rate || 0) / 100;
 
-
+  HIDE_TAX = data?.hide_tax || false;
 }
 
 function formatMoney(amount) {
@@ -67,6 +69,8 @@ window.lastCart = null;
       (payload) => {
 
         TAX_RATE = Number(payload.new.tax_rate || 0) / 100;
+
+        HIDE_TAX = payload.new.hide_tax || false;
 
 
         if (cart.length > 0) {
@@ -355,7 +359,9 @@ window.completeOrder = async function () {
 
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
-  const vat = subtotal * TAX_RATE;
+  const vat = HIDE_TAX
+  ? 0
+  : subtotal * TAX_RATE;
 
   const total = subtotal + vat;
 
