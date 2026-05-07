@@ -237,6 +237,11 @@ export function openPaymentAndSave(
   overlay
     .querySelector("#confirmPay")
     .onclick = async () => {
+      
+      if (!currentShiftId) {
+  alert("❌ لازم تفتح شفت أول");
+  return;
+}
 
       const cash =
         parseFloat(cashInput.value || "0");
@@ -318,10 +323,10 @@ export function openPaymentAndSave(
 
       await deductInventory(cart);
 
-      prepareReceipt(order);
-
       window.lastOrder = order;
       window.lastCart = [...cart];
+
+      prepareReceipt(order);
 
       cart.length = 0;
 
@@ -517,24 +522,73 @@ function showAfterPaymentOptions() {
   overlay.className = "popup-overlay";
 
   overlay.innerHTML = `
-    <div class="popup-box">
+    <div class="popup-box" style="text-align:center">
 
-      <h3>✅ تم الدفع</h3>
+      <h3>✅ تم الدفع بنجاح</h3>
+
+      <p style="margin:10px 0;">
+        وش تبي تسوي؟
+      </p>
 
       <button onclick="printReceipt()">
         🖨 طباعة الفاتورة
       </button>
 
-      <hr>
+      <hr style="margin:15px 0">
+
+      <h4>📤 إرسال واتساب</h4>
+
+      <select
+        id="countryCode"
+        style="
+          width:100%;
+          padding:8px;
+          margin-bottom:8px;
+        "
+      >
+        <option value="966" selected>
+          🇸🇦 السعودية
+        </option>
+
+        <option value="973">
+          🇧🇭 البحرين
+        </option>
+
+        <option value="971">
+          🇦🇪 الإمارات
+        </option>
+
+        <option value="965">
+          🇰🇼 الكويت
+        </option>
+
+        <option value="974">
+          🇶🇦 قطر
+        </option>
+
+        <option value="968">
+          🇴🇲 عمان
+        </option>
+
+      </select>
 
       <input
         id="customerPhone"
         placeholder="رقم العميل"
+        style="
+          width:100%;
+          padding:10px;
+          border-radius:8px;
+          border:1px solid #ccc;
+          margin-bottom:10px;
+        "
       >
 
       <button id="sendWhatsappBtn">
-        📤 إرسال واتساب
+        📤 إرسال
       </button>
+
+      <br><br>
 
       <button class="cancel-btn">
         إغلاق
@@ -559,4 +613,11 @@ function showAfterPaymentOptions() {
   overlay
     .querySelector(".cancel-btn")
     .onclick = () => overlay.remove();
+
+  overlay.onclick = (e) => {
+
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  };
 }
