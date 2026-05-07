@@ -19,14 +19,11 @@ body {
   align-items: center;
   justify-content: space-between;    
 
-  position: relative;
 }
 .topbar-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   font-size: 20px;
   font-weight: bold;
+  pointer-events: none;
 }
 /* ===============================
    Layout (Desktop)
@@ -378,15 +375,15 @@ body {
   border-left:6px solid #22c55e;
 }
 .menu-container {
-  position: absolute;
-  right: 15px;
-  top: 12px;
+  position: relative;
+  z-index: 99999;
 }
 
 #menuBtn {
   background: rgba(255,255,255,0.2);
   border-radius: 8px;
   padding: 5px 10px;
+  cursor: pointer;
 }
 
 
