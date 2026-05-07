@@ -3,8 +3,8 @@ import { cart, renderCart } from "./cart.js";
 import { loadActiveOrders } from "./orders.js";
 import { loadCancelledOrders } from "./reports.js";
 
-let currentShiftId = null;
-let currentEmployee = null;
+export let currentShiftId = null;
+export let currentEmployee = null;
 
 /* ===============================
    تحديث زر الشفت
@@ -226,8 +226,8 @@ export async function restoreShift() {
 
     updateShiftButton();
 
-    loadActiveOrders(currentShiftId);
-    loadCancelledOrders(currentShiftId);
+loadActiveOrders(currentShiftId);
+loadCancelledOrders(currentShiftId);
 
   } else {
 
@@ -438,7 +438,5 @@ window.showShiftInfo = async function () {
    Export
 ================================ */
 export {
-  currentShiftId,
-  currentEmployee,
   updateShiftButton
 };
