@@ -82,7 +82,8 @@ window.showAdminTab = function (type) {
   sales: document.getElementById("salesTab"),
   shifts: document.getElementById("shiftsTab"),
   inventory: document.getElementById("inventoryTab"),
-  customers: document.getElementById("customersTab"), // 🔥 هذا الجديد
+  customers: document.getElementById("customersTab"),
+  settings: document.getElementById("settingsTab"),
 };
 
   document.querySelectorAll(".admin-section").forEach(s => s.style.display = "none");
@@ -469,3 +470,45 @@ window.handleSalesFilter = function () {
     loadSales();
   }
 };
+
+  /* ===============================
+   إعدادات النظام
+================================ */
+
+async function loadSettings() {
+
+  const { data } = await supabase
+    .from("settings")
+    .select("hide_tax")
+    .eq("id", 1)
+    .single();
+
+  const toggle =
+    document.getElementById("hideTaxToggle");
+
+  if (toggle) {
+    toggle.checked = data?.hide_tax || false;
+  }
+}
+
+window.addEventListener("load", () => {
+
+  loadSettings();
+
+  const toggle =
+    document.getElementById("hideTaxToggle");
+
+  if (!toggle) return;
+
+  toggle.addEventListener("change", async () => {
+
+    await supabase
+      .from("settings")
+      .update({
+        hide_tax: toggle.checked
+      })
+      .eq("id", 1);
+
+    alert("✅ تم حفظ الإعداد");
+  });
+});
