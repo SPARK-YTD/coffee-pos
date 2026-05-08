@@ -456,13 +456,6 @@ if (activeOrders && activeOrders.length > 0) {
   alert("📅 تم إغلاق يوم العمل");
 };
 
-window.showReport = function () {
-  alert("📊 التقارير قريباً");
-};
-
-// ===============================
-// MENU
-// ===============================
 
 const menuBtn = document.getElementById("menuBtn");
 const menuDropdown = document.getElementById("menuDropdown");
