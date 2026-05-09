@@ -487,3 +487,30 @@ if (menuBtn && menuDropdown) {
     e.stopPropagation();
   });
 }
+/* ===============================
+   تبديل التابات (الجارية / الملغية)
+================================ */
+window.showTab = function (tab) {
+
+  const activeBox = document.getElementById("activeOrders");
+  const cancelledBox = document.getElementById("cancelledOrders");
+
+  // إخفاء الكل
+  if (activeBox) activeBox.style.display = "none";
+  if (cancelledBox) cancelledBox.style.display = "none";
+
+  // إزالة active من كل التابات
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+
+  // إظهار الصحيح
+  if (tab === "active") {
+    if (activeBox) activeBox.style.display = "block";
+  } else if (tab === "cancelled") {
+    if (cancelledBox) cancelledBox.style.display = "block";
+  }
+
+  // إضافة active على الزر اللي اتضغط
+  if (event && event.target) {
+    event.target.classList.add("active");
+  }
+};
