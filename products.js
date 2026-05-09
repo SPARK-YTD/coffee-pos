@@ -5,6 +5,7 @@ import { supabase } from "./supabase.js";
 ================================ */
 let editingProductId = null;
 let currentImageUrl = null;
+let realtimeWorking = false;
 
 /* ===============================
    تحميل المنتجات
@@ -14,13 +15,13 @@ async function loadProducts() {
   const { data, error } = await supabase
     .from("products")
     .select(`
-  *,
-  product_ingredients (
-    qty_used,
-    inventory_id,
-    inventory ( name )
-  )
-`);
+      *,
+      product_ingredients (
+        qty_used,
+        inventory_id,
+        inventory ( name )
+      )
+    `);
 
   if (error) {
     console.error(error);
@@ -34,25 +35,23 @@ async function loadProducts() {
 
   (data || []).forEach(p => {
 
-    // الحالة
     const status = p.is_active
       ? "<span style='color:#16a34a;font-weight:bold'>● مفعل</span>"
       : "<span style='color:#dc2626;font-weight:bold'>● معطل</span>";
 
-    // المواد
     let ingredientsText = "❌ غير مربوط";
 
     if (p.product_ingredients && p.product_ingredients.length > 0) {
       ingredientsText = p.product_ingredients
-  .map(i => `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      ${i.inventory?.name || "-"} (${i.qty_used})
-      <button onclick="removeIngredient('${p.id}', '${i.inventory_id}')">
-        ❌
-      </button>
-    </div>
-  `)
-  .join("");
+        .map(i => `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            ${i.inventory?.name || "-"} (${i.qty_used})
+            <button onclick="removeIngredient('${p.id}', '${i.inventory_id}')">
+              ❌
+            </button>
+          </div>
+        `)
+        .join("");
     }
 
     tbody.innerHTML += `
@@ -60,8 +59,8 @@ async function loadProducts() {
         <td>${p.name}</td>
 
         <td>
-          ${p.has_variants 
-            ? "☕ متعدد الأحجام" 
+          ${p.has_variants
+            ? "☕ متعدد الأحجام"
             : (p.price ? p.price + " ر.س" : "-")}
         </td>
 
@@ -106,7 +105,9 @@ window.toggleProduct = async function(id, current) {
     return;
   }
 
-  loadProducts();
+  if (!realtimeWorking) {
+    loadProducts();
+  }
 };
 
 /* ===============================
@@ -117,7 +118,10 @@ window.deleteProduct = async function(id) {
   if (!confirm("حذف المنتج؟")) return;
 
   await supabase.from("products").delete().eq("id", id);
-  loadProducts();
+
+  if (!realtimeWorking) {
+    loadProducts();
+  }
 };
 
 /* ===============================
@@ -146,14 +150,12 @@ window.startEditProduct = async function(id) {
   document.getElementById("variantsBox").style.display =
     p.has_variants ? "block" : "none";
 
-  // الصورة
   if (p.image_url) {
     const img = document.getElementById("preview");
     img.src = p.image_url;
     img.style.display = "block";
   }
 
-  // الأحجام
   if (p.has_variants) {
 
     const { data: variants } = await supabase
@@ -227,6 +229,65 @@ async function loadTax() {
   if (data) {
     document.getElementById("taxRate").value = data.tax_rate;
   }
+}
+
+/* ===============================
+   Realtime — تغييرات المنتجات والمواد
+================================ */
+function listenProductsRealtime() {
+
+  // debounce: لو صار كذا تغيير في وقت قصير، نعمل reload مرة وحدة بس
+  let reloadTimer = null;
+
+  function scheduleReload() {
+    if (reloadTimer) return;
+    reloadTimer = setTimeout(() => {
+      reloadTimer = null;
+      loadProducts();
+    }, 300);
+  }
+
+  supabase
+    .channel("admin-products-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "products"
+      },
+      scheduleReload
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "product_ingredients"
+      },
+      scheduleReload
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "product_variants"
+      },
+      scheduleReload
+    )
+    .subscribe((status) => {
+
+      console.log("📡 ADMIN PRODUCTS REALTIME:", status);
+
+      if (status === "SUBSCRIBED") {
+        realtimeWorking = true;
+      }
+
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        realtimeWorking = false;
+      }
+    });
 }
 
 /* ===============================
@@ -338,12 +399,15 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("image").value = "";
       document.getElementById("preview").style.display = "none";
 
-      loadProducts();
+      if (!realtimeWorking) {
+        loadProducts();
+      }
     };
   }
 
   loadProducts();
   loadTax();
+  listenProductsRealtime();
 });
 
 /* ===============================
@@ -394,7 +458,10 @@ window.selectProduct = async function(productId) {
   }
 
   alert("✅ تم الربط");
-  loadProducts();
+
+  if (!realtimeWorking) {
+    loadProducts();
+  }
 };
 
 window.removeIngredient = async function (productId, inventoryId) {
@@ -416,5 +483,7 @@ window.removeIngredient = async function (productId, inventoryId) {
 
   alert("✅ تم حذف المادة");
 
-  loadProducts(); // تحديث الجدول
+  if (!realtimeWorking) {
+    loadProducts();
+  }
 };
