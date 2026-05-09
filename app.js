@@ -148,7 +148,7 @@ function listenToProductChanges() {
 }
 
 /* ===============================
-   Realtime — تغييرات يوم العمل (يحدّث الزر تلقائياً)
+   Realtime — تغييرات يوم العمل
 ================================ */
 function listenToBusinessDayChanges() {
 
@@ -162,7 +162,6 @@ function listenToBusinessDayChanges() {
         table: "business_days"
       },
       () => {
-        // أي تغيير في يوم العمل → نحدّث الزر
         updateDayButton();
       }
     )
@@ -426,7 +425,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   loadCancelledOrders(currentShiftId);
 
-  // تحديث زر اليوم حسب الحالة
   updateDayButton();
 });
 
@@ -460,7 +458,7 @@ window.completeOrder = async function () {
 };
 
 /* ===============================
-   تحديث زر اليوم (إغلاق اليوم / فتح يوم جديد)
+   تحديث زر اليوم
 ================================ */
 async function updateDayButton() {
 
@@ -474,11 +472,9 @@ async function updateDayButton() {
     .maybeSingle();
 
   if (openDay) {
-    // فيه يوم مفتوح → الزر يكون "إغلاق اليوم"
     dayBtn.textContent = "📅 إغلاق اليوم";
     dayBtn.onclick = () => window.closeDay();
   } else {
-    // ما فيه يوم مفتوح → الزر يكون "فتح يوم جديد"
     dayBtn.textContent = "🌅 فتح يوم جديد";
     dayBtn.onclick = () => window.openDay();
   }
@@ -487,11 +483,10 @@ async function updateDayButton() {
 window.updateDayButton = updateDayButton;
 
 /* ===============================
-   فتح يوم جديد (للمدير فقط)
+   فتح يوم جديد
 ================================ */
 window.openDay = async function () {
 
-  // 🔐 طلب PIN المدير
   const pin = prompt("🔐 أدخل PIN المدير لفتح يوم جديد");
 
   if (!pin) return;
@@ -508,7 +503,6 @@ window.openDay = async function () {
     return;
   }
 
-  // تأكد ما فيه يوم مفتوح أصلاً
   const { data: existingDay } = await supabase
     .from("business_days")
     .select("id")
@@ -521,7 +515,6 @@ window.openDay = async function () {
     return;
   }
 
-  // ➕ إنشاء يوم جديد
   const { data: newDay, error } = await supabase
     .from("business_days")
     .insert({
@@ -544,7 +537,7 @@ window.openDay = async function () {
 };
 
 /* ===============================
-   إغلاق اليوم
+   إغلاق اليوم — يحسب يوم العمل الفعلي + يستثني الملغية
 ================================ */
 window.closeDay = async function () {
 
@@ -589,16 +582,16 @@ window.closeDay = async function () {
     return;
   }
 
-  const start = new Date(day.day_date);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-
+  // 🎯 حساب يوم العمل الفعلي:
+  // من وقت فتح اليوم لين الوقت الحالي
+  // + استثناء الطلبات الملغية
   const { data: orders } = await supabase
     .from("orders")
     .select("total")
     .eq("is_paid", true)
-    .gte("created_at", start.toISOString())
-    .lt("created_at", end.toISOString());
+    .neq("status", "cancelled")  // ← استثناء الملغية
+    .gte("created_at", day.opened_at)  // ← من وقت فتح اليوم
+    .lte("created_at", new Date().toISOString());  // ← للوقت الحالي
 
   let total = 0;
   (orders || []).forEach(o => {
@@ -608,17 +601,19 @@ window.closeDay = async function () {
   const count = orders?.length || 0;
 
   const ok = confirm(`
-📊 تقرير اليوم:
+📊 تقرير يوم العمل:
 
 💰 الإجمالي: ${formatMoney(total)}
 🧾 الطلبات: ${count}
+
+ℹ️ من ${new Date(day.opened_at).toLocaleString()}
+   إلى الآن
 
 تأكيد الإغلاق؟
   `);
 
   if (!ok) return;
 
-  // 🔥 التحقق من نجاح التحديث
   const { data: updated, error: updateErr } = await supabase
     .from("business_days")
     .update({
