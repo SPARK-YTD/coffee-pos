@@ -5,6 +5,29 @@ function formatMoney(amount) {
   return `${Number(amount).toFixed(2)} ﷼`;
 }
 
+/* ===============================
+   تنسيق الوقت بالعربي بشكل واضح
+================================ */
+function formatDateTime(dateStr) {
+  if (!dateStr) return "-";
+
+  const d = new Date(dateStr);
+
+  const date = d.toLocaleDateString("ar-SA-u-ca-gregory", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+
+  const time = d.toLocaleTimeString("ar-SA", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+
+  return `${date} - ${time}`;
+}
+
 let cancelledList = [];
 let activeShiftId = null;
 let cancelledChannel = null;
@@ -15,7 +38,6 @@ let realtimeWorking = false;
 ================================ */
 export async function loadCancelledOrders(shiftId) {
 
-  // لو الشفت تغيّر، نعيد الاشتراك
   const shiftChanged = activeShiftId !== shiftId;
 
   activeShiftId = shiftId;
@@ -29,7 +51,7 @@ export async function loadCancelledOrders(shiftId) {
 
   const { data } = await supabase
     .from("orders")
-    .select("id, total, cancelled_at, status, shift_id")
+    .select("id, invoice_number, total, cancelled_at, status, shift_id")
     .eq("status", "cancelled")
     .eq("shift_id", shiftId)
     .order("cancelled_at", { ascending: false });
@@ -38,7 +60,6 @@ export async function loadCancelledOrders(shiftId) {
 
   renderCancelledOrders();
 
-  // اشتراك مرة وحدة بس (أو لما الشفت يتغيّر)
   if (!cancelledChannel || shiftChanged) {
     setupRealtime();
   }
@@ -81,7 +102,6 @@ function setupRealtime() {
 
         if (o.status === "cancelled") {
 
-          // ضيف لو مو موجود
           const exists = cancelledList.some(x => x.id === o.id);
           if (!exists) {
             cancelledList.unshift(o);
@@ -90,7 +110,6 @@ function setupRealtime() {
 
         } else {
 
-          // طلب رجع نشط مثلاً → شيله من قائمة الملغاة
           const idx = cancelledList.findIndex(x => x.id === o.id);
           if (idx !== -1) {
             cancelledList.splice(idx, 1);
@@ -123,14 +142,29 @@ function renderCancelledOrders() {
 
   box.innerHTML = "";
 
+  if (cancelledList.length === 0) {
+    box.innerHTML = `
+      <div style="text-align:center;padding:30px;color:#888;">
+        🍃 ما فيه طلبات ملغية
+      </div>
+    `;
+    return;
+  }
+
   cancelledList.forEach(order => {
+
     const div = document.createElement("div");
     div.className = "order-box";
 
+    // رقم الفاتورة لو موجود، وإلا نستخدم أول 6 من id
+    const invoiceNum = order.invoice_number
+      ? `#${order.invoice_number}`
+      : `#${order.id.slice(0,6)}`;
+
     div.innerHTML = `
-      <strong>طلب #${order.id.slice(0,6)}</strong><br>
+      <strong>🧾 فاتورة ${invoiceNum}</strong><br>
       💰 ${formatMoney(order.total)}<br>
-      ⏱ ${new Date(order.cancelled_at).toLocaleString()}
+      ⏱ ${formatDateTime(order.cancelled_at)}
     `;
 
     box.appendChild(div);
