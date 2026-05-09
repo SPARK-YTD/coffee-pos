@@ -23,10 +23,9 @@ window.addEventListener("unhandledrejection", (e) => {
 });
 
 
-
-
 let TAX_RATE = 0;
 let HIDE_TAX = false;
+let currentCategory = "drinks"; // الفئة المعروضة حالياً
 
 async function loadTax() {
 
@@ -48,13 +47,16 @@ function formatMoney(amount) {
 window.formatMoney = formatMoney;
 
 
-  let items = [];
+let items = [];
 
 window.editingOrderId = null;
 window.lastOrder = null;
 window.lastCart = null;
 
-  function listenToTaxChanges() {
+/* ===============================
+   Realtime — تغييرات الضريبة
+================================ */
+function listenToTaxChanges() {
 
   supabase
     .channel("tax-live")
@@ -69,9 +71,7 @@ window.lastCart = null;
       (payload) => {
 
         TAX_RATE = Number(payload.new.tax_rate || 0) / 100;
-
         HIDE_TAX = payload.new.hide_tax || false;
-
 
         if (cart.length > 0) {
           renderCart();
@@ -79,8 +79,84 @@ window.lastCart = null;
       }
     )
     .subscribe((status) => {
-      console.log("📡 REALTIME STATUS:", status);
+      console.log("📡 TAX REALTIME:", status);
     });
+}
+
+/* ===============================
+   Realtime — تغييرات المنتجات
+================================ */
+function listenToProductChanges() {
+
+  supabase
+    .channel("products-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "products"
+      },
+      (payload) => {
+
+        const eventType = payload.eventType;
+        const newRow = payload.new;
+        const oldRow = payload.old;
+
+        if (eventType === "INSERT") {
+
+          // منتج جديد — أضفه لو من نفس الفئة وفعّال
+          if (newRow.category === currentCategory && newRow.is_active) {
+            items.push(mapProduct(newRow));
+            renderItems();
+          }
+
+        } else if (eventType === "UPDATE") {
+
+          const idx = items.findIndex(i => i.id === newRow.id);
+
+          // المنتج لم يعد ضمن الفئة الحالية أو صار معطّل
+          const shouldBeShown =
+            newRow.category === currentCategory && newRow.is_active;
+
+          if (!shouldBeShown) {
+            if (idx !== -1) {
+              items.splice(idx, 1);
+              renderItems();
+            }
+            return;
+          }
+
+          // محدث وضمن الفئة الحالية
+          if (idx !== -1) {
+            items[idx] = mapProduct(newRow);
+          } else {
+            items.push(mapProduct(newRow));
+          }
+          renderItems();
+
+        } else if (eventType === "DELETE") {
+
+          const idx = items.findIndex(i => i.id === oldRow.id);
+          if (idx !== -1) {
+            items.splice(idx, 1);
+            renderItems();
+          }
+        }
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 PRODUCTS REALTIME:", status);
+    });
+}
+
+function mapProduct(p) {
+  return {
+    ...p,
+    extras: p.extras_text
+      ? p.extras_text.split("\n").map(e => e.trim()).filter(e => e !== "")
+      : []
+  };
 }
 
 /* ===============================
@@ -88,27 +164,20 @@ window.lastCart = null;
 ================================ */
 async function loadItems(category = "drinks") {
 
+  currentCategory = category;
+
   const { data, error } = await supabase
-  .from("products")
-  .select("*")
-  .eq("category", category)
-  .eq("is_active", true);
-  
+    .from("products")
+    .select("*")
+    .eq("category", category)
+    .eq("is_active", true);
 
   if (error) {
     console.error(error);
     return;
   }
 
-  items = (data || []).map(p => ({
-  ...p,
-  extras: p.extras_text
-    ? p.extras_text
-        .split("\n")
-        .map(e => e.trim())
-        .filter(e => e !== "")
-    : []
-}));
+  items = (data || []).map(mapProduct);
 
   renderItems();
 }
@@ -119,30 +188,30 @@ async function loadItems(category = "drinks") {
 function renderItems() {
   const box = document.getElementById("items");
 
-if (!box) {
-  console.error("❌ items container مو موجود");
-  return;
-}
+  if (!box) {
+    console.error("❌ items container مو موجود");
+    return;
+  }
 
-box.innerHTML = "";
+  box.innerHTML = "";
 
   items.forEach(item => {
     const div = document.createElement("div");
     div.className = "item";
 
     div.innerHTML = `
-  ${item.image_url ? `
-    <img src="${item.image_url}" class="item-img">
-  ` : ""}
+      ${item.image_url ? `
+        <img src="${item.image_url}" class="item-img">
+      ` : ""}
 
-  <div class="item-name">${item.name}</div>
+      <div class="item-name">${item.name}</div>
 
-  <div class="item-price">
-  ${item.has_variants
-    ? "اختر الحجم"
-    : formatMoney(item.price || 0)}
-</div>
-`;
+      <div class="item-price">
+        ${item.has_variants
+          ? "اختر الحجم"
+          : formatMoney(item.price || 0)}
+      </div>
+    `;
 
     div.onclick = () => handleItem(item);
 
@@ -154,42 +223,43 @@ box.innerHTML = "";
    الضغط على المنتج
 ================================ */
 async function handleItem(item) {
-  
+
   if (!currentShiftId) {
-  alert("❌ لازم تفتح شفت أول");
-  return;
-}
+    alert("❌ لازم تفتح شفت أول");
+    return;
+  }
 
   const existingPopup = document.querySelector(".popup-overlay");
-if (existingPopup) {
-  existingPopup.remove();
-}
+  if (existingPopup) {
+    existingPopup.remove();
+  }
 
   if (item.has_variants) {
 
     const { data: variants, error } = await supabase
-  .from("product_variants")
-  .select("*")
-  .eq("product_id", item.id);
+      .from("product_variants")
+      .select("*")
+      .eq("product_id", item.id);
 
-if (error) {
-  console.error(error);
-  alert("❌ خطأ في تحميل الأحجام");
-  return;
-}
-     
+    if (error) {
+      console.error(error);
+      alert("❌ خطأ في تحميل الأحجام");
+      return;
+    }
+
     showVariantsPopup(item, variants);
     return;
   }
 
-if (item.extras && item.extras.filter(e => e).length > 0) {    showExtrasPopup(item);
+  if (item.extras && item.extras.filter(e => e).length > 0) {
+    showExtrasPopup(item);
     return;
   }
 
   addToCart({
-  ...item,
-  product_id: item.id
-}, renderCart);
+    ...item,
+    product_id: item.id
+  }, renderCart);
 }
 
 /* ===============================
@@ -240,12 +310,11 @@ window.selectVariant = function (id, name, label, price) {
     });
   } else {
     addToCart({
-  id: id,
-  product_id: id,
-  name: `${name} (${label})`,
-  price: price
-}, renderCart);
-
+      id: id,
+      product_id: id,
+      name: `${name} (${label})`,
+      price: price
+    }, renderCart);
   }
 
   document.querySelector(".popup-overlay")?.remove();
@@ -294,11 +363,11 @@ function showExtrasPopup(item) {
     }
 
     addToCart({
-  id: item.id,
-  product_id: item.id,
-  name,
-  price: item.price
-}, renderCart);
+      id: item.id,
+      product_id: item.id,
+      name,
+      price: item.price
+    }, renderCart);
 
     overlay.remove();
   };
@@ -313,39 +382,37 @@ window.filterCategory = function (category, btn) {
 
 window.addEventListener("DOMContentLoaded", async () => {
 
-
   try {
 
+    await loadTax();
 
-  await loadTax();
+    listenToTaxChanges();
+    listenToProductChanges();
+
+  } catch (err) {
+
+    console.error("🔥 INIT ERROR:", err);
+
+  }
 
 
-  listenToTaxChanges();
+  await restoreShift();
 
-} catch (err) {
+  loadItems("drinks");
 
-  console.error("🔥 TAX ERROR:", err);
+  loadActiveOrders(currentShiftId);
 
-}
-
-  
-await restoreShift();
-
-loadItems("drinks");
-
-loadActiveOrders(currentShiftId);
-
-loadCancelledOrders(currentShiftId);
+  loadCancelledOrders(currentShiftId);
 
 });
 
 
 window.completeOrder = async function () {
-  
+
   if (!currentShiftId) {
-  alert("❌ لازم تفتح شفت أول");
-  return;
-}
+    alert("❌ لازم تفتح شفت أول");
+    return;
+  }
 
   if (!cart.length) {
     alert("السلة فاضية");
@@ -353,15 +420,15 @@ window.completeOrder = async function () {
   }
 
   if (TAX_RATE === null || TAX_RATE === undefined) {
-  alert("⚠️ الضريبة ما تحملت");
-  return;
+    alert("⚠️ الضريبة ما تحملت");
+    return;
   }
 
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
   const vat = HIDE_TAX
-  ? 0
-  : subtotal * TAX_RATE;
+    ? 0
+    : subtotal * TAX_RATE;
 
   const total = subtotal + vat;
 
@@ -383,39 +450,39 @@ window.closeDay = async function () {
   }
 
   const { data: openShifts } = await supabase
-  .from("shifts")
-  .select(`
-    id,
-    employees (
-      name
-    )
-  `)
-  .eq("is_open", true);
+    .from("shifts")
+    .select(`
+      id,
+      employees (
+        name
+      )
+    `)
+    .eq("is_open", true);
 
-if (openShifts && openShifts.length > 0) {
+  if (openShifts && openShifts.length > 0) {
 
-  const names = openShifts
-    .map(s => s.employees?.name || "غير معروف")
-    .join("\n");
+    const names = openShifts
+      .map(s => s.employees?.name || "غير معروف")
+      .join("\n");
 
-  alert(`❌ فيه شفتات مفتوحة:\n\n${names}\n\nلازم تقفلهم أول`);
-  return;
-}
+    alert(`❌ فيه شفتات مفتوحة:\n\n${names}\n\nلازم تقفلهم أول`);
+    return;
+  }
 
-    // 🔴 يمنع الإغلاق إذا فيه طلبات شغالة بأي شفت
-const { data: activeOrders } = await supabase
-  .from("orders")
-  .select("id")
-  .eq("status", "active");
+  // 🔴 يمنع الإغلاق إذا فيه طلبات شغالة بأي شفت
+  const { data: activeOrders } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("status", "active");
 
-if (activeOrders && activeOrders.length > 0) {
-  alert("❌ فيه طلبات مفتوحة! لازم تخلصها أول");
-  return;
-}
+  if (activeOrders && activeOrders.length > 0) {
+    alert("❌ فيه طلبات مفتوحة! لازم تخلصها أول");
+    return;
+  }
 
-    const start = new Date(day.day_date);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+  const start = new Date(day.day_date);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
 
   const { data: orders } = await supabase
     .from("orders")
@@ -487,10 +554,11 @@ if (menuBtn && menuDropdown) {
     e.stopPropagation();
   });
 }
+
 /* ===============================
    تبديل التابات (الجارية / الملغية)
 ================================ */
-window.showTab = function (tab) {
+window.showTab = function (tab, btn) {
 
   const activeBox = document.getElementById("activeOrders");
   const cancelledBox = document.getElementById("cancelledOrders");
@@ -510,7 +578,10 @@ window.showTab = function (tab) {
   }
 
   // إضافة active على الزر اللي اتضغط
-  if (event && event.target) {
+  // نستخدم btn لو انمرّ، أو event.target كاحتياط
+  if (btn) {
+    btn.classList.add("active");
+  } else if (typeof event !== "undefined" && event && event.target) {
     event.target.classList.add("active");
   }
 };
