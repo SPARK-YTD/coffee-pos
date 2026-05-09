@@ -3,6 +3,9 @@ import { supabase } from "./supabase.js";
 let currentAdminTab = "products";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
 
+// Realtime — يشتغل مرة وحدة بس بعد تسجيل الدخول
+let adminRealtimeStarted = false;
+
 /* ===============================
    الجلسة
 ================================ */
@@ -25,15 +28,12 @@ window.addEventListener("load", () => {
     updateLastActivity();
 
     showAdminTab("products");
+    startAdminRealtime();
   } else {
     localStorage.removeItem("admin");
   }
 
-  setInterval(() => {
-    if (currentAdminTab === "shifts") {
-      loadAdminShifts();
-    }
-  }, 10000);
+  // ما نحتاج setInterval — Realtime يتولاها
 });
 
 window.login = async function () {
@@ -66,6 +66,7 @@ window.login = async function () {
   document.getElementById("adminApp").style.display = "block";
 
   showAdminTab("products");
+  startAdminRealtime();
   errorBox.style.display = "none";
 };
 
@@ -77,14 +78,14 @@ window.showAdminTab = function (type) {
   currentAdminTab = type;
 
   const sections = {
-  products: document.getElementById("productsTab"),
-  employees: document.getElementById("employeesTab"),
-  sales: document.getElementById("salesTab"),
-  shifts: document.getElementById("shiftsTab"),
-  inventory: document.getElementById("inventoryTab"),
-  customers: document.getElementById("customersTab"),
-  settings: document.getElementById("settingsTab"),
-};
+    products: document.getElementById("productsTab"),
+    employees: document.getElementById("employeesTab"),
+    sales: document.getElementById("salesTab"),
+    shifts: document.getElementById("shiftsTab"),
+    inventory: document.getElementById("inventoryTab"),
+    customers: document.getElementById("customersTab"),
+    settings: document.getElementById("settingsTab"),
+  };
 
   document.querySelectorAll(".admin-section").forEach(s => s.style.display = "none");
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -94,13 +95,13 @@ window.showAdminTab = function (type) {
   document.querySelectorAll(".tab").forEach(btn => {
     if (btn.dataset.tab === type) btn.classList.add("active");
   });
-  
+
   if (type === "sales") loadSales();
   if (type === "employees") loadEmployees();
   if (type === "shifts") loadAdminShifts();
   if (type === "inventory") {
-
-}
+    // صفحة المخزون لها ملف مستقل
+  }
 };
 
 /* ===============================
@@ -131,13 +132,15 @@ window.addEmployee = async function () {
   document.getElementById("empName").value = "";
   document.getElementById("empPin").value = "";
 
-  loadEmployees();
+  // Realtime يحدّث القائمة تلقائي
 };
 
 async function loadEmployees() {
   const { data } = await supabase.from("employees").select("*");
 
   const box = document.getElementById("employeesList");
+  if (!box) return;
+
   box.innerHTML = "";
 
   (data || []).forEach(e => {
@@ -156,7 +159,6 @@ window.deleteEmployee = async function (id) {
   const pin = prompt("🔐 أدخل رقم المدير");
   if (!pin) return;
 
-  // تحقق من المدير
   const { data: manager } = await supabase
     .from("employees")
     .select("id, role")
@@ -169,10 +171,8 @@ window.deleteEmployee = async function (id) {
     return;
   }
 
-  // تأكيد الحذف
   if (!confirm("حذف الموظف؟")) return;
 
-  // حذف
   const { error } = await supabase
     .from("employees")
     .delete()
@@ -185,7 +185,7 @@ window.deleteEmployee = async function (id) {
 
   alert("✅ تم حذف الموظف");
 
-  loadEmployees();
+  // Realtime يحدّث القائمة تلقائي
 };
 
 /* ===============================
@@ -209,7 +209,6 @@ window.loadSales = async function () {
       created_at
     `);
 
-  // فلترة التاريخ
   if (mode === "today") {
     const start = new Date(); start.setHours(0,0,0,0);
     const end = new Date(); end.setHours(23,59,59,999);
@@ -242,7 +241,6 @@ window.loadSales = async function () {
 
   const { data = [] } = await query.eq("is_paid", true);
 
-  // الحسابات
   let total = 0, cash = 0, card = 0;
 
   data.forEach(o => {
@@ -251,7 +249,6 @@ window.loadSales = async function () {
     card += Number(o.card_amount || 0);
   });
 
-  // ===== المنتجات =====
   let itemsQuery = supabase
     .from("order_items")
     .select(`
@@ -267,7 +264,6 @@ window.loadSales = async function () {
     .eq("orders.is_paid", true)
     .neq("orders.status", "cancelled");
 
-  // نفس الفلترة
   if (mode === "today") {
     const start = new Date(); start.setHours(0,0,0,0);
     const end = new Date(); end.setHours(23,59,59,999);
@@ -295,10 +291,9 @@ window.loadSales = async function () {
       .lte("orders.created_at", to + " 23:59:59");
   }
 
-const { data: items } = await itemsQuery;
-const safeItems = items || [];
+  const { data: items } = await itemsQuery;
+  const safeItems = items || [];
 
-  // تجميع
   const map = {};
 
   safeItems.forEach(i => {
@@ -320,68 +315,72 @@ const safeItems = items || [];
 
   const bestProduct = products[0] || null;
   const totalQty = products.length
-  ? products.reduce((sum, p) => sum + p.qty, 0)
-  : 0;
+    ? products.reduce((sum, p) => sum + p.qty, 0)
+    : 0;
 
-  // ===== الإحصائيات =====
-  document.getElementById("salesStats").innerHTML = `
-    <div class="stat-box">
-      <span>💰 الإجمالي</span>
-      <strong>${money(total)}</strong>
+  const statsEl = document.getElementById("salesStats");
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-box">
+        <span>💰 الإجمالي</span>
+        <strong>${money(total)}</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>💵 كاش</span>
+        <strong>${money(cash)}</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>💳 بطاقة</span>
+        <strong>${money(card)}</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>🧾 الطلبات</span>
+        <strong>${data.length}</strong>
+      </div>
+    `;
+  }
+
+  const salesBox = document.getElementById("salesBox");
+  if (salesBox) {
+    salesBox.innerHTML = `
+
+    <div class="card">
+      🏆 الأكثر مبيعاً<br><br>
+      <strong style="font-size:18px">
+        ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
+      </strong>
     </div>
 
-    <div class="stat-box">
-      <span>💵 كاش</span>
-      <strong>${money(cash)}</strong>
-    </div>
+    <div class="card">
+      <h3>📊 تفاصيل الأصناف</h3>
 
-    <div class="stat-box">
-      <span>💳 بطاقة</span>
-      <strong>${money(card)}</strong>
-    </div>
-
-    <div class="stat-box">
-      <span>🧾 الطلبات</span>
-      <strong>${data.length}</strong>
-    </div>
-  `;
-
-  // ===== التفاصيل =====
-  document.getElementById("salesBox").innerHTML = `
-
-  <div class="card">
-    🏆 الأكثر مبيعاً<br><br>
-    <strong style="font-size:18px">
-      ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
-    </strong>
-  </div>
-
-  <div class="card">
-    <h3>📊 تفاصيل الأصناف</h3>
-
-    <table style="width:100%; text-align:center;">
-      <tr>
-        <th>الصنف</th>
-        <th>الكمية</th>
-        <th>الإجمالي</th>
-        <th>%</th>
-      </tr>
-
-      ${products.length === 0 ? `
-        <tr><td colspan="4">❌ لا يوجد مبيعات</td></tr>
-      ` : products.map(p => `
+      <table style="width:100%; text-align:center;">
         <tr>
-          <td>${p.name}</td>
-          <td>${p.qty}</td>
-          <td>${money(p.total)}</td>
-          <td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
+          <th>الصنف</th>
+          <th>الكمية</th>
+          <th>الإجمالي</th>
+          <th>%</th>
         </tr>
-      `).join("")}
 
-    </table>
-  </div>
-  `;
-};  
+        ${products.length === 0 ? `
+          <tr><td colspan="4">❌ لا يوجد مبيعات</td></tr>
+        ` : products.map(p => `
+          <tr>
+            <td>${p.name}</td>
+            <td>${p.qty}</td>
+            <td>${money(p.total)}</td>
+            <td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
+          </tr>
+        `).join("")}
+
+      </table>
+    </div>
+    `;
+  }
+};
 
 /* ===============================
    الشفتات
@@ -398,6 +397,7 @@ window.loadAdminShifts = async function () {
     .eq("is_open", true);
 
   const box = document.getElementById("adminShifts");
+  if (!box) return;
 
   if (!shifts || shifts.length === 0) {
     box.innerHTML = "❌ لا يوجد شفتات";
@@ -425,7 +425,7 @@ window.loadAdminShifts = async function () {
     html += `
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      
+
       <div>
         <strong>👤 ${s.employees?.name || "غير معروف"}</strong><br>
         <small style="color:#666">شفت مفتوح</small>
@@ -442,6 +442,90 @@ window.loadAdminShifts = async function () {
 
   box.innerHTML = html;
 };
+
+/* ===============================
+   Realtime — يحدّث التبويب الحالي تلقائي
+================================ */
+function startAdminRealtime() {
+
+  if (adminRealtimeStarted) return;
+  adminRealtimeStarted = true;
+
+  // debounce: لو صار كذا تغيير في وقت قصير، نحدّث مرة وحدة بس
+  let salesReloadTimer = null;
+  let shiftsReloadTimer = null;
+
+  function scheduleSalesReload() {
+    if (salesReloadTimer) return;
+    salesReloadTimer = setTimeout(() => {
+      salesReloadTimer = null;
+      if (currentAdminTab === "sales") loadSales();
+    }, 500);
+  }
+
+  function scheduleShiftsReload() {
+    if (shiftsReloadTimer) return;
+    shiftsReloadTimer = setTimeout(() => {
+      shiftsReloadTimer = null;
+      if (currentAdminTab === "shifts") loadAdminShifts();
+    }, 500);
+  }
+
+  // الطلبات → تأثر على الشفتات + المبيعات
+  supabase
+    .channel("admin-orders-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders"
+      },
+      () => {
+        scheduleSalesReload();
+        scheduleShiftsReload();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN ORDERS REALTIME:", status);
+    });
+
+  // الشفتات (فتح/إغلاق)
+  supabase
+    .channel("admin-shifts-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "shifts"
+      },
+      () => {
+        scheduleShiftsReload();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN SHIFTS REALTIME:", status);
+    });
+
+  // الموظفين
+  supabase
+    .channel("admin-employees-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "employees"
+      },
+      () => {
+        if (currentAdminTab === "employees") loadEmployees();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN EMPLOYEES REALTIME:", status);
+    });
+}
 
 /* ===============================
    نشاط المستخدم
@@ -471,7 +555,7 @@ window.handleSalesFilter = function () {
   }
 };
 
-  /* ===============================
+/* ===============================
    إعدادات النظام
 ================================ */
 
