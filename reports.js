@@ -6,26 +6,29 @@ function formatMoney(amount) {
 }
 
 /* ===============================
-   تنسيق الوقت بالعربي بشكل واضح
+   تنسيق الوقت — يستخدم المنطقة الزمنية المحلية للجهاز
 ================================ */
 function formatDateTime(dateStr) {
   if (!dateStr) return "-";
 
   const d = new Date(dateStr);
 
-  const date = d.toLocaleDateString("ar-SA-u-ca-gregory", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
+  // استخدام تنسيق يدوي عشان نضمن أرقام إنجليزية وتقويم ميلادي
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
 
-  const time = d.toLocaleTimeString("ar-SA", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
+  let hours = d.getHours();
+  const mins = String(d.getMinutes()).padStart(2, "0");
 
-  return `${date} - ${time}`;
+  const period = hours >= 12 ? "م" : "ص";
+
+  // تحويل لـ 12 ساعة
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  const hh = String(hours).padStart(2, "0");
+
+  return `${yyyy}/${mm}/${dd} - ${hh}:${mins} ${period}`;
 }
 
 let cancelledList = [];
@@ -156,7 +159,6 @@ function renderCancelledOrders() {
     const div = document.createElement("div");
     div.className = "order-box";
 
-    // رقم الفاتورة لو موجود، وإلا نستخدم أول 6 من id
     const invoiceNum = order.invoice_number
       ? `#${order.invoice_number}`
       : `#${order.id.slice(0,6)}`;
