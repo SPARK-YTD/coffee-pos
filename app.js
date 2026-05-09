@@ -476,11 +476,11 @@ async function updateDayButton() {
   if (openDay) {
     // فيه يوم مفتوح → الزر يكون "إغلاق اليوم"
     dayBtn.textContent = "📅 إغلاق اليوم";
-    dayBtn.onclick = () => closeDay();
+    dayBtn.onclick = () => window.closeDay();
   } else {
     // ما فيه يوم مفتوح → الزر يكون "فتح يوم جديد"
     dayBtn.textContent = "🌅 فتح يوم جديد";
-    dayBtn.onclick = () => openDay();
+    dayBtn.onclick = () => window.openDay();
   }
 }
 
