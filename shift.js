@@ -7,26 +7,27 @@ export let currentShiftId = null;
 export let currentEmployee = null;
 
 /* ===============================
-   تنسيق الوقت بالعربي
+   تنسيق الوقت — المنطقة الزمنية المحلية
 ================================ */
 function formatDateTime(dateStr) {
   if (!dateStr) return "-";
 
   const d = new Date(dateStr);
 
-  const date = d.toLocaleDateString("ar-SA-u-ca-gregory", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
 
-  const time = d.toLocaleTimeString("ar-SA", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
+  let hours = d.getHours();
+  const mins = String(d.getMinutes()).padStart(2, "0");
 
-  return `${date} - ${time}`;
+  const period = hours >= 12 ? "م" : "ص";
+
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  const hh = String(hours).padStart(2, "0");
+
+  return `${yyyy}/${mm}/${dd} - ${hh}:${mins} ${period}`;
 }
 
 /* ===============================
@@ -110,7 +111,6 @@ window.confirmOpenShift = async function () {
     return;
   }
 
-  // 🔍 التحقق من الموظف
   const { data: emp } = await supabase
     .from("employees")
     .select("id, name, pin")
@@ -127,7 +127,6 @@ window.confirmOpenShift = async function () {
 
   errorBox.style.display = "none";
 
-  // 🔍 التحقق من وجود يوم عمل مفتوح
   const { data: openDay } = await supabase
     .from("business_days")
     .select("*")
@@ -142,7 +141,6 @@ window.confirmOpenShift = async function () {
     return;
   }
 
-  // 🔍 شفت مفتوح مسبقًا
   const { data: existingShift } = await supabase
     .from("shifts")
     .select("*")
@@ -169,7 +167,6 @@ window.confirmOpenShift = async function () {
     return;
   }
 
-  // ➕ إنشاء شفت جديد
   const { data: shift, error } = await supabase
     .from("shifts")
     .insert({
@@ -399,7 +396,6 @@ window.showShiftInfo = async function () {
   diff %= 3600;
   const mins = Math.floor(diff / 60);
 
-  // ⭐ التنسيق الجديد للوقت
   const openedDateTime = formatDateTime(shift.opened_at);
 
   const overlay = document.createElement("div");
