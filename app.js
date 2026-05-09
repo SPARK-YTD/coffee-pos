@@ -438,11 +438,17 @@ window.completeOrder = async function () {
 
 window.closeDay = async function () {
 
-  const { data: day } = await supabase
+  const { data: day, error: dayErr } = await supabase
     .from("business_days")
     .select("*")
     .eq("is_open", true)
     .maybeSingle();
+
+  if (dayErr) {
+    console.error("DAY FETCH ERROR:", dayErr);
+    alert("❌ خطأ في قراءة يوم العمل");
+    return;
+  }
 
   if (!day) {
     alert("❌ ما فيه يوم مفتوح");
@@ -451,25 +457,17 @@ window.closeDay = async function () {
 
   const { data: openShifts } = await supabase
     .from("shifts")
-    .select(`
-      id,
-      employees (
-        name
-      )
-    `)
+    .select(`id, employees ( name )`)
     .eq("is_open", true);
 
   if (openShifts && openShifts.length > 0) {
-
     const names = openShifts
       .map(s => s.employees?.name || "غير معروف")
       .join("\n");
-
     alert(`❌ فيه شفتات مفتوحة:\n\n${names}\n\nلازم تقفلهم أول`);
     return;
   }
 
-  // 🔴 يمنع الإغلاق إذا فيه طلبات شغالة بأي شفت
   const { data: activeOrders } = await supabase
     .from("orders")
     .select("id")
@@ -492,7 +490,6 @@ window.closeDay = async function () {
     .lt("created_at", end.toISOString());
 
   let total = 0;
-
   (orders || []).forEach(o => {
     total += Number(o.total || 0);
   });
@@ -510,7 +507,8 @@ window.closeDay = async function () {
 
   if (!ok) return;
 
-  await supabase
+  // 🔥 الإصلاح المهم — نتحقق من نجاح التحديث
+  const { data: updated, error: updateErr } = await supabase
     .from("business_days")
     .update({
       is_open: false,
@@ -518,11 +516,22 @@ window.closeDay = async function () {
       total_sales: total,
       total_orders: count
     })
-    .eq("id", day.id);
+    .eq("id", day.id)
+    .select();
+
+  if (updateErr) {
+    console.error("CLOSE DAY ERROR:", updateErr);
+    alert("❌ فشل إغلاق اليوم: " + updateErr.message);
+    return;
+  }
+
+  if (!updated || updated.length === 0) {
+    alert("❌ ما تم تحديث اليوم — جرب مرة ثانية");
+    return;
+  }
 
   alert("📅 تم إغلاق يوم العمل");
 };
-
 
 const menuBtn = document.getElementById("menuBtn");
 const menuDropdown = document.getElementById("menuDropdown");
