@@ -9,8 +9,6 @@ import {
   currentShiftId
 } from "./shift.js";
 
-import { loadActiveOrders } from "./orders.js";
-
 import { sendReceiptWhatsApp } from "./customers.js";
 
 /* ===============================
@@ -237,11 +235,11 @@ export function openPaymentAndSave(
   overlay
     .querySelector("#confirmPay")
     .onclick = async () => {
-      
+
       if (!currentShiftId) {
-  alert("❌ لازم تفتح شفت أول");
-  return;
-}
+        alert("❌ لازم تفتح شفت أول");
+        return;
+      }
 
       const cash =
         parseFloat(cashInput.value || "0");
@@ -332,7 +330,7 @@ export function openPaymentAndSave(
 
       renderCart();
 
-      loadActiveOrders(currentShiftId);
+      // ما نحتاج loadActiveOrders — Realtime يضيف الطلب تلقائي
 
       overlay.remove();
 
