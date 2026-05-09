@@ -104,31 +104,20 @@ window.confirmOpenShift = async function () {
 
   errorBox.style.display = "none";
 
-  // 🔍 يوم العمل
+  // 🔍 التحقق من وجود يوم عمل مفتوح
   const { data: openDay } = await supabase
     .from("business_days")
     .select("*")
     .eq("is_open", true)
     .maybeSingle();
 
-  // ➕ إنشاء يوم عمل إذا ما فيه
+  // ❌ ما فيه يوم مفتوح → لازم المدير يفتح يوم أول
   if (!openDay) {
 
-    const { error: dayError } = await supabase
-      .from("business_days")
-      .insert({
-        day_date: new Date().toISOString().split("T")[0],
-        is_open: true,
-        invoice_counter: 0
-      });
+    errorBox.textContent = "❌ لا يوجد يوم عمل مفتوح. اطلب من المدير فتح يوم جديد.";
+    errorBox.style.display = "block";
 
-    if (dayError) {
-
-      console.error(dayError);
-
-      alert("❌ خطأ في فتح يوم العمل");
-      return;
-    }
+    return;
   }
 
   // 🔍 شفت مفتوح مسبقًا
@@ -199,9 +188,7 @@ export async function restoreShift() {
   const savedShift = localStorage.getItem("shiftId");
 
   if (!savedShift) {
-
-    openShiftPrompt();
-
+    // ما نفتح popup تلقائياً — لو ما فيه يوم، يطلع خطأ
     return;
   }
 
@@ -226,14 +213,12 @@ export async function restoreShift() {
 
     updateShiftButton();
 
-loadActiveOrders(currentShiftId);
-loadCancelledOrders(currentShiftId);
+    loadActiveOrders(currentShiftId);
+    loadCancelledOrders(currentShiftId);
 
   } else {
 
     localStorage.removeItem("shiftId");
-
-    openShiftPrompt();
   }
 }
 
@@ -294,8 +279,8 @@ window.closeShift = async function (autoAsk = true) {
 
   if (!ok) return;
 
-  // 🔒 إغلاق
-  await supabase
+  // 🔒 إغلاق مع التحقق من النجاح
+  const { data: updated, error: updateErr } = await supabase
     .from("shifts")
     .update({
       is_open: false,
@@ -305,7 +290,19 @@ window.closeShift = async function (autoAsk = true) {
       total_orders: totalOrders,
       closed_at: new Date().toISOString()
     })
-    .eq("id", currentShiftId);
+    .eq("id", currentShiftId)
+    .select();
+
+  if (updateErr) {
+    console.error("CLOSE SHIFT ERROR:", updateErr);
+    alert("❌ فشل إغلاق الشفت: " + updateErr.message);
+    return;
+  }
+
+  if (!updated || updated.length === 0) {
+    alert("❌ ما تم تحديث الشفت — جرب مرة ثانية");
+    return;
+  }
 
   // 🧹 تنظيف
   currentShiftId = null;
@@ -319,13 +316,16 @@ window.closeShift = async function (autoAsk = true) {
 
   updateShiftButton();
 
-  document.getElementById("items").innerHTML = `
-    <div style="text-align:center;padding:40px;font-size:18px;">
-      🔒 الكاشير مغلق
-      <br><br>
-      افتح شفت عشان تبدأ
-    </div>
-  `;
+  const itemsBox = document.getElementById("items");
+  if (itemsBox) {
+    itemsBox.innerHTML = `
+      <div style="text-align:center;padding:40px;font-size:18px;">
+        🔒 الكاشير مغلق
+        <br><br>
+        افتح شفت عشان تبدأ
+      </div>
+    `;
+  }
 
   alert("✅ تم إغلاق الشفت");
 
