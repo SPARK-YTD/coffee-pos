@@ -2,22 +2,132 @@ import { supabase } from "./supabase.js";
 import { loadCancelledOrders } from "./reports.js";
 
 let activeOrders = [];
+let activeShiftId = null;
+let ordersChannel = null;
+let realtimeWorking = false;
 
+/* ===============================
+   تحميل الطلبات النشطة (المرة الأولى + fallback)
+================================ */
 export async function loadActiveOrders(currentShiftId) {
+
+  activeShiftId = currentShiftId;
+
+  if (!currentShiftId) {
+    activeOrders = [];
+    renderActiveOrders();
+    return;
+  }
 
   const { data } = await supabase
     .from("orders")
-    .select("id, invoice_number, total, is_paid, is_prepared, created_at")
+    .select("id, invoice_number, total, is_paid, is_prepared, created_at, shift_id, status")
     .eq("status", "active")
     .eq("shift_id", currentShiftId)
     .order("created_at", { ascending: false });
 
   activeOrders = data || [];
 
-  renderActiveOrders(currentShiftId);
+  renderActiveOrders();
+
+  // اشتراك في Realtime (مرة وحدة، أو إعادة اشتراك لو الشفت تغيّر)
+  setupRealtime();
 }
 
-export function renderActiveOrders(currentShiftId) {
+/* ===============================
+   اشتراك Realtime
+================================ */
+function setupRealtime() {
+
+  // امسح الاشتراك القديم لو موجود (لما الشفت يتغيّر)
+  if (ordersChannel) {
+    supabase.removeChannel(ordersChannel);
+    ordersChannel = null;
+  }
+
+  if (!activeShiftId) return;
+
+  ordersChannel = supabase
+    .channel(`active-orders-${activeShiftId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `shift_id=eq.${activeShiftId}`
+      },
+      (payload) => {
+
+        const eventType = payload.eventType;
+        const newRow = payload.new;
+        const oldRow = payload.old;
+
+        if (eventType === "INSERT") {
+
+          if (newRow.status === "active") {
+            // أضفه في البداية (ترتيب تنازلي)
+            activeOrders.unshift(newRow);
+            renderActiveOrders();
+          }
+
+        } else if (eventType === "UPDATE") {
+
+          const idx = activeOrders.findIndex(o => o.id === newRow.id);
+
+          if (newRow.status !== "active") {
+            // الطلب صار ملغي/مكتمل → شيله من القائمة
+            if (idx !== -1) {
+              activeOrders.splice(idx, 1);
+              renderActiveOrders();
+            }
+
+            // لو ملغي حدّث قائمة الإلغاء
+            if (newRow.status === "cancelled") {
+              loadCancelledOrders(activeShiftId);
+            }
+
+          } else {
+            // ما زال نشط → حدّث بياناته (مثل is_prepared)
+            if (idx !== -1) {
+              activeOrders[idx] = newRow;
+              renderActiveOrders();
+            } else {
+              // ما كان موجود وصار نشط (نادر)
+              activeOrders.unshift(newRow);
+              renderActiveOrders();
+            }
+          }
+
+        } else if (eventType === "DELETE") {
+
+          const idx = activeOrders.findIndex(o => o.id === oldRow.id);
+          if (idx !== -1) {
+            activeOrders.splice(idx, 1);
+            renderActiveOrders();
+          }
+        }
+      }
+    )
+    .subscribe((status) => {
+
+      console.log("📡 ACTIVE ORDERS REALTIME:", status);
+
+      if (status === "SUBSCRIBED") {
+        realtimeWorking = true;
+      }
+
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        realtimeWorking = false;
+        console.warn("⚠️ Realtime مو شغّال على orders — راح يستخدم تحديث يدوي");
+      }
+    });
+}
+
+/* ===============================
+   عرض الطلبات
+================================ */
+export function renderActiveOrders() {
 
   const box = document.getElementById("activeOrders");
 
@@ -49,6 +159,9 @@ export function renderActiveOrders(currentShiftId) {
   });
 }
 
+/* ===============================
+   تم التسليم
+================================ */
 window.markCompleted = async function(id) {
 
   await supabase
@@ -56,9 +169,15 @@ window.markCompleted = async function(id) {
     .update({ status: "completed" })
     .eq("id", id);
 
-  await loadActiveOrders(localStorage.getItem("shiftId"));
+  // لو Realtime مو شغّال، نحدث يدوياً
+  if (!realtimeWorking) {
+    await loadActiveOrders(localStorage.getItem("shiftId"));
+  }
 };
 
+/* ===============================
+   إلغاء الطلب
+================================ */
 window.cancelOrder = async function(id) {
 
   const pin = prompt("🔐 أدخل رقم المدير");
@@ -88,11 +207,16 @@ window.cancelOrder = async function(id) {
     })
     .eq("id", id);
 
-  await loadActiveOrders(localStorage.getItem("shiftId"));
-
-  loadCancelledOrders(localStorage.getItem("shiftId"));
+  // لو Realtime مو شغّال، نحدث يدوياً
+  if (!realtimeWorking) {
+    await loadActiveOrders(localStorage.getItem("shiftId"));
+    loadCancelledOrders(localStorage.getItem("shiftId"));
+  }
 };
 
+/* ===============================
+   عرض تفاصيل الطلب
+================================ */
 window.viewOrder = async function(orderId) {
 
   const { data } = await supabase
@@ -107,6 +231,9 @@ window.viewOrder = async function(orderId) {
   );
 };
 
+/* ===============================
+   تعديل الطلب
+================================ */
 window.editOrder = async function(orderId) {
 
   const { data } = await supabase
