@@ -25,7 +25,7 @@ window.addEventListener("unhandledrejection", (e) => {
 
 let TAX_RATE = 0;
 let HIDE_TAX = false;
-let currentCategory = "drinks"; // الفئة المعروضة حالياً
+let currentCategory = "drinks";
 
 async function loadTax() {
 
@@ -105,7 +105,6 @@ function listenToProductChanges() {
 
         if (eventType === "INSERT") {
 
-          // منتج جديد — أضفه لو من نفس الفئة وفعّال
           if (newRow.category === currentCategory && newRow.is_active) {
             items.push(mapProduct(newRow));
             renderItems();
@@ -115,7 +114,6 @@ function listenToProductChanges() {
 
           const idx = items.findIndex(i => i.id === newRow.id);
 
-          // المنتج لم يعد ضمن الفئة الحالية أو صار معطّل
           const shouldBeShown =
             newRow.category === currentCategory && newRow.is_active;
 
@@ -127,7 +125,6 @@ function listenToProductChanges() {
             return;
           }
 
-          // محدث وضمن الفئة الحالية
           if (idx !== -1) {
             items[idx] = mapProduct(newRow);
           } else {
@@ -147,6 +144,30 @@ function listenToProductChanges() {
     )
     .subscribe((status) => {
       console.log("📡 PRODUCTS REALTIME:", status);
+    });
+}
+
+/* ===============================
+   Realtime — تغييرات يوم العمل (يحدّث الزر تلقائياً)
+================================ */
+function listenToBusinessDayChanges() {
+
+  supabase
+    .channel("business-day-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "business_days"
+      },
+      () => {
+        // أي تغيير في يوم العمل → نحدّث الزر
+        updateDayButton();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 BUSINESS DAY REALTIME:", status);
     });
 }
 
@@ -388,6 +409,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     listenToTaxChanges();
     listenToProductChanges();
+    listenToBusinessDayChanges();
 
   } catch (err) {
 
@@ -404,6 +426,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   loadCancelledOrders(currentShiftId);
 
+  // تحديث زر اليوم حسب الحالة
+  updateDayButton();
 });
 
 
@@ -435,7 +459,93 @@ window.completeOrder = async function () {
   openPaymentAndSave(total, subtotal, vat);
 };
 
+/* ===============================
+   تحديث زر اليوم (إغلاق اليوم / فتح يوم جديد)
+================================ */
+async function updateDayButton() {
 
+  const dayBtn = document.getElementById("dayBtn");
+  if (!dayBtn) return;
+
+  const { data: openDay } = await supabase
+    .from("business_days")
+    .select("id")
+    .eq("is_open", true)
+    .maybeSingle();
+
+  if (openDay) {
+    // فيه يوم مفتوح → الزر يكون "إغلاق اليوم"
+    dayBtn.textContent = "📅 إغلاق اليوم";
+    dayBtn.onclick = () => closeDay();
+  } else {
+    // ما فيه يوم مفتوح → الزر يكون "فتح يوم جديد"
+    dayBtn.textContent = "🌅 فتح يوم جديد";
+    dayBtn.onclick = () => openDay();
+  }
+}
+
+window.updateDayButton = updateDayButton;
+
+/* ===============================
+   فتح يوم جديد (للمدير فقط)
+================================ */
+window.openDay = async function () {
+
+  // 🔐 طلب PIN المدير
+  const pin = prompt("🔐 أدخل PIN المدير لفتح يوم جديد");
+
+  if (!pin) return;
+
+  const { data: manager } = await supabase
+    .from("employees")
+    .select("id, role, name")
+    .eq("pin", pin.trim())
+    .eq("role", "manager")
+    .maybeSingle();
+
+  if (!manager) {
+    alert("❌ غير مصرح — هذي العملية للمدير فقط");
+    return;
+  }
+
+  // تأكد ما فيه يوم مفتوح أصلاً
+  const { data: existingDay } = await supabase
+    .from("business_days")
+    .select("id")
+    .eq("is_open", true)
+    .maybeSingle();
+
+  if (existingDay) {
+    alert("⚠️ فيه يوم مفتوح بالفعل");
+    updateDayButton();
+    return;
+  }
+
+  // ➕ إنشاء يوم جديد
+  const { data: newDay, error } = await supabase
+    .from("business_days")
+    .insert({
+      day_date: new Date().toISOString().split("T")[0],
+      is_open: true,
+      invoice_counter: 0
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    alert("❌ فشل فتح اليوم: " + error.message);
+    return;
+  }
+
+  alert(`🌅 تم فتح يوم عمل جديد\n👤 بواسطة: ${manager.name}`);
+
+  updateDayButton();
+};
+
+/* ===============================
+   إغلاق اليوم
+================================ */
 window.closeDay = async function () {
 
   const { data: day, error: dayErr } = await supabase
@@ -452,6 +562,7 @@ window.closeDay = async function () {
 
   if (!day) {
     alert("❌ ما فيه يوم مفتوح");
+    updateDayButton();
     return;
   }
 
@@ -507,7 +618,7 @@ window.closeDay = async function () {
 
   if (!ok) return;
 
-  // 🔥 الإصلاح المهم — نتحقق من نجاح التحديث
+  // 🔥 التحقق من نجاح التحديث
   const { data: updated, error: updateErr } = await supabase
     .from("business_days")
     .update({
@@ -531,6 +642,8 @@ window.closeDay = async function () {
   }
 
   alert("📅 تم إغلاق يوم العمل");
+
+  updateDayButton();
 };
 
 const menuBtn = document.getElementById("menuBtn");
@@ -572,22 +685,17 @@ window.showTab = function (tab, btn) {
   const activeBox = document.getElementById("activeOrders");
   const cancelledBox = document.getElementById("cancelledOrders");
 
-  // إخفاء الكل
   if (activeBox) activeBox.style.display = "none";
   if (cancelledBox) cancelledBox.style.display = "none";
 
-  // إزالة active من كل التابات
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
 
-  // إظهار الصحيح
   if (tab === "active") {
     if (activeBox) activeBox.style.display = "block";
   } else if (tab === "cancelled") {
     if (cancelledBox) cancelledBox.style.display = "block";
   }
 
-  // إضافة active على الزر اللي اتضغط
-  // نستخدم btn لو انمرّ، أو event.target كاحتياط
   if (btn) {
     btn.classList.add("active");
   } else if (typeof event !== "undefined" && event && event.target) {
