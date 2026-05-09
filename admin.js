@@ -3,7 +3,6 @@ import { supabase } from "./supabase.js";
 let currentAdminTab = "products";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
 
-// Realtime — يشتغل مرة وحدة بس بعد تسجيل الدخول
 let adminRealtimeStarted = false;
 
 /* ===============================
@@ -32,8 +31,6 @@ window.addEventListener("load", () => {
   } else {
     localStorage.removeItem("admin");
   }
-
-  // ما نحتاج setInterval — Realtime يتولاها
 });
 
 window.login = async function () {
@@ -96,13 +93,37 @@ window.showAdminTab = function (type) {
     if (btn.dataset.tab === type) btn.classList.add("active");
   });
 
-  if (type === "sales") loadSales();
+  if (type === "sales") {
+    ensureBusinessDayOption();
+    loadSales();
+  }
   if (type === "employees") loadEmployees();
   if (type === "shifts") loadAdminShifts();
   if (type === "inventory") {
     // صفحة المخزون لها ملف مستقل
   }
 };
+
+/* ===============================
+   إضافة خيار "يوم العمل الحالي" في القائمة المنسدلة
+================================ */
+function ensureBusinessDayOption() {
+  const select = document.getElementById("salesMode");
+  if (!select) return;
+
+  // تحقق لو الخيار موجود مسبقاً
+  const exists = [...select.options].some(opt => opt.value === "business_day");
+  if (exists) return;
+
+  // إضافة الخيار في البداية
+  const opt = document.createElement("option");
+  opt.value = "business_day";
+  opt.textContent = "🟢 يوم العمل الحالي";
+  select.insertBefore(opt, select.firstChild);
+
+  // اجعله الخيار الافتراضي
+  select.value = "business_day";
+}
 
 /* ===============================
    الموظفين
@@ -131,8 +152,6 @@ window.addEmployee = async function () {
 
   document.getElementById("empName").value = "";
   document.getElementById("empPin").value = "";
-
-  // Realtime يحدّث القائمة تلقائي
 };
 
 async function loadEmployees() {
@@ -155,7 +174,6 @@ async function loadEmployees() {
 
 window.deleteEmployee = async function (id) {
 
-  // 🔐 طلب PIN المدير
   const pin = prompt("🔐 أدخل رقم المدير");
   if (!pin) return;
 
@@ -184,12 +202,10 @@ window.deleteEmployee = async function (id) {
   }
 
   alert("✅ تم حذف الموظف");
-
-  // Realtime يحدّث القائمة تلقائي
 };
 
 /* ===============================
-   المبيعات
+   المبيعات (مع استثناء الملغية + خيار يوم العمل)
 ================================ */
 
 function money(val) {
@@ -198,8 +214,29 @@ function money(val) {
 
 window.loadSales = async function () {
 
-  const mode = document.getElementById("salesMode")?.value || "today";
+  const mode = document.getElementById("salesMode")?.value || "business_day";
 
+  // 🟢 يوم العمل الحالي — يحسب من فتح اليوم للوقت الحالي
+  let businessDayStart = null;
+
+  if (mode === "business_day") {
+
+    const { data: openDay } = await supabase
+      .from("business_days")
+      .select("opened_at")
+      .eq("is_open", true)
+      .maybeSingle();
+
+    if (!openDay) {
+      // ما فيه يوم مفتوح
+      showEmptySales("❌ لا يوجد يوم عمل مفتوح حالياً");
+      return;
+    }
+
+    businessDayStart = openDay.opened_at;
+  }
+
+  // بناء استعلام الطلبات
   let query = supabase
     .from("orders")
     .select(`
@@ -207,14 +244,23 @@ window.loadSales = async function () {
       cash_amount,
       card_amount,
       created_at
-    `);
+    `)
+    .eq("is_paid", true)
+    .neq("status", "cancelled");  // ← استثناء الملغية
+
+  if (mode === "business_day") {
+    query = query
+      .gte("created_at", businessDayStart)
+      .lte("created_at", new Date().toISOString());
+  }
 
   if (mode === "today") {
     const start = new Date(); start.setHours(0,0,0,0);
     const end = new Date(); end.setHours(23,59,59,999);
 
-    query = query.gte("created_at", start.toISOString())
-                 .lte("created_at", end.toISOString());
+    query = query
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
   }
 
   if (mode === "month") {
@@ -239,7 +285,7 @@ window.loadSales = async function () {
       .lte("created_at", to + " 23:59:59");
   }
 
-  const { data = [] } = await query.eq("is_paid", true);
+  const { data = [] } = await query;
 
   let total = 0, cash = 0, card = 0;
 
@@ -249,6 +295,7 @@ window.loadSales = async function () {
     card += Number(o.card_amount || 0);
   });
 
+  // ===== استعلام الأصناف =====
   let itemsQuery = supabase
     .from("order_items")
     .select(`
@@ -263,6 +310,12 @@ window.loadSales = async function () {
     `)
     .eq("orders.is_paid", true)
     .neq("orders.status", "cancelled");
+
+  if (mode === "business_day") {
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", businessDayStart)
+      .lte("orders.created_at", new Date().toISOString());
+  }
 
   if (mode === "today") {
     const start = new Date(); start.setHours(0,0,0,0);
@@ -383,6 +436,46 @@ window.loadSales = async function () {
 };
 
 /* ===============================
+   عرض إحصائيات فاضية مع رسالة
+================================ */
+function showEmptySales(message) {
+
+  const statsEl = document.getElementById("salesStats");
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-box">
+        <span>💰 الإجمالي</span>
+        <strong>${money(0)}</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>💵 كاش</span>
+        <strong>${money(0)}</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>💳 بطاقة</span>
+        <strong>${money(0)}</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>🧾 الطلبات</span>
+        <strong>0</strong>
+      </div>
+    `;
+  }
+
+  const salesBox = document.getElementById("salesBox");
+  if (salesBox) {
+    salesBox.innerHTML = `
+      <div class="card" style="text-align:center; padding:30px;">
+        ${message}
+      </div>
+    `;
+  }
+}
+
+/* ===============================
    الشفتات
 ================================ */
 
@@ -410,7 +503,8 @@ window.loadAdminShifts = async function () {
     .from("orders")
     .select("shift_id, total")
     .in("shift_id", shiftIds)
-    .eq("is_paid", true);
+    .eq("is_paid", true)
+    .neq("status", "cancelled");  // ← استثناء الملغية
 
   const map = {};
 
@@ -444,14 +538,13 @@ window.loadAdminShifts = async function () {
 };
 
 /* ===============================
-   Realtime — يحدّث التبويب الحالي تلقائي
+   Realtime
 ================================ */
 function startAdminRealtime() {
 
   if (adminRealtimeStarted) return;
   adminRealtimeStarted = true;
 
-  // debounce: لو صار كذا تغيير في وقت قصير، نحدّث مرة وحدة بس
   let salesReloadTimer = null;
   let shiftsReloadTimer = null;
 
@@ -471,7 +564,6 @@ function startAdminRealtime() {
     }, 500);
   }
 
-  // الطلبات → تأثر على الشفتات + المبيعات
   supabase
     .channel("admin-orders-live")
     .on(
@@ -490,7 +582,6 @@ function startAdminRealtime() {
       console.log("📡 ADMIN ORDERS REALTIME:", status);
     });
 
-  // الشفتات (فتح/إغلاق)
   supabase
     .channel("admin-shifts-live")
     .on(
@@ -508,7 +599,6 @@ function startAdminRealtime() {
       console.log("📡 ADMIN SHIFTS REALTIME:", status);
     });
 
-  // الموظفين
   supabase
     .channel("admin-employees-live")
     .on(
@@ -524,6 +614,24 @@ function startAdminRealtime() {
     )
     .subscribe((status) => {
       console.log("📡 ADMIN EMPLOYEES REALTIME:", status);
+    });
+
+  // Realtime على business_days لتحديث المبيعات لما يفتح/يقفل يوم
+  supabase
+    .channel("admin-business-days-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "business_days"
+      },
+      () => {
+        scheduleSalesReload();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN BUSINESS DAYS REALTIME:", status);
     });
 }
 
