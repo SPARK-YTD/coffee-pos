@@ -7,15 +7,19 @@ let ordersChannel = null;
 let realtimeWorking = false;
 
 /* ===============================
-   تحميل الطلبات النشطة (المرة الأولى + fallback)
+   تحميل الطلبات النشطة
 ================================ */
 export async function loadActiveOrders(currentShiftId) {
+
+  // لو الشفت تغيّر، نعيد الاشتراك
+  const shiftChanged = activeShiftId !== currentShiftId;
 
   activeShiftId = currentShiftId;
 
   if (!currentShiftId) {
     activeOrders = [];
     renderActiveOrders();
+    teardownRealtime();
     return;
   }
 
@@ -30,8 +34,22 @@ export async function loadActiveOrders(currentShiftId) {
 
   renderActiveOrders();
 
-  // اشتراك في Realtime (مرة وحدة، أو إعادة اشتراك لو الشفت تغيّر)
-  setupRealtime();
+  // اشتراك Realtime مرة وحدة بس (أو إذا الشفت تغيّر)
+  if (!ordersChannel || shiftChanged) {
+    setupRealtime();
+  }
+}
+
+/* ===============================
+   إلغاء الاشتراك
+================================ */
+function teardownRealtime() {
+
+  if (ordersChannel) {
+    supabase.removeChannel(ordersChannel);
+    ordersChannel = null;
+    realtimeWorking = false;
+  }
 }
 
 /* ===============================
@@ -39,11 +57,8 @@ export async function loadActiveOrders(currentShiftId) {
 ================================ */
 function setupRealtime() {
 
-  // امسح الاشتراك القديم لو موجود (لما الشفت يتغيّر)
-  if (ordersChannel) {
-    supabase.removeChannel(ordersChannel);
-    ordersChannel = null;
-  }
+  // امسح الاشتراك القديم لو موجود
+  teardownRealtime();
 
   if (!activeShiftId) return;
 
@@ -66,7 +81,6 @@ function setupRealtime() {
         if (eventType === "INSERT") {
 
           if (newRow.status === "active") {
-            // أضفه في البداية (ترتيب تنازلي)
             activeOrders.unshift(newRow);
             renderActiveOrders();
           }
@@ -76,24 +90,22 @@ function setupRealtime() {
           const idx = activeOrders.findIndex(o => o.id === newRow.id);
 
           if (newRow.status !== "active") {
-            // الطلب صار ملغي/مكتمل → شيله من القائمة
+            // الطلب صار ملغي/مكتمل
             if (idx !== -1) {
               activeOrders.splice(idx, 1);
               renderActiveOrders();
             }
 
-            // لو ملغي حدّث قائمة الإلغاء
             if (newRow.status === "cancelled") {
               loadCancelledOrders(activeShiftId);
             }
 
           } else {
-            // ما زال نشط → حدّث بياناته (مثل is_prepared)
+            // ما زال نشط → حدّث (مثل is_prepared)
             if (idx !== -1) {
               activeOrders[idx] = newRow;
               renderActiveOrders();
             } else {
-              // ما كان موجود وصار نشط (نادر)
               activeOrders.unshift(newRow);
               renderActiveOrders();
             }
@@ -117,10 +129,12 @@ function setupRealtime() {
         realtimeWorking = true;
       }
 
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         realtimeWorking = false;
-        console.warn("⚠️ Realtime مو شغّال على orders — راح يستخدم تحديث يدوي");
+        console.warn("⚠️ Realtime مشكلة على orders — راح يستخدم تحديث يدوي");
       }
+
+      // CLOSED طبيعي لما الصفحة تتسكر، ما نطبع تحذير
     });
 }
 
@@ -169,7 +183,6 @@ window.markCompleted = async function(id) {
     .update({ status: "completed" })
     .eq("id", id);
 
-  // لو Realtime مو شغّال، نحدث يدوياً
   if (!realtimeWorking) {
     await loadActiveOrders(localStorage.getItem("shiftId"));
   }
@@ -207,7 +220,6 @@ window.cancelOrder = async function(id) {
     })
     .eq("id", id);
 
-  // لو Realtime مو شغّال، نحدث يدوياً
   if (!realtimeWorking) {
     await loadActiveOrders(localStorage.getItem("shiftId"));
     loadCancelledOrders(localStorage.getItem("shiftId"));
