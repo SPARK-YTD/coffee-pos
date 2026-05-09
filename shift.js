@@ -7,6 +7,29 @@ export let currentShiftId = null;
 export let currentEmployee = null;
 
 /* ===============================
+   تنسيق الوقت بالعربي
+================================ */
+function formatDateTime(dateStr) {
+  if (!dateStr) return "-";
+
+  const d = new Date(dateStr);
+
+  const date = d.toLocaleDateString("ar-SA-u-ca-gregory", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+
+  const time = d.toLocaleTimeString("ar-SA", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+
+  return `${date} - ${time}`;
+}
+
+/* ===============================
    تحديث زر الشفت
 ================================ */
 function updateShiftButton() {
@@ -111,7 +134,6 @@ window.confirmOpenShift = async function () {
     .eq("is_open", true)
     .maybeSingle();
 
-  // ❌ ما فيه يوم مفتوح → لازم المدير يفتح يوم أول
   if (!openDay) {
 
     errorBox.textContent = "❌ لا يوجد يوم عمل مفتوح. اطلب من المدير فتح يوم جديد.";
@@ -188,7 +210,6 @@ export async function restoreShift() {
   const savedShift = localStorage.getItem("shiftId");
 
   if (!savedShift) {
-    // ما نفتح popup تلقائياً — لو ما فيه يوم، يطلع خطأ
     return;
   }
 
@@ -231,7 +252,6 @@ window.closeShift = async function (autoAsk = true) {
     return;
   }
 
-  // 🔴 طلبات مفتوحة
   const { data: active } = await supabase
     .from("orders")
     .select("id")
@@ -245,12 +265,13 @@ window.closeShift = async function (autoAsk = true) {
     return;
   }
 
-  // 🟢 الطلبات المدفوعة
+  // 🟢 الطلبات المدفوعة (بدون الملغية)
   const { data: orders } = await supabase
     .from("orders")
     .select("total, cash_amount, card_amount")
     .eq("shift_id", currentShiftId)
-    .eq("is_paid", true);
+    .eq("is_paid", true)
+    .neq("status", "cancelled");
 
   let totalSales = 0;
   let totalCash = 0;
@@ -279,7 +300,6 @@ window.closeShift = async function (autoAsk = true) {
 
   if (!ok) return;
 
-  // 🔒 إغلاق مع التحقق من النجاح
   const { data: updated, error: updateErr } = await supabase
     .from("shifts")
     .update({
@@ -304,7 +324,6 @@ window.closeShift = async function (autoAsk = true) {
     return;
   }
 
-  // 🧹 تنظيف
   currentShiftId = null;
   currentEmployee = null;
 
@@ -372,16 +391,16 @@ window.showShiftInfo = async function () {
   const name = shift.employees?.name || "غير معروف";
 
   const start = new Date(shift.opened_at);
-
   const now = new Date();
 
   let diff = Math.floor((now - start) / 1000);
 
   const hours = Math.floor(diff / 3600);
-
   diff %= 3600;
-
   const mins = Math.floor(diff / 60);
+
+  // ⭐ التنسيق الجديد للوقت
+  const openedDateTime = formatDateTime(shift.opened_at);
 
   const overlay = document.createElement("div");
 
@@ -399,13 +418,13 @@ window.showShiftInfo = async function () {
 
       🕒 وقت الفتح:
       <br>
-      ${start.toLocaleString()}
+      <strong>${openedDateTime}</strong>
 
       <br><br>
 
       ⏱ المدة:
       <br>
-      ${hours} ساعة ${mins} دقيقة
+      <strong>${hours} ساعة و ${mins} دقيقة</strong>
 
       <br><br>
 
