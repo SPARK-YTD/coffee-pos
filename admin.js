@@ -145,12 +145,17 @@ window.addEmployee = async function () {
     return;
   }
 
-  const { error } = await supabase
-    .from("employees")
-    .insert({ name, pin, role });
+  // 🔐 استخدام RPC لتشفير PIN وحفظ الموظف
+  const { data, error } = await supabase
+    .rpc("add_employee_with_pin_hash", { 
+      p_name: name,
+      p_pin: pin,
+      p_role: role
+    });
 
   if (error) {
-    alert(error.message);
+    console.error(error);
+    alert("❌ " + error.message);
     return;
   }
 
@@ -158,6 +163,9 @@ window.addEmployee = async function () {
 
   document.getElementById("empName").value = "";
   document.getElementById("empPin").value = "";
+  
+  // إعادة تحميل قائمة الموظفين
+  loadEmployees();
 };
 
 async function loadEmployees() {
