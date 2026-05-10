@@ -43,15 +43,21 @@ window.login = async function () {
     return;
   }
 
-  const { data: manager } = await supabase
-    .from("employees")
-    .select("*")
-    .eq("pin", pin)
-    .eq("role", "manager")
-    .maybeSingle();
+  // 🔐 استدعاء RPC للتحقق من PIN المدير
+  const { data: managerArray, error: rpcError } = await supabase
+    .rpc("verify_employee_pin", { input_pin: pin });
 
-  if (!manager) {
-    errorBox.textContent = "❌ PIN خطأ";
+  if (rpcError) {
+    console.error("RPC ERROR:", rpcError);
+    errorBox.textContent = "❌ خطأ في التحقق";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
+
+  if (!manager || manager.role !== "manager") {
+    errorBox.textContent = "❌ PIN خطأ أو ليس مدير";
     errorBox.style.display = "block";
     return;
   }
@@ -177,14 +183,19 @@ window.deleteEmployee = async function (id) {
   const pin = prompt("🔐 أدخل رقم المدير");
   if (!pin) return;
 
-  const { data: manager } = await supabase
-    .from("employees")
-    .select("id, role")
-    .eq("pin", pin.trim())
-    .eq("role", "manager")
-    .maybeSingle();
+  // 🔐 استدعاء RPC للتحقق من PIN المدير
+  const { data: managerArray, error: rpcError } = await supabase
+    .rpc("verify_employee_pin", { input_pin: pin });
 
-  if (!manager) {
+  if (rpcError) {
+    console.error("RPC ERROR:", rpcError);
+    alert("❌ خطأ في التحقق");
+    return;
+  }
+
+  const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
+
+  if (!manager || manager.role !== "manager") {
     alert("❌ غير مصرح");
     return;
   }
