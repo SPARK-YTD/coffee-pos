@@ -169,7 +169,10 @@ window.confirmOpenShift = async function () {
   if (existingShift) {
 
     currentShiftId = existingShift.id;
-    currentEmployee = emp;
+    currentEmployee = {
+      id: emp.id,
+      name: emp.name
+    };
 
     localStorage.setItem("shiftId", existingShift.id);
 
@@ -203,7 +206,10 @@ window.confirmOpenShift = async function () {
   }
 
   currentShiftId = shift.id;
-  currentEmployee = emp;
+  currentEmployee = {
+    id: emp.id,
+    name: emp.name
+  };
 
   localStorage.setItem("shiftId", shift.id);
 
