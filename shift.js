@@ -1,289 +1,325 @@
-import { supabase } from "./supabase.js";
-import { cart, renderCart } from "./cart.js";
-import { loadActiveOrders } from "./orders.js";
-import { loadCancelledOrders } from "./reports.js";
+import { supabase } from “./supabase.js”;
+import { cart, renderCart } from “./cart.js”;
+import { loadActiveOrders } from “./orders.js”;
+import { loadCancelledOrders } from “./reports.js”;
 
 export let currentShiftId = null;
 export let currentEmployee = null;
 
 /* ===============================
-   تنسيق الوقت — المنطقة الزمنية المحلية
+تنسيق الوقت — توقيت الرياض (UTC+3) صراحة
 ================================ */
 function formatDateTime(dateStr) {
-  if (!dateStr) return "-";
+if (!dateStr) return “-”;
 
-  const d = new Date(dateStr);
+let isoStr = String(dateStr);
+if (!isoStr.endsWith(“Z”) && !isoStr.includes(”+”) && !isoStr.match(/-\d\d:\d\d$/)) {
+isoStr = isoStr.replace(” “, “T”) + “Z”;
+}
 
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+const d = new Date(isoStr);
 
-  let hours = d.getHours();
-  const mins = String(d.getMinutes()).padStart(2, "0");
+const parts = new Intl.DateTimeFormat(“en-GB”, {
+timeZone: “Asia/Riyadh”,
+year: “numeric”,
+month: “2-digit”,
+day: “2-digit”,
+hour: “2-digit”,
+minute: “2-digit”,
+hour12: true
+}).formatToParts(d);
 
-  const period = hours >= 12 ? "م" : "ص";
+const get = (type) => parts.find(p => p.type === type)?.value || “”;
 
-  hours = hours % 12;
-  if (hours === 0) hours = 12;
-  const hh = String(hours).padStart(2, "0");
+const yyyy = get(“year”);
+const mm = get(“month”);
+const dd = get(“day”);
+const hh = get(“hour”);
+const mins = get(“minute”);
+const period = get(“dayPeriod”) === “AM” ? “ص” : “م”;
 
-  return `${yyyy}/${mm}/${dd} - ${hh}:${mins} ${period}`;
+return `${yyyy}/${mm}/${dd} - ${hh}:${mins} ${period}`;
 }
 
 /* ===============================
-   تحديث زر الشفت
+تحديث زر الشفت
 ================================ */
 function updateShiftButton() {
 
-  const shiftBtn = document.getElementById("shiftBtn");
-  const infoBtn = document.getElementById("shiftInfoBtn");
-  const closeBtn = document.getElementById("closeShiftBtn");
+const shiftBtn = document.getElementById(“shiftBtn”);
+const infoBtn = document.getElementById(“shiftInfoBtn”);
+const closeBtn = document.getElementById(“closeShiftBtn”);
 
-  if (!shiftBtn) return;
+if (!shiftBtn) return;
 
-  if (currentShiftId && currentEmployee?.name) {
+if (currentShiftId && currentEmployee?.name) {
 
-    shiftBtn.textContent = `🟢 ${currentEmployee.name}`;
+```
+shiftBtn.textContent = `🟢 ${currentEmployee.name}`;
 
-    if (infoBtn) infoBtn.style.display = "block";
-    if (closeBtn) closeBtn.style.display = "block";
+if (infoBtn) infoBtn.style.display = "block";
+if (closeBtn) closeBtn.style.display = "block";
+```
 
-  } else {
+} else {
 
-    shiftBtn.textContent = "➕ فتح شفت";
+```
+shiftBtn.textContent = "➕ فتح شفت";
 
-    if (infoBtn) infoBtn.style.display = "none";
-    if (closeBtn) closeBtn.style.display = "none";
-  }
+if (infoBtn) infoBtn.style.display = "none";
+if (closeBtn) closeBtn.style.display = "none";
+```
+
+}
 }
 
 /* ===============================
-   فتح Popup الشفت
+فتح Popup الشفت
 ================================ */
 window.openShiftPrompt = function () {
 
-  const popup = document.getElementById("shiftPopup");
+const popup = document.getElementById(“shiftPopup”);
 
-  if (!popup) {
-    console.error("❌ shiftPopup غير موجود");
-    return;
-  }
+if (!popup) {
+console.error(“❌ shiftPopup غير موجود”);
+return;
+}
 
-  popup.style.display = "flex";
+popup.style.display = “flex”;
 };
 
 /* ===============================
-   إغلاق Popup الشفت
+إغلاق Popup الشفت
 ================================ */
 window.closeShiftPopup = function () {
 
-  const popup = document.getElementById("shiftPopup");
+const popup = document.getElementById(“shiftPopup”);
 
-  if (popup) {
-    popup.style.display = "none";
-  }
+if (popup) {
+popup.style.display = “none”;
+}
 };
 
 /* ===============================
-   زر الشفت
+زر الشفت
 ================================ */
 window.toggleShiftAction = function () {
 
-  if (!currentShiftId) {
-    openShiftPrompt();
-  }
+if (!currentShiftId) {
+openShiftPrompt();
+}
 };
 
 /* ===============================
-   فتح الشفت
+فتح الشفت
 ================================ */
 window.confirmOpenShift = async function () {
 
-  const pin = document.getElementById("shiftPin").value.trim();
+const pin = document.getElementById(“shiftPin”).value.trim();
 
-  const errorBox = document.getElementById("shiftError");
+const errorBox = document.getElementById(“shiftError”);
 
-  if (!pin) {
+if (!pin) {
 
-    errorBox.textContent = "❌ أدخل PIN";
-    errorBox.style.display = "block";
+```
+errorBox.textContent = "❌ أدخل PIN";
+errorBox.style.display = "block";
 
-    return;
-  }
+return;
+```
 
-  const { data: emp } = await supabase
-    .from("employees")
-    .select("id, name, pin")
-    .eq("pin", pin)
-    .maybeSingle();
+}
 
-  if (!emp) {
+const { data: emp } = await supabase
+.from(“employees”)
+.select(“id, name, pin”)
+.eq(“pin”, pin)
+.maybeSingle();
 
-    errorBox.textContent = "❌ PIN خطأ";
-    errorBox.style.display = "block";
+if (!emp) {
 
-    return;
-  }
+```
+errorBox.textContent = "❌ PIN خطأ";
+errorBox.style.display = "block";
 
-  errorBox.style.display = "none";
+return;
+```
 
-  const { data: openDay } = await supabase
-    .from("business_days")
-    .select("*")
-    .eq("is_open", true)
-    .maybeSingle();
+}
 
-  if (!openDay) {
+errorBox.style.display = “none”;
 
-    errorBox.textContent = "❌ لا يوجد يوم عمل مفتوح. اطلب من المدير فتح يوم جديد.";
-    errorBox.style.display = "block";
+const { data: openDay } = await supabase
+.from(“business_days”)
+.select(”*”)
+.eq(“is_open”, true)
+.maybeSingle();
 
-    return;
-  }
+if (!openDay) {
 
-  const { data: existingShift } = await supabase
-    .from("shifts")
-    .select("*")
-    .eq("employee_id", emp.id)
-    .eq("is_open", true)
-    .maybeSingle();
+```
+errorBox.textContent = "❌ لا يوجد يوم عمل مفتوح. اطلب من المدير فتح يوم جديد.";
+errorBox.style.display = "block";
 
-  if (existingShift) {
+return;
+```
 
-    currentShiftId = existingShift.id;
-    currentEmployee = emp;
+}
 
-    localStorage.setItem("shiftId", existingShift.id);
+const { data: existingShift } = await supabase
+.from(“shifts”)
+.select(”*”)
+.eq(“employee_id”, emp.id)
+.eq(“is_open”, true)
+.maybeSingle();
 
-    loadActiveOrders(currentShiftId);
-    loadCancelledOrders(currentShiftId);
+if (existingShift) {
 
-    updateShiftButton();
+```
+currentShiftId = existingShift.id;
+currentEmployee = emp;
 
-    closeShiftPopup();
+localStorage.setItem("shiftId", existingShift.id);
 
-    alert(`📂 تم استرجاع الشفت - ${emp.name}`);
+loadActiveOrders(currentShiftId);
+loadCancelledOrders(currentShiftId);
 
-    return;
-  }
+updateShiftButton();
 
-  const { data: shift, error } = await supabase
-    .from("shifts")
-    .insert({
-      employee_id: emp.id
-    })
-    .select()
-    .single();
+closeShiftPopup();
 
-  if (error) {
+alert(`📂 تم استرجاع الشفت - ${emp.name}`);
 
-    console.error(error);
+return;
+```
 
-    alert("❌ خطأ في فتح الشفت");
+}
 
-    return;
-  }
+const { data: shift, error } = await supabase
+.from(“shifts”)
+.insert({
+employee_id: emp.id
+})
+.select()
+.single();
 
-  currentShiftId = shift.id;
-  currentEmployee = emp;
+if (error) {
 
-  localStorage.setItem("shiftId", shift.id);
+```
+console.error(error);
 
-  loadActiveOrders(currentShiftId);
-  loadCancelledOrders(currentShiftId);
+alert("❌ خطأ في فتح الشفت");
 
-  updateShiftButton();
+return;
+```
 
-  closeShiftPopup();
+}
 
-  alert(`✅ تم فتح الشفت - ${emp.name}`);
+currentShiftId = shift.id;
+currentEmployee = emp;
+
+localStorage.setItem(“shiftId”, shift.id);
+
+loadActiveOrders(currentShiftId);
+loadCancelledOrders(currentShiftId);
+
+updateShiftButton();
+
+closeShiftPopup();
+
+alert(`✅ تم فتح الشفت - ${emp.name}`);
 };
 
 /* ===============================
-   استرجاع الشفت
+استرجاع الشفت
 ================================ */
 export async function restoreShift() {
 
-  const savedShift = localStorage.getItem("shiftId");
+const savedShift = localStorage.getItem(“shiftId”);
 
-  if (!savedShift) {
-    return;
-  }
+if (!savedShift) {
+return;
+}
 
-  const { data } = await supabase
-    .from("shifts")
-    .select(`
-      *,
-      employees (
-        name
-      )
-    `)
-    .eq("id", savedShift)
-    .single();
+const { data } = await supabase
+.from(“shifts”)
+.select(`*, employees ( name )`)
+.eq(“id”, savedShift)
+.single();
 
-  if (data && data.is_open) {
+if (data && data.is_open) {
 
-    currentShiftId = data.id;
+```
+currentShiftId = data.id;
 
-    currentEmployee = {
-      name: data.employees?.name || "غير معروف"
-    };
+currentEmployee = {
+  name: data.employees?.name || "غير معروف"
+};
 
-    updateShiftButton();
+updateShiftButton();
 
-    loadActiveOrders(currentShiftId);
-    loadCancelledOrders(currentShiftId);
+loadActiveOrders(currentShiftId);
+loadCancelledOrders(currentShiftId);
+```
 
-  } else {
+} else {
 
-    localStorage.removeItem("shiftId");
-  }
+```
+localStorage.removeItem("shiftId");
+```
+
+}
 }
 
 /* ===============================
-   إغلاق الشفت
+إغلاق الشفت
 ================================ */
 window.closeShift = async function (autoAsk = true) {
 
-  if (!currentShiftId) {
-    return;
-  }
+if (!currentShiftId) {
+return;
+}
 
-  const { data: active } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("shift_id", currentShiftId)
-    .eq("status", "active");
+const { data: active } = await supabase
+.from(“orders”)
+.select(“id”)
+.eq(“shift_id”, currentShiftId)
+.eq(“status”, “active”);
 
-  if (active && active.length > 0) {
+if (active && active.length > 0) {
 
-    alert("❌ فيه طلبات مفتوحة");
+```
+alert("❌ فيه طلبات مفتوحة");
 
-    return;
-  }
+return;
+```
 
-  // 🟢 الطلبات المدفوعة (بدون الملغية)
-  const { data: orders } = await supabase
-    .from("orders")
-    .select("total, cash_amount, card_amount")
-    .eq("shift_id", currentShiftId)
-    .eq("is_paid", true)
-    .neq("status", "cancelled");
+}
 
-  let totalSales = 0;
-  let totalCash = 0;
-  let totalCard = 0;
+const { data: orders } = await supabase
+.from(“orders”)
+.select(“total, cash_amount, card_amount”)
+.eq(“shift_id”, currentShiftId)
+.eq(“is_paid”, true)
+.neq(“status”, “cancelled”);
 
-  (orders || []).forEach(o => {
+let totalSales = 0;
+let totalCash = 0;
+let totalCard = 0;
 
-    totalSales += Number(o.total || 0);
-    totalCash += Number(o.cash_amount || 0);
-    totalCard += Number(o.card_amount || 0);
-  });
+(orders || []).forEach(o => {
 
-  const totalOrders = orders?.length || 0;
+```
+totalSales += Number(o.total || 0);
+totalCash += Number(o.cash_amount || 0);
+totalCard += Number(o.card_amount || 0);
+```
 
-  const ok = confirm(`
+});
+
+const totalOrders = orders?.length || 0;
+
+const ok = confirm(`
 📊 تقرير الشفت:
 
 💰 الإجمالي: ${totalSales.toFixed(2)} ﷼
@@ -293,165 +329,169 @@ window.closeShift = async function (autoAsk = true) {
 🧾 عدد الطلبات: ${totalOrders}
 
 تأكيد الإغلاق؟
-  `);
+`);
 
-  if (!ok) return;
+if (!ok) return;
 
-  const { data: updated, error: updateErr } = await supabase
-    .from("shifts")
-    .update({
-      is_open: false,
-      total_sales: totalSales,
-      total_cash: totalCash,
-      total_card: totalCard,
-      total_orders: totalOrders,
-      closed_at: new Date().toISOString()
-    })
-    .eq("id", currentShiftId)
-    .select();
+const { data: updated, error: updateErr } = await supabase
+.from(“shifts”)
+.update({
+is_open: false,
+total_sales: totalSales,
+total_cash: totalCash,
+total_card: totalCard,
+total_orders: totalOrders,
+closed_at: new Date().toISOString()
+})
+.eq(“id”, currentShiftId)
+.select();
 
-  if (updateErr) {
-    console.error("CLOSE SHIFT ERROR:", updateErr);
-    alert("❌ فشل إغلاق الشفت: " + updateErr.message);
-    return;
-  }
+if (updateErr) {
+console.error(“CLOSE SHIFT ERROR:”, updateErr);
+alert(“❌ فشل إغلاق الشفت: “ + updateErr.message);
+return;
+}
 
-  if (!updated || updated.length === 0) {
-    alert("❌ ما تم تحديث الشفت — جرب مرة ثانية");
-    return;
-  }
+if (!updated || updated.length === 0) {
+alert(“❌ ما تم تحديث الشفت — جرب مرة ثانية”);
+return;
+}
 
-  currentShiftId = null;
-  currentEmployee = null;
+currentShiftId = null;
+currentEmployee = null;
 
-  localStorage.removeItem("shiftId");
+localStorage.removeItem(“shiftId”);
 
-  cart.length = 0;
+cart.length = 0;
 
-  renderCart();
+renderCart();
 
-  updateShiftButton();
+updateShiftButton();
 
-  const itemsBox = document.getElementById("items");
-  if (itemsBox) {
-    itemsBox.innerHTML = `
-      <div style="text-align:center;padding:40px;font-size:18px;">
-        🔒 الكاشير مغلق
-        <br><br>
-        افتح شفت عشان تبدأ
-      </div>
-    `;
-  }
+const itemsBox = document.getElementById(“items”);
+if (itemsBox) {
+itemsBox.innerHTML = `<div style="text-align:center;padding:40px;font-size:18px;"> 🔒 الكاشير مغلق <br><br> افتح شفت عشان تبدأ </div>`;
+}
 
-  alert("✅ تم إغلاق الشفت");
+alert(“✅ تم إغلاق الشفت”);
 
-  if (autoAsk) {
+if (autoAsk) {
 
-    const reopen = confirm("هل تبي تفتح شفت جديد؟");
+```
+const reopen = confirm("هل تبي تفتح شفت جديد؟");
 
-    if (reopen) {
-      openShiftPrompt();
-    }
-  }
+if (reopen) {
+  openShiftPrompt();
+}
+```
+
+}
 };
 
 /* ===============================
-   معلومات الشفت
+معلومات الشفت
 ================================ */
 window.showShiftInfo = async function () {
 
-  if (!currentShiftId) {
+if (!currentShiftId) {
 
-    alert("❌ ما فيه شفت مفتوح");
+```
+alert("❌ ما فيه شفت مفتوح");
 
-    return;
-  }
+return;
+```
 
-  const { data: shift } = await supabase
-    .from("shifts")
-    .select(`
-      opened_at,
-      employees (
-        name
-      )
-    `)
-    .eq("id", currentShiftId)
-    .single();
+}
 
-  if (!shift) {
+const { data: shift } = await supabase
+.from(“shifts”)
+.select(`opened_at, employees ( name )`)
+.eq(“id”, currentShiftId)
+.single();
 
-    alert("❌ ما قدرنا نجيب بيانات الشفت");
+if (!shift) {
 
-    return;
-  }
+```
+alert("❌ ما قدرنا نجيب بيانات الشفت");
 
-  const name = shift.employees?.name || "غير معروف";
+return;
+```
 
-  const start = new Date(shift.opened_at);
-  const now = new Date();
+}
 
-  let diff = Math.floor((now - start) / 1000);
+const name = shift.employees?.name || “غير معروف”;
 
-  const hours = Math.floor(diff / 3600);
-  diff %= 3600;
-  const mins = Math.floor(diff / 60);
+const start = new Date(shift.opened_at);
+const now = new Date();
 
-  const openedDateTime = formatDateTime(shift.opened_at);
+let diff = Math.floor((now - start) / 1000);
 
-  const overlay = document.createElement("div");
+const hours = Math.floor(diff / 3600);
+diff %= 3600;
+const mins = Math.floor(diff / 60);
 
-  overlay.className = "popup-overlay";
+const openedDateTime = formatDateTime(shift.opened_at);
 
-  overlay.innerHTML = `
-    <div class="popup-box" style="text-align:center">
+const overlay = document.createElement(“div”);
 
-      <h3>🟢 الشفت المفتوح</h3>
+overlay.className = “popup-overlay”;
 
-      👤 الموظف:
-      <strong>${name}</strong>
+overlay.innerHTML = `
+<div class="popup-box" style="text-align:center">
 
-      <br><br>
+```
+  <h3>🟢 الشفت المفتوح</h3>
 
-      🕒 وقت الفتح:
-      <br>
-      <strong>${openedDateTime}</strong>
+  👤 الموظف:
+  <strong>${name}</strong>
 
-      <br><br>
+  <br><br>
 
-      ⏱ المدة:
-      <br>
-      <strong>${hours} ساعة و ${mins} دقيقة</strong>
+  🕒 وقت الفتح:
+  <br>
+  <strong>${openedDateTime}</strong>
 
-      <br><br>
+  <br><br>
 
-      <button onclick="closeShift()">
-        🔒 إغلاق الشفت
-      </button>
+  ⏱ المدة:
+  <br>
+  <strong>${hours} ساعة و ${mins} دقيقة</strong>
 
-      <button class="cancel-btn">
-        إغلاق
-      </button>
+  <br><br>
 
-    </div>
-  `;
+  <button onclick="closeShift()">
+    🔒 إغلاق الشفت
+  </button>
 
-  document.body.appendChild(overlay);
+  <button class="cancel-btn">
+    إغلاق
+  </button>
 
-  overlay.querySelector(".cancel-btn").onclick = () => {
-    overlay.remove();
-  };
+</div>
+```
 
-  overlay.onclick = (e) => {
+`;
 
-    if (e.target === overlay) {
-      overlay.remove();
-    }
-  };
+document.body.appendChild(overlay);
+
+overlay.querySelector(”.cancel-btn”).onclick = () => {
+overlay.remove();
+};
+
+overlay.onclick = (e) => {
+
+```
+if (e.target === overlay) {
+  overlay.remove();
+}
+```
+
+};
 };
 
 /* ===============================
-   Export
+Export
 ================================ */
 export {
-  updateShiftButton
+updateShiftButton
 };
