@@ -491,14 +491,19 @@ window.openDay = async function () {
 
   if (!pin) return;
 
-  const { data: manager } = await supabase
-    .from("employees")
-    .select("id, role, name")
-    .eq("pin", pin.trim())
-    .eq("role", "manager")
-    .maybeSingle();
+  // 🔐 استدعاء RPC للتحقق من PIN المدير
+  const { data: managerArray, error: rpcError } = await supabase
+    .rpc("verify_employee_pin", { input_pin: pin.trim() });
 
-  if (!manager) {
+  if (rpcError) {
+    console.error("RPC ERROR:", rpcError);
+    alert("❌ خطأ في التحقق");
+    return;
+  }
+
+  const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
+
+  if (!manager || manager.role !== "manager") {
     alert("❌ غير مصرح — هذي العملية للمدير فقط");
     return;
   }
