@@ -122,11 +122,18 @@ window.confirmOpenShift = async function () {
     return;
   }
 
-  const { data: emp } = await supabase
-    .from("employees")
-    .select("id, name, pin")
-    .eq("pin", pin)
-    .maybeSingle();
+  // 🔐 استدعاء RPC function بدل البحث المباشر
+  const { data: empArray, error: rpcError } = await supabase
+    .rpc("verify_employee_pin", { input_pin: pin });
+
+  if (rpcError) {
+    console.error("RPC ERROR:", rpcError);
+    errorBox.textContent = "❌ خطأ في التحقق";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  const emp = empArray && empArray.length > 0 ? empArray[0] : null;
 
   if (!emp) {
 
