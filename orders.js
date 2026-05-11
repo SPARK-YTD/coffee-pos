@@ -377,4 +377,4 @@ setTimeout(function() {
 printWindow.print();
 }, 250);
 };
-};
+}; 
