@@ -1,93 +1,123 @@
-import { loadCancelledOrders } from ‘./reports.js’;
-import { supabase } from ‘./supabase.js’;
-import { loadActiveOrders } from ‘./orders.js’;
-import { openPaymentAndSave } from ‘./payment.js’;
-import { cart, addToCart, renderCart } from ‘./cart.js’;
-import { currentShiftId, restoreShift } from ‘./shift.js’;
+import { loadCancelledOrders } from “./reports.js”;
+import { supabase } from “./supabase.js”;
+import { loadActiveOrders } from “./orders.js”;
+import { openPaymentAndSave } from “./payment.js”;
 
-window.addEventListener(‘error’, function(e) {
-console.error(‘GLOBAL ERROR:’, e.error);
+import {
+cart,
+addToCart,
+renderCart
+} from “./cart.js”;
+
+import {
+currentShiftId,
+restoreShift
+} from “./shift.js”;
+
+window.addEventListener(“error”, (e) => {
+console.error(“🔥 GLOBAL ERROR:”, e.error);
 });
 
-window.addEventListener(‘unhandledrejection’, function(e) {
-console.error(‘PROMISE ERROR:’, e.reason);
+window.addEventListener(“unhandledrejection”, (e) => {
+console.error(“🔥 PROMISE ERROR:”, e.reason);
 });
 
 let TAX_RATE = 0;
 let HIDE_TAX = false;
-let currentCategory = ‘drinks’;
+let currentCategory = “drinks”;
 
 async function loadTax() {
-const result = await supabase
-.from(‘settings’)
-.select(‘tax_rate, hide_tax’)
-.eq(‘id’, 1)
+
+const { data } = await supabase
+.from(“settings”)
+.select(“tax_rate, hide_tax”)
+.eq(“id”, 1)
 .single();
 
-const data = result.data;
-TAX_RATE = Number((data && data.tax_rate) || 0) / 100;
-HIDE_TAX = (data && data.hide_tax) || false;
+TAX_RATE = Number(data?.tax_rate || 0) / 100;
+
+HIDE_TAX = data?.hide_tax || false;
 }
 
 function formatMoney(amount) {
-return Number(amount).toFixed(2) + ’ ر.س’;
+return `${Number(amount).toFixed(2)} ﷼`;
 }
 
 window.formatMoney = formatMoney;
 
 let items = [];
+
 window.editingOrderId = null;
 window.lastOrder = null;
 window.lastCart = null;
 
+/* ===============================
+Realtime — تغييرات الضريبة
+================================ */
 function listenToTaxChanges() {
-supabase
-.channel(‘tax-live’)
-.on(
-‘postgres_changes’,
-{
-event: ‘UPDATE’,
-schema: ‘public’,
-table: ‘settings’,
-filter: ‘id=eq.1’
-},
-function(payload) {
-TAX_RATE = Number(payload.new.tax_rate || 0) / 100;
-HIDE_TAX = payload.new.hide_tax || false;
-if (cart.length > 0) {
-renderCart();
-}
-}
-)
-.subscribe(function(status) {
-console.log(‘TAX REALTIME:’, status);
-});
-}
 
-function listenToProductChanges() {
 supabase
-.channel(‘products-live’)
+.channel(“tax-live”)
 .on(
-‘postgres_changes’,
+“postgres_changes”,
 {
-event: ‘*’,
-schema: ‘public’,
-table: ‘products’
+event: “UPDATE”,
+schema: “public”,
+table: “settings”,
+filter: “id=eq.1”
 },
-function(payload) {
-const eventType = payload.eventType;
-const newRow = payload.new;
-const oldRow = payload.old;
+(payload) => {
 
 ```
-    if (eventType === 'INSERT') {
+    TAX_RATE = Number(payload.new.tax_rate || 0) / 100;
+    HIDE_TAX = payload.new.hide_tax || false;
+
+    if (cart.length > 0) {
+      renderCart();
+    }
+  }
+)
+.subscribe((status) => {
+  console.log("📡 TAX REALTIME:", status);
+});
+```
+
+}
+
+/* ===============================
+Realtime — تغييرات المنتجات
+================================ */
+function listenToProductChanges() {
+
+supabase
+.channel(“products-live”)
+.on(
+“postgres_changes”,
+{
+event: “*”,
+schema: “public”,
+table: “products”
+},
+(payload) => {
+
+```
+    const eventType = payload.eventType;
+    const newRow = payload.new;
+    const oldRow = payload.old;
+
+    if (eventType === "INSERT") {
+
       if (newRow.category === currentCategory && newRow.is_active) {
         items.push(mapProduct(newRow));
         renderItems();
       }
-    } else if (eventType === 'UPDATE') {
-      const idx = items.findIndex(function(i) { return i.id === newRow.id; });
-      const shouldBeShown = newRow.category === currentCategory && newRow.is_active;
+
+    } else if (eventType === "UPDATE") {
+
+      const idx = items.findIndex(i => i.id === newRow.id);
+
+      const shouldBeShown =
+        newRow.category === currentCategory && newRow.is_active;
 
       if (!shouldBeShown) {
         if (idx !== -1) {
@@ -103,8 +133,10 @@ const oldRow = payload.old;
         items.push(mapProduct(newRow));
       }
       renderItems();
-    } else if (eventType === 'DELETE') {
-      const idx = items.findIndex(function(i) { return i.id === oldRow.id; });
+
+    } else if (eventType === "DELETE") {
+
+      const idx = items.findIndex(i => i.id === oldRow.id);
       if (idx !== -1) {
         items.splice(idx, 1);
         renderItems();
@@ -112,222 +144,265 @@ const oldRow = payload.old;
     }
   }
 )
-.subscribe(function(status) {
-  console.log('PRODUCTS REALTIME:', status);
+.subscribe((status) => {
+  console.log("📡 PRODUCTS REALTIME:", status);
 });
 ```
 
 }
 
+/* ===============================
+Realtime — تغييرات يوم العمل
+================================ */
 function listenToBusinessDayChanges() {
+
 supabase
-.channel(‘business-day-live’)
+.channel(“business-day-live”)
 .on(
-‘postgres_changes’,
+“postgres_changes”,
 {
-event: ‘*’,
-schema: ‘public’,
-table: ‘business_days’
+event: “*”,
+schema: “public”,
+table: “business_days”
 },
-function() {
+() => {
 updateDayButton();
 }
 )
-.subscribe(function(status) {
-console.log(‘BUSINESS DAY REALTIME:’, status);
+.subscribe((status) => {
+console.log(“📡 BUSINESS DAY REALTIME:”, status);
 });
 }
 
 function mapProduct(p) {
-const extrasArr = p.extras_text
-? p.extras_text.split(’\n’).map(function(e) { return e.trim(); }).filter(function(e) { return e !== ‘’; })
-: [];
-return Object.assign({}, p, { extras: extrasArr });
+return {
+…p,
+extras: p.extras_text
+? p.extras_text.split(”\n”).map(e => e.trim()).filter(e => e !== “”)
+: []
+};
 }
 
-async function loadItems(category) {
-if (!category) category = ‘drinks’;
+/* ===============================
+تحميل المنتجات
+================================ */
+async function loadItems(category = “drinks”) {
+
 currentCategory = category;
 
-const result = await supabase
-.from(‘products’)
-.select(’*’)
-.eq(‘category’, category)
-.eq(‘is_active’, true);
+const { data, error } = await supabase
+.from(“products”)
+.select(”*”)
+.eq(“category”, category)
+.eq(“is_active”, true);
 
-if (result.error) {
-console.error(result.error);
+if (error) {
+console.error(error);
 return;
 }
 
-items = (result.data || []).map(mapProduct);
+items = (data || []).map(mapProduct);
+
 renderItems();
 }
 
-window.loadItems = loadItems;
-
+/* ===============================
+عرض المنتجات
+================================ */
 function renderItems() {
-const box = document.getElementById(‘items’);
+const box = document.getElementById(“items”);
+
 if (!box) {
-console.error(‘items container not found’);
+console.error(“❌ items container مو موجود”);
 return;
 }
 
-box.innerHTML = ‘’;
+box.innerHTML = “”;
 
-items.forEach(function(item) {
-const div = document.createElement(‘div’);
-div.className = ‘item’;
+items.forEach(item => {
+const div = document.createElement(“div”);
+div.className = “item”;
 
 ```
-let imgPart = '';
-if (item.image_url) {
-  imgPart = '<img src="' + item.image_url + '" class="item-img">';
-}
+div.innerHTML = `
+  ${item.image_url ? `
+    <img src="${item.image_url}" class="item-img">
+  ` : ""}
 
-let pricePart;
-if (item.has_variants) {
-  pricePart = 'اختر الحجم';
-} else {
-  pricePart = formatMoney(item.price || 0);
-}
+  <div class="item-name">${item.name}</div>
 
-div.innerHTML =
-  imgPart +
-  '<div class="item-name">' + item.name + '</div>' +
-  '<div class="item-price">' + pricePart + '</div>';
+  <div class="item-price">
+    ${item.has_variants
+      ? "اختر الحجم"
+      : formatMoney(item.price || 0)}
+  </div>
+`;
 
-div.onclick = function() { handleItem(item); };
+div.onclick = () => handleItem(item);
+
 box.appendChild(div);
 ```
 
 });
 }
 
+/* ===============================
+الضغط على المنتج
+================================ */
 async function handleItem(item) {
+
 if (!currentShiftId) {
-alert(‘لازم تفتح شفت أول’);
+alert(“❌ لازم تفتح شفت أول”);
 return;
 }
 
-const existingPopup = document.querySelector(’.popup-overlay’);
+const existingPopup = document.querySelector(”.popup-overlay”);
 if (existingPopup) {
 existingPopup.remove();
 }
 
 if (item.has_variants) {
-const result = await supabase
-.from(‘product_variants’)
-.select(’*’)
-.eq(‘product_id’, item.id);
 
 ```
-if (result.error) {
-  console.error(result.error);
-  alert('خطأ في تحميل الأحجام');
+const { data: variants, error } = await supabase
+  .from("product_variants")
+  .select("*")
+  .eq("product_id", item.id);
+
+if (error) {
+  console.error(error);
+  alert("❌ خطأ في تحميل الأحجام");
   return;
 }
 
-showVariantsPopup(item, result.data);
+showVariantsPopup(item, variants);
 return;
 ```
 
 }
 
-if (item.extras && item.extras.filter(function(e) { return e; }).length > 0) {
+if (item.extras && item.extras.filter(e => e).length > 0) {
 showExtrasPopup(item);
 return;
 }
 
-addToCart(Object.assign({}, item, { product_id: item.id }), renderCart);
+addToCart({
+…item,
+product_id: item.id
+}, renderCart);
 }
 
+/* ===============================
+Popup السايز
+================================ */
 function showVariantsPopup(item, variants) {
-const overlay = document.createElement(‘div’);
-overlay.className = ‘popup-overlay’;
 
-let variantsHtml = ‘’;
-(variants || []).forEach(function(v) {
-variantsHtml +=
-‘<button class="variant-btn" onclick="selectVariant(\'' +
-item.id + '\',\'' + item.name + '\',\'' + v.label + '\',' + v.price + ')">’ +
-v.label + ’ - ’ + formatMoney(v.price) +
-‘</button>’;
-});
+const overlay = document.createElement(“div”);
+overlay.className = “popup-overlay”;
 
-overlay.innerHTML =
-‘<div class="popup-box">’ +
-‘<h3>’ + item.name + ‘</h3>’ +
-variantsHtml +
-‘<button class="cancel-btn">إلغاء</button>’ +
-‘</div>’;
+overlay.innerHTML = `
+<div class="popup-box">
+<h3>${item.name}</h3>
+
+```
+  ${(variants || []).map(v => `
+    <button class="variant-btn"
+      onclick="selectVariant(
+        '${item.id}',
+        '${item.name}',
+        '${v.label}',
+        ${v.price}
+      )">
+      ${v.label} — ${formatMoney(v.price)}
+    </button>
+  `).join("")}
+
+  <button class="cancel-btn">إلغاء</button>
+</div>
+```
+
+`;
 
 document.body.appendChild(overlay);
 
-overlay.querySelector(’.cancel-btn’).onclick = function() { overlay.remove(); };
-overlay.onclick = function(e) {
+overlay.querySelector(”.cancel-btn”).onclick = () => overlay.remove();
+overlay.onclick = e => {
 if (e.target === overlay) overlay.remove();
 };
 }
 
-window.selectVariant = function(id, name, label, price) {
-const baseItem = items.find(function(i) { return String(i.id) === String(id); });
+window.selectVariant = function (id, name, label, price) {
 
-if (baseItem && baseItem.extras && baseItem.extras.length > 0) {
-showExtrasPopup(Object.assign({}, baseItem, {
-name: name + ’ (’ + label + ‘)’,
-price: price
-}));
+const baseItem = items.find(i => String(i.id) === String(id));
+
+if (baseItem?.extras && baseItem.extras.length > 0) {
+showExtrasPopup({
+…baseItem,
+name: `${name} (${label})`,
+price
+});
 } else {
 addToCart({
 id: id,
 product_id: id,
-name: name + ’ (’ + label + ‘)’,
+name: `${name} (${label})`,
 price: price
 }, renderCart);
 }
 
-const popup = document.querySelector(’.popup-overlay’);
-if (popup) popup.remove();
+document.querySelector(”.popup-overlay”)?.remove();
 };
 
+/* ===============================
+Popup الإضافات
+================================ */
 function showExtrasPopup(item) {
-const overlay = document.createElement(‘div’);
-overlay.className = ‘popup-overlay’;
 
-let extrasHtml = ‘’;
-(item.extras || []).forEach(function(extra) {
-extrasHtml +=
-‘<label><input type="checkbox" value="' + extra + '" checked>’ +
-extra + ‘</label>’;
-});
+const overlay = document.createElement(“div”);
+overlay.className = “popup-overlay”;
 
-overlay.innerHTML =
-‘<div class="popup-box">’ +
-‘<h3>’ + item.name + ‘</h3>’ +
-‘<div>’ + extrasHtml + ‘</div>’ +
-‘<button id="confirmExtras">إضافة</button>’ +
-‘<button class="cancel-btn">إلغاء</button>’ +
-‘</div>’;
+overlay.innerHTML = `
+<div class="popup-box">
+<h3>${item.name}</h3>
+
+```
+  <div>
+    ${(item.extras || []).map(extra => `
+      <label>
+        <input type="checkbox" value="${extra}" checked>
+        ${extra}
+      </label>
+    `).join("")}
+  </div>
+
+  <button id="confirmExtras">إضافة</button>
+  <button class="cancel-btn">إلغاء</button>
+</div>
+```
+
+`;
 
 document.body.appendChild(overlay);
 
-overlay.querySelector(’.cancel-btn’).onclick = function() { overlay.remove(); };
+overlay.querySelector(”.cancel-btn”).onclick = () => overlay.remove();
 
-overlay.querySelector(’#confirmExtras’).onclick = function() {
-const inputs = Array.from(overlay.querySelectorAll(‘input’));
-const removed = inputs.filter(function(cb) { return !cb.checked; }).map(function(cb) { return cb.value; });
+overlay.querySelector(”#confirmExtras”).onclick = () => {
 
 ```
+const removed = [...overlay.querySelectorAll("input")]
+  .filter(cb => !cb.checked)
+  .map(cb => cb.value);
+
 let name = item.name;
+
 if (removed.length > 0) {
-  name += ' (بدون: ' + removed.join(', ') + ')';
+  name += ` (بدون: ${removed.join(", ")})`;
 }
 
 addToCart({
   id: item.id,
   product_id: item.id,
-  name: name,
+  name,
   price: item.price
 }, renderCart);
 
@@ -337,262 +412,319 @@ overlay.remove();
 };
 }
 
-window.filterCategory = function(category, btn) {
-document.querySelectorAll(’.cat’).forEach(function(b) { b.classList.remove(‘active’); });
-btn.classList.add(‘active’);
+window.filterCategory = function (category, btn) {
+document.querySelectorAll(”.cat”).forEach(b => b.classList.remove(“active”));
+btn.classList.add(“active”);
 loadItems(category);
 };
 
-window.addEventListener(‘DOMContentLoaded’, async function() {
+window.addEventListener(“DOMContentLoaded”, async () => {
+
 try {
+
+```
 await loadTax();
+
 listenToTaxChanges();
 listenToProductChanges();
 listenToBusinessDayChanges();
+```
+
 } catch (err) {
-console.error(‘INIT ERROR:’, err);
+
+```
+console.error("🔥 INIT ERROR:", err);
+```
+
 }
 
 await restoreShift();
-loadItems(‘drinks’);
+
+loadItems(“drinks”);
+
 loadActiveOrders(currentShiftId);
+
 loadCancelledOrders(currentShiftId);
+
 updateDayButton();
 });
 
-window.completeOrder = async function() {
+window.completeOrder = async function () {
+
 if (!currentShiftId) {
-alert(‘لازم تفتح شفت أول’);
+alert(“❌ لازم تفتح شفت أول”);
 return;
 }
 
 if (!cart.length) {
-alert(‘السلة فاضية’);
+alert(“السلة فاضية”);
 return;
 }
 
 if (TAX_RATE === null || TAX_RATE === undefined) {
-alert(‘الضريبة ما تحملت’);
+alert(“⚠️ الضريبة ما تحملت”);
 return;
 }
 
-const subtotal = cart.reduce(function(s, i) { return s + i.qty * i.price; }, 0);
-const vat = HIDE_TAX ? 0 : subtotal * TAX_RATE;
+const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
+
+const vat = HIDE_TAX
+? 0
+: subtotal * TAX_RATE;
+
 const total = subtotal + vat;
 
 openPaymentAndSave(total, subtotal, vat);
 };
 
+/* ===============================
+تحديث زر اليوم
+================================ */
 async function updateDayButton() {
-const dayBtn = document.getElementById(‘dayBtn’);
+
+const dayBtn = document.getElementById(“dayBtn”);
 if (!dayBtn) return;
 
-const result = await supabase
-.from(‘business_days’)
-.select(‘id’)
-.eq(‘is_open’, true)
+const { data: openDay } = await supabase
+.from(“business_days”)
+.select(“id”)
+.eq(“is_open”, true)
 .maybeSingle();
 
-if (result.data) {
-dayBtn.textContent = ‘إغلاق اليوم’;
-dayBtn.onclick = function() { window.closeDay(); };
+if (openDay) {
+dayBtn.textContent = “📅 إغلاق اليوم”;
+dayBtn.onclick = () => window.closeDay();
 } else {
-dayBtn.textContent = ‘فتح يوم جديد’;
-dayBtn.onclick = function() { window.openDay(); };
+dayBtn.textContent = “🌅 فتح يوم جديد”;
+dayBtn.onclick = () => window.openDay();
 }
 }
 
 window.updateDayButton = updateDayButton;
 
-window.openDay = async function() {
-const pin = prompt(‘أدخل PIN المدير لفتح يوم جديد’);
+/* ===============================
+فتح يوم جديد
+================================ */
+window.openDay = async function () {
+
+const pin = prompt(“🔐 أدخل PIN المدير لفتح يوم جديد”);
+
 if (!pin) return;
 
-const result = await supabase.rpc(‘verify_employee_pin’, { input_pin: pin.trim() });
+// 🔐 استدعاء RPC للتحقق من PIN المدير
+const { data: managerArray, error: rpcError } = await supabase
+.rpc(“verify_employee_pin”, { input_pin: pin.trim() });
 
-if (result.error) {
-console.error(‘RPC ERROR:’, result.error);
-alert(‘خطأ في التحقق’);
+if (rpcError) {
+console.error(“RPC ERROR:”, rpcError);
+alert(“❌ خطأ في التحقق”);
 return;
 }
 
-const managerArray = result.data;
 const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
 
-if (!manager || manager.role !== ‘manager’) {
-alert(‘غير مصرح - هذي العملية للمدير فقط’);
+if (!manager || manager.role !== “manager”) {
+alert(“❌ غير مصرح — هذي العملية للمدير فقط”);
 return;
 }
 
-const existing = await supabase
-.from(‘business_days’)
-.select(‘id’)
-.eq(‘is_open’, true)
+const { data: existingDay } = await supabase
+.from(“business_days”)
+.select(“id”)
+.eq(“is_open”, true)
 .maybeSingle();
 
-if (existing.data) {
-alert(‘فيه يوم مفتوح بالفعل’);
+if (existingDay) {
+alert(“⚠️ فيه يوم مفتوح بالفعل”);
 updateDayButton();
 return;
 }
 
-const insertResult = await supabase
-.from(‘business_days’)
+const { data: newDay, error } = await supabase
+.from(“business_days”)
 .insert({
-day_date: new Date().toISOString().split(‘T’)[0],
+day_date: new Date().toISOString().split(“T”)[0],
 is_open: true,
 invoice_counter: 0
 })
 .select()
 .single();
 
-if (insertResult.error) {
-console.error(insertResult.error);
-alert(’فشل فتح اليوم: ’ + insertResult.error.message);
+if (error) {
+console.error(error);
+alert(“❌ فشل فتح اليوم: “ + error.message);
 return;
 }
 
-alert(’تم فتح يوم عمل جديد\nبواسطة: ’ + manager.name);
+alert(`🌅 تم فتح يوم عمل جديد\n👤 بواسطة: ${manager.name}`);
+
 updateDayButton();
 };
 
-window.closeDay = async function() {
-const dayResult = await supabase
-.from(‘business_days’)
-.select(’*’)
-.eq(‘is_open’, true)
+/* ===============================
+إغلاق اليوم — يحسب يوم العمل الفعلي + يستثني الملغية
+================================ */
+window.closeDay = async function () {
+
+const { data: day, error: dayErr } = await supabase
+.from(“business_days”)
+.select(”*”)
+.eq(“is_open”, true)
 .maybeSingle();
 
-if (dayResult.error) {
-console.error(‘DAY FETCH ERROR:’, dayResult.error);
-alert(‘خطأ في قراءة يوم العمل’);
+if (dayErr) {
+console.error(“DAY FETCH ERROR:”, dayErr);
+alert(“❌ خطأ في قراءة يوم العمل”);
 return;
 }
 
-const day = dayResult.data;
 if (!day) {
-alert(‘ما فيه يوم مفتوح’);
+alert(“❌ ما فيه يوم مفتوح”);
 updateDayButton();
 return;
 }
 
-const shiftsResult = await supabase
-.from(‘shifts’)
-.select(‘id, employees ( name )’)
-.eq(‘is_open’, true);
+const { data: openShifts } = await supabase
+.from(“shifts”)
+.select(`id, employees ( name )`)
+.eq(“is_open”, true);
 
-const openShifts = shiftsResult.data;
 if (openShifts && openShifts.length > 0) {
-const names = openShifts.map(function(s) {
-return (s.employees && s.employees.name) || ‘غير معروف’;
-}).join(’\n’);
-alert(‘فيه شفتات مفتوحة:\n\n’ + names + ‘\n\nلازم تقفلهم أول’);
+const names = openShifts
+.map(s => s.employees?.name || “غير معروف”)
+.join(”\n”);
+alert(`❌ فيه شفتات مفتوحة:\n\n${names}\n\nلازم تقفلهم أول`);
 return;
 }
 
-const activeResult = await supabase
-.from(‘orders’)
-.select(‘id’)
-.eq(‘status’, ‘active’);
+const { data: activeOrders } = await supabase
+.from(“orders”)
+.select(“id”)
+.eq(“status”, “active”);
 
-if (activeResult.data && activeResult.data.length > 0) {
-alert(‘فيه طلبات مفتوحة! لازم تخلصها أول’);
+if (activeOrders && activeOrders.length > 0) {
+alert(“❌ فيه طلبات مفتوحة! لازم تخلصها أول”);
 return;
 }
 
-const ordersResult = await supabase
-.from(‘orders’)
-.select(‘total’)
-.eq(‘is_paid’, true)
-.neq(‘status’, ‘cancelled’)
-.gte(‘created_at’, day.opened_at)
-.lte(‘created_at’, new Date().toISOString());
+// 🎯 حساب يوم العمل الفعلي:
+// من وقت فتح اليوم لين الوقت الحالي
+// + استثناء الطلبات الملغية
+const { data: orders } = await supabase
+.from(“orders”)
+.select(“total”)
+.eq(“is_paid”, true)
+.neq(“status”, “cancelled”)  // ← استثناء الملغية
+.gte(“created_at”, day.opened_at)  // ← من وقت فتح اليوم
+.lte(“created_at”, new Date().toISOString());  // ← للوقت الحالي
 
-const orders = ordersResult.data || [];
 let total = 0;
-orders.forEach(function(o) {
+(orders || []).forEach(o => {
 total += Number(o.total || 0);
 });
 
-const count = orders.length;
+const count = orders?.length || 0;
 
-const ok = confirm(
-‘تقرير يوم العمل:\n\n’ +
-’الإجمالي: ’ + formatMoney(total) + ‘\n’ +
-’الطلبات: ’ + count + ‘\n\n’ +
-’من ’ + new Date(day.opened_at).toLocaleString() + ‘\n’ +
-‘إلى الآن\n\n’ +
-‘تأكيد الإغلاق؟’
-);
+const ok = confirm(`
+📊 تقرير يوم العمل:
+
+💰 الإجمالي: ${formatMoney(total)}
+🧾 الطلبات: ${count}
+
+ℹ️ من ${new Date(day.opened_at).toLocaleString()}
+إلى الآن
+
+تأكيد الإغلاق؟
+`);
 
 if (!ok) return;
 
-const updateResult = await supabase
-.from(‘business_days’)
+const { data: updated, error: updateErr } = await supabase
+.from(“business_days”)
 .update({
 is_open: false,
 closed_at: new Date().toISOString(),
 total_sales: total,
 total_orders: count
 })
-.eq(‘id’, day.id)
+.eq(“id”, day.id)
 .select();
 
-if (updateResult.error) {
-console.error(‘CLOSE DAY ERROR:’, updateResult.error);
-alert(’فشل إغلاق اليوم: ’ + updateResult.error.message);
+if (updateErr) {
+console.error(“CLOSE DAY ERROR:”, updateErr);
+alert(“❌ فشل إغلاق اليوم: “ + updateErr.message);
 return;
 }
 
-if (!updateResult.data || updateResult.data.length === 0) {
-alert(‘ما تم تحديث اليوم - جرب مرة ثانية’);
+if (!updated || updated.length === 0) {
+alert(“❌ ما تم تحديث اليوم — جرب مرة ثانية”);
 return;
 }
 
-alert(‘تم إغلاق يوم العمل’);
+alert(“📅 تم إغلاق يوم العمل”);
+
 updateDayButton();
 };
 
-const menuBtn = document.getElementById(‘menuBtn’);
-const menuDropdown = document.getElementById(‘menuDropdown’);
+const menuBtn = document.getElementById(“menuBtn”);
+const menuDropdown = document.getElementById(“menuDropdown”);
 
 if (menuBtn && menuDropdown) {
-menuBtn.addEventListener(‘click’, function(e) {
+
+menuBtn.addEventListener(“click”, (e) => {
+
+```
 e.stopPropagation();
-if (menuDropdown.style.display === ‘flex’) {
-menuDropdown.style.display = ‘none’;
+
+if (
+  menuDropdown.style.display === "flex"
+) {
+
+  menuDropdown.style.display = "none";
+
 } else {
-menuDropdown.style.display = ‘flex’;
+
+  menuDropdown.style.display = "flex";
 }
+```
+
 });
 
-document.addEventListener(‘click’, function() {
-menuDropdown.style.display = ‘none’;
+document.addEventListener(“click”, () => {
+
+```
+menuDropdown.style.display = "none";
+```
+
 });
 
-menuDropdown.addEventListener(‘click’, function(e) {
+menuDropdown.addEventListener(“click”, (e) => {
 e.stopPropagation();
 });
 }
 
-window.showTab = function(tab, btn) {
-const activeBox = document.getElementById(‘activeOrders’);
-const cancelledBox = document.getElementById(‘cancelledOrders’);
+/* ===============================
+تبديل التابات (الجارية / الملغية)
+================================ */
+window.showTab = function (tab, btn) {
 
-if (activeBox) activeBox.style.display = ‘none’;
-if (cancelledBox) cancelledBox.style.display = ‘none’;
+const activeBox = document.getElementById(“activeOrders”);
+const cancelledBox = document.getElementById(“cancelledOrders”);
 
-document.querySelectorAll(’.tab’).forEach(function(t) { t.classList.remove(‘active’); });
+if (activeBox) activeBox.style.display = “none”;
+if (cancelledBox) cancelledBox.style.display = “none”;
 
-if (tab === ‘active’) {
-if (activeBox) activeBox.style.display = ‘block’;
-} else if (tab === ‘cancelled’) {
-if (cancelledBox) cancelledBox.style.display = ‘block’;
+document.querySelectorAll(”.tab”).forEach(t => t.classList.remove(“active”));
+
+if (tab === “active”) {
+if (activeBox) activeBox.style.display = “block”;
+} else if (tab === “cancelled”) {
+if (cancelledBox) cancelledBox.style.display = “block”;
 }
 
 if (btn) {
-btn.classList.add(‘active’);
-} else if (typeof event !== ‘undefined’ && event && event.target) {
-event.target.classList.add(‘active’);
+btn.classList.add(“active”);
+} else if (typeof event !== “undefined” && event && event.target) {
+event.target.classList.add(“active”);
 }
 };
