@@ -491,7 +491,6 @@ window.openDay = async function () {
 
   if (!pin) return;
 
-  // 🔐 استدعاء RPC للتحقق من PIN المدير
   const { data: managerArray, error: rpcError } = await supabase
     .rpc("verify_employee_pin", { input_pin: pin.trim() });
 
@@ -542,7 +541,7 @@ window.openDay = async function () {
 };
 
 /* ===============================
-   إغلاق اليوم — يحسب يوم العمل الفعلي + يستثني الملغية
+   إغلاق اليوم
 ================================ */
 window.closeDay = async function () {
 
@@ -587,16 +586,13 @@ window.closeDay = async function () {
     return;
   }
 
-  // 🎯 حساب يوم العمل الفعلي:
-  // من وقت فتح اليوم لين الوقت الحالي
-  // + استثناء الطلبات الملغية
   const { data: orders } = await supabase
     .from("orders")
     .select("total")
     .eq("is_paid", true)
-    .neq("status", "cancelled")  // ← استثناء الملغية
-    .gte("created_at", day.opened_at)  // ← من وقت فتح اليوم
-    .lte("created_at", new Date().toISOString());  // ← للوقت الحالي
+    .neq("status", "cancelled")
+    .gte("created_at", day.opened_at)
+    .lte("created_at", new Date().toISOString());
 
   let total = 0;
   (orders || []).forEach(o => {
@@ -678,7 +674,7 @@ if (menuBtn && menuDropdown) {
 }
 
 /* ===============================
-   تبديل التابات (الجارية / الملغية)
+   تبديل التابات
 ================================ */
 window.showTab = function (tab, btn) {
 
