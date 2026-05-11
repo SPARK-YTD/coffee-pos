@@ -1,46 +1,46 @@
 // reports.js
-import { supabase } from "./supabase.js";
+import { supabase } from “./supabase.js”;
 
 function formatMoney(amount) {
-  return `${Number(amount).toFixed(2)} ﷼`;
+return `${Number(amount).toFixed(2)} ﷼`;
 }
 
 /* ===============================
-   تنسيق الوقت — توقيت الرياض (UTC+3) صراحة
+تنسيق الوقت — توقيت الرياض (UTC+3) صراحة
 ================================ */
 function formatDateTime(dateStr) {
-  if (!dateStr) return "-";
+if (!dateStr) return “-”;
 
-  // نتأكد إن السلسلة تنتهي بـ Z لو ما فيها timezone (يجبر القراءة كـ UTC)
-  let isoStr = String(dateStr);
-  if (!isoStr.endsWith("Z") && !isoStr.includes("+") && !isoStr.match(/-\d\d:\d\d$/)) {
-    // لو ما فيها timezone، نضيف Z
-    isoStr = isoStr.replace(" ", "T") + "Z";
-  }
+// نتأكد إن السلسلة تنتهي بـ Z لو ما فيها timezone (يجبر القراءة كـ UTC)
+let isoStr = String(dateStr);
+if (!isoStr.endsWith(“Z”) && !isoStr.includes(”+”) && !isoStr.match(/-\d\d:\d\d$/)) {
+// لو ما فيها timezone، نضيف Z
+isoStr = isoStr.replace(” “, “T”) + “Z”;
+}
 
-  const d = new Date(isoStr);
+const d = new Date(isoStr);
 
-  // نطبع بتوقيت الرياض صراحة (Asia/Riyadh)
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Riyadh",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  }).formatToParts(d);
+// نطبع بتوقيت الرياض صراحة (Asia/Riyadh)
+const parts = new Intl.DateTimeFormat(“en-GB”, {
+timeZone: “Asia/Riyadh”,
+year: “numeric”,
+month: “2-digit”,
+day: “2-digit”,
+hour: “2-digit”,
+minute: “2-digit”,
+hour12: true
+}).formatToParts(d);
 
-  const get = (type) => parts.find(p => p.type === type)?.value || "";
+const get = (type) => parts.find(p => p.type === type)?.value || “”;
 
-  const yyyy = get("year");
-  const mm = get("month");
-  const dd = get("day");
-  const hh = get("hour");
-  const mins = get("minute");
-  const period = get("dayPeriod") === "AM" ? "ص" : "م";
+const yyyy = get(“year”);
+const mm = get(“month”);
+const dd = get(“day”);
+const hh = get(“hour”);
+const mins = get(“minute”);
+const period = get(“dayPeriod”) === “AM” ? “ص” : “م”;
 
-  return `${yyyy}/${mm}/${dd} - ${hh}:${mins} ${period}`;
+return `${yyyy}/${mm}/${dd} - ${hh}:${mins} ${period}`;
 }
 
 let cancelledList = [];
@@ -49,138 +49,140 @@ let cancelledChannel = null;
 let realtimeWorking = false;
 
 /* ===============================
-   تحميل الطلبات الملغية
+تحميل الطلبات الملغية
 ================================ */
 export async function loadCancelledOrders(shiftId) {
 
-  const shiftChanged = activeShiftId !== shiftId;
+const shiftChanged = activeShiftId !== shiftId;
 
-  activeShiftId = shiftId;
+activeShiftId = shiftId;
 
-  if (!shiftId) {
-    cancelledList = [];
-    renderCancelledOrders();
-    teardownRealtime();
-    return;
-  }
+if (!shiftId) {
+cancelledList = [];
+renderCancelledOrders();
+teardownRealtime();
+return;
+}
 
-  const { data } = await supabase
-    .from("orders")
-    .select("id, invoice_number, total, cancelled_at, status, shift_id")
-    .eq("status", "cancelled")
-    .eq("shift_id", shiftId)
-    .order("cancelled_at", { ascending: false });
+const { data } = await supabase
+.from(“orders”)
+.select(“id, invoice_number, total, cancelled_at, status, shift_id”)
+.eq(“status”, “cancelled”)
+.eq(“shift_id”, shiftId)
+.order(“cancelled_at”, { ascending: false });
 
-  cancelledList = data || [];
+cancelledList = data || [];
 
-  renderCancelledOrders();
+renderCancelledOrders();
 
-  if (!cancelledChannel || shiftChanged) {
-    setupRealtime();
-  }
+if (!cancelledChannel || shiftChanged) {
+setupRealtime();
+}
 }
 
 /* ===============================
-   إلغاء الاشتراك
+إلغاء الاشتراك
 ================================ */
 function teardownRealtime() {
 
-  if (cancelledChannel) {
-    supabase.removeChannel(cancelledChannel);
-    cancelledChannel = null;
-    realtimeWorking = false;
-  }
+if (cancelledChannel) {
+supabase.removeChannel(cancelledChannel);
+cancelledChannel = null;
+realtimeWorking = false;
+}
 }
 
 /* ===============================
-   اشتراك Realtime
+اشتراك Realtime
 ================================ */
 function setupRealtime() {
 
-  teardownRealtime();
+teardownRealtime();
 
-  if (!activeShiftId) return;
+if (!activeShiftId) return;
 
-  cancelledChannel = supabase
-    .channel(`cancelled-orders-${activeShiftId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "orders",
-        filter: `shift_id=eq.${activeShiftId}`
-      },
-      (payload) => {
+cancelledChannel = supabase
+.channel(`cancelled-orders-${activeShiftId}`)
+.on(
+“postgres_changes”,
+{
+event: “UPDATE”,
+schema: “public”,
+table: “orders”,
+filter: `shift_id=eq.${activeShiftId}`
+},
+(payload) => {
 
-        const o = payload.new;
+```
+    const o = payload.new;
 
-        if (o.status === "cancelled") {
+    if (o.status === "cancelled") {
 
-          const exists = cancelledList.some(x => x.id === o.id);
-          if (!exists) {
-            cancelledList.unshift(o);
-            renderCancelledOrders();
-          }
-
-        } else {
-
-          const idx = cancelledList.findIndex(x => x.id === o.id);
-          if (idx !== -1) {
-            cancelledList.splice(idx, 1);
-            renderCancelledOrders();
-          }
-        }
-      }
-    )
-    .subscribe((status) => {
-
-      console.log("📡 CANCELLED ORDERS REALTIME:", status);
-
-      if (status === "SUBSCRIBED") {
-        realtimeWorking = true;
+      const exists = cancelledList.some(x => x.id === o.id);
+      if (!exists) {
+        cancelledList.unshift(o);
+        renderCancelledOrders();
       }
 
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        realtimeWorking = false;
+    } else {
+
+      const idx = cancelledList.findIndex(x => x.id === o.id);
+      if (idx !== -1) {
+        cancelledList.splice(idx, 1);
+        renderCancelledOrders();
       }
-    });
+    }
+  }
+)
+.subscribe((status) => {
+
+  console.log("📡 CANCELLED ORDERS REALTIME:", status);
+
+  if (status === "SUBSCRIBED") {
+    realtimeWorking = true;
+  }
+
+  if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+    realtimeWorking = false;
+  }
+});
+```
+
 }
 
 /* ===============================
-   عرض الطلبات الملغية
+عرض الطلبات الملغية
 ================================ */
 function renderCancelledOrders() {
 
-  const box = document.getElementById("cancelledOrders");
-  if (!box) return;
+const box = document.getElementById(“cancelledOrders”);
+if (!box) return;
 
-  box.innerHTML = "";
+box.innerHTML = “”;
 
-  if (cancelledList.length === 0) {
-    box.innerHTML = `
-      <div style="text-align:center;padding:30px;color:#888;">
-        🍃 ما فيه طلبات ملغية
-      </div>
-    `;
-    return;
-  }
+if (cancelledList.length === 0) {
+box.innerHTML = `<div style="text-align:center;padding:30px;color:#888;"> 🍃 ما فيه طلبات ملغية </div>`;
+return;
+}
 
-  cancelledList.forEach(order => {
+cancelledList.forEach(order => {
 
-    const div = document.createElement("div");
-    div.className = "order-box";
+```
+const div = document.createElement("div");
+div.className = "order-box";
 
-    const invoiceNum = order.invoice_number
-      ? `#${order.invoice_number}`
-      : `#${order.id.slice(0,6)}`;
+const invoiceNum = order.invoice_number
+  ? `#${order.invoice_number}`
+  : `#${order.id.slice(0,6)}`;
 
-    div.innerHTML = `
-      <strong>🧾 فاتورة ${invoiceNum}</strong><br>
-      💰 ${formatMoney(order.total)}<br>
-      ⏱ ${formatDateTime(order.cancelled_at)}
-    `;
+div.innerHTML = `
+  <strong>🧾 فاتورة ${invoiceNum}</strong><br>
+  💰 ${formatMoney(order.total)}<br>
+  ⏱ ${formatDateTime(order.cancelled_at)}
+`;
 
-    box.appendChild(div);
-  });
+box.appendChild(div);
+```
+
+});
 }
