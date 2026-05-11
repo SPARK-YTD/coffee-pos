@@ -11,6 +11,7 @@ let realtimeWorking = false;
 ================================ */
 export async function loadActiveOrders(currentShiftId) {
 
+// لو الشفت تغيّر، نعيد الاشتراك
 const shiftChanged = activeShiftId !== currentShiftId;
 
 activeShiftId = currentShiftId;
@@ -33,6 +34,7 @@ activeOrders = data || [];
 
 renderActiveOrders();
 
+// اشتراك Realtime مرة وحدة بس (أو إذا الشفت تغيّر)
 if (!ordersChannel || shiftChanged) {
 setupRealtime();
 }
@@ -55,6 +57,7 @@ realtimeWorking = false;
 ================================ */
 function setupRealtime() {
 
+// امسح الاشتراك القديم لو موجود
 teardownRealtime();
 
 if (!activeShiftId) return;
@@ -88,6 +91,7 @@ filter: `shift_id=eq.${activeShiftId}`
       const idx = activeOrders.findIndex(o => o.id === newRow.id);
 
       if (newRow.status !== "active") {
+        // الطلب صار ملغي/مكتمل
         if (idx !== -1) {
           activeOrders.splice(idx, 1);
           renderActiveOrders();
@@ -98,6 +102,7 @@ filter: `shift_id=eq.${activeShiftId}`
         }
 
       } else {
+        // ما زال نشط → حدّث (مثل is_prepared)
         if (idx !== -1) {
           activeOrders[idx] = newRow;
           renderActiveOrders();
@@ -129,6 +134,8 @@ filter: `shift_id=eq.${activeShiftId}`
     realtimeWorking = false;
     console.warn("⚠️ Realtime مشكلة على orders — راح يستخدم تحديث يدوي");
   }
+
+  // CLOSED طبيعي لما الصفحة تتسكر، ما نطبع تحذير
 });
 ```
 
@@ -161,7 +168,7 @@ div.innerHTML = `
   ${order.is_prepared ? "🟢 جاهز" : "🟡 قيد التحضير"}<br><br>
 
   <button onclick="viewOrder('${order.id}')">👁 عرض</button>
-  <button onclick="reprintOrder('${order.id}')">🖨️ إعادة طباعة</button>
+  <button onclick="editOrder('${order.id}')">✏️ تعديل</button>
   <button onclick="cancelOrder('${order.id}')">❌ إلغاء</button>
   <button onclick="markCompleted('${order.id}')">تم التسليم</button>
 `;
@@ -188,31 +195,27 @@ await loadActiveOrders(localStorage.getItem(“shiftId”));
 };
 
 /* ===============================
-إلغاء الطلب (المدير فقط - عبر RPC)
+إلغاء الطلب
 ================================ */
 window.cancelOrder = async function(id) {
 
-const pin = prompt(“🔐 أدخل رمز المدير لإلغاء الفاتورة”);
+const pin = prompt(“🔐 أدخل رقم المدير”);
 
 if (!pin) return;
 
-const { data: managerArray, error: rpcError } = await supabase
-.rpc(“verify_employee_pin”, { input_pin: pin.trim() });
+const { data: manager } = await supabase
+.from(“employees”)
+.select(“id, role”)
+.eq(“pin”, pin.trim())
+.eq(“role”, “manager”)
+.maybeSingle();
 
-if (rpcError) {
-console.error(“RPC ERROR:”, rpcError);
-alert(“❌ خطأ في التحقق”);
+if (!manager) {
+alert(“❌ غير مصرح”);
 return;
 }
 
-const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
-
-if (!manager || manager.role !== “manager”) {
-alert(“❌ غير مصرح — هذا الإجراء للمدير فقط”);
-return;
-}
-
-if (!confirm(“⚠️ تأكيد إلغاء الفاتورة؟”)) return;
+if (!confirm(“تأكيد إلغاء الطلب؟”)) return;
 
 await supabase
 .from(“orders”)
@@ -222,8 +225,6 @@ cancelled_by: manager.id,
 cancelled_at: new Date().toISOString()
 })
 .eq(“id”, id);
-
-alert(“✅ تم إلغاء الفاتورة”);
 
 if (!realtimeWorking) {
 await loadActiveOrders(localStorage.getItem(“shiftId”));
@@ -249,132 +250,25 @@ data.map(i => `${i.item_name} × ${i.qty}`).join(”\n”)
 };
 
 /* ===============================
-تنسيق الوقت
+تعديل الطلب
 ================================ */
-function formatPrintTime(d) {
-const yyyy = d.getFullYear();
-const mm = String(d.getMonth() + 1).padStart(2, “0”);
-const dd = String(d.getDate()).padStart(2, “0”);
-let hours = d.getHours();
-const mins = String(d.getMinutes()).padStart(2, “0”);
-const period = hours >= 12 ? “PM” : “AM”;
-hours = hours % 12;
-if (hours === 0) hours = 12;
-const hh = String(hours).padStart(2, “0”);
-return yyyy + “/” + mm + “/” + dd + “ - “ + hh + “:” + mins + “ “ + period;
-}
+window.editOrder = async function(orderId) {
 
-/* ===============================
-إعادة طباعة الفاتورة
-================================ */
-window.reprintOrder = async function(orderId) {
-
-// جلب الفاتورة
-const { data: order, error: orderErr } = await supabase
-.from(“orders”)
-.select(”*”)
-.eq(“id”, orderId)
-.single();
-
-if (orderErr || !order) {
-alert(“❌ ما قدرنا نجيب الفاتورة”);
-return;
-}
-
-// جلب الأصناف
-const { data: items } = await supabase
+const { data } = await supabase
 .from(“order_items”)
 .select(”*”)
 .eq(“order_id”, orderId);
 
-if (!items || items.length === 0) {
-alert(“❌ ما فيه أصناف في الفاتورة”);
-return;
-}
+if (!data) return;
 
-const reprintTime = formatPrintTime(new Date());
-const originalTime = formatPrintTime(new Date(order.created_at));
-const invoiceNum = order.invoice_number || “—”;
-const totalAmount = Number(order.total).toFixed(2);
+window.cart = data.map(i => ({
+id: i.product_id,
+name: i.item_name,
+price: i.price,
+qty: i.qty
+}));
 
-// بناء جدول الأصناف
-let itemsRows = “”;
-items.forEach(function(i) {
-const itemTotal = (i.price * i.qty).toFixed(2);
-itemsRows += ‘<tr>’;
-itemsRows += ‘<td>’ + i.item_name + ‘</td>’;
-itemsRows += ‘<td style="text-align:center">’ + i.qty + ‘</td>’;
-itemsRows += ‘<td style="text-align:left">’ + itemTotal + ‘</td>’;
-itemsRows += ‘</tr>’;
-});
+window.editingOrderId = orderId;
 
-// طريقة الدفع
-let paymentBlock = “”;
-if (order.payment_method) {
-let payText = “مختلط”;
-if (order.payment_method === “cash”) payText = “كاش”;
-if (order.payment_method === “card”) payText = “بطاقة”;
-paymentBlock = ’<div class="info" style="margin-top:10px;"><div><strong>💳 طريقة الدفع:</strong> ’ + payText + ‘</div></div>’;
-}
-
-// بناء HTML للفاتورة (بدون template literal كبير)
-let html = “”;
-html += ‘<!DOCTYPE html>’;
-html += ‘<html dir="rtl">’;
-html += ‘<head>’;
-html += ‘<meta charset="UTF-8">’;
-html += ‘<title>إعادة طباعة فاتورة</title>’;
-html += ‘<style>’;
-html += ‘body{font-family:Arial,sans-serif;max-width:80mm;margin:0 auto;padding:10px;font-size:14px;}’;
-html += ‘.reprint-banner{background:#ffeb3b;color:#000;padding:8px;text-align:center;font-weight:bold;margin-bottom:15px;border:2px dashed #f57c00;font-size:13px;}’;
-html += ‘.header{text-align:center;margin-bottom:15px;border-bottom:1px dashed #000;padding-bottom:10px;}’;
-html += ‘.header h2{margin:0;font-size:18px;}’;
-html += ‘.info{margin-bottom:10px;}’;
-html += ‘.info div{margin:4px 0;}’;
-html += ‘table{width:100%;border-collapse:collapse;margin:10px 0;}’;
-html += ‘th,td{padding:5px;border-bottom:1px dashed #999;}’;
-html += ‘th{background:#f0f0f0;}’;
-html += ‘.total{font-weight:bold;font-size:16px;text-align:center;margin-top:15px;padding:10px;border:2px solid #000;}’;
-html += ‘.footer{text-align:center;margin-top:20px;font-size:12px;color:#666;}’;
-html += ‘@media print{.no-print{display:none;}}’;
-html += ‘</style>’;
-html += ‘</head>’;
-html += ‘<body>’;
-html += ‘<div class="reprint-banner">⚠️ نسخة معاد طباعتها<br>REPRINT - NOT ORIGINAL</div>’;
-html += ‘<div class="header"><h2>☕ سكوب لاب</h2></div>’;
-html += ‘<div class="info">’;
-html += ’<div><strong>🧾 فاتورة رقم:</strong> ’ + invoiceNum + ‘</div>’;
-html += ’<div><strong>📅 التاريخ الأصلي:</strong> ’ + originalTime + ‘</div>’;
-html += ’<div><strong>🖨️ تاريخ إعادة الطباعة:</strong> ’ + reprintTime + ‘</div>’;
-html += ‘</div>’;
-html += ‘<table>’;
-html += ‘<thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th></tr></thead>’;
-html += ‘<tbody>’ + itemsRows + ‘</tbody>’;
-html += ‘</table>’;
-html += ‘<div class="total">💰 الإجمالي: ’ + totalAmount + ’ ﷼</div>’;
-html += paymentBlock;
-html += ‘<div class="footer">شكراً لزيارتكم 🙏<br><small>هذه نسخة معاد طباعتها من الفاتورة الأصلية</small></div>’;
-html += ‘<div class="no-print" style="text-align:center; margin-top:20px;">’;
-html += ‘<button onclick="window.print()" style="padding:10px 30px; font-size:16px; cursor:pointer;">🖨️ طباعة</button>’;
-html += ‘<button onclick="window.close()" style="padding:10px 30px; font-size:16px; cursor:pointer; margin-right:10px;">❌ إغلاق</button>’;
-html += ‘</div>’;
-html += ‘</body>’;
-html += ‘</html>’;
-
-// فتح نافذة جديدة
-const printWindow = window.open(””, “_blank”, “width=400,height=600”);
-
-if (!printWindow) {
-alert(“❌ لم تفتح نافذة الطباعة. تأكد من السماح للنوافذ المنبثقة.”);
-return;
-}
-
-printWindow.document.write(html);
-printWindow.document.close();
-
-printWindow.onload = function() {
-setTimeout(function() {
-printWindow.print();
-}, 250);
+window.renderCart();
 };
-}; 
