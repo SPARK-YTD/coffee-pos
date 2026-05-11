@@ -15,49 +15,12 @@ restoreShift
 } from “./shift.js”;
 
 window.addEventListener(“error”, (e) => {
-console.error(“🔥 GLOBAL ERROR:”, e.error);
+console.error(“GLOBAL ERROR:”, e.error);
 });
 
 window.addEventListener(“unhandledrejection”, (e) => {
-console.error(“🔥 PROMISE ERROR:”, e.reason);
+console.error(“PROMISE ERROR:”, e.reason);
 });
-
-/* ===============================
-💓 Keep-Alive — يمنع Supabase من النوم
-================================ */
-async function pingKeepAlive() {
-try {
-const { error } = await supabase.rpc(“keep_alive_ping”);
-if (error) {
-console.warn(“⚠️ Keep-alive failed:”, error.message);
-} else {
-console.log(“💓 keep-alive ping OK”);
-}
-} catch (e) {
-console.warn(“⚠️ Keep-alive error:”, e);
-}
-}
-
-// أول ping مباشرة، ثم كل 4 دقايق
-pingKeepAlive();
-setInterval(pingKeepAlive, 4 * 60 * 1000);
-
-/* ===============================
-عرض رسالة تحميل
-================================ */
-function showLoadingItems() {
-const box = document.getElementById(“items”);
-if (box) {
-box.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#666;grid-column:1/-1;"> <div style="font-size:32px;margin-bottom:15px;">⏳</div> <div style="font-size:16px;font-weight:bold;">جاري التحميل...</div> <div style="font-size:13px;margin-top:8px;color:#999;"> قد يأخذ بضع ثوانٍ </div> </div>`;
-}
-}
-
-function showErrorItems(message) {
-const box = document.getElementById(“items”);
-if (box) {
-box.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#d32f2f;grid-column:1/-1;"> <div style="font-size:32px;margin-bottom:15px;">⚠️</div> <div style="font-size:16px;font-weight:bold;">${message}</div> <button onclick="loadItems(currentCategory || 'drinks')" style="margin-top:15px;padding:10px 25px;background:#4caf50;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;"> 🔄 إعادة المحاولة </button> </div>`;
-}
-}
 
 let TAX_RATE = 0;
 let HIDE_TAX = false;
@@ -77,7 +40,7 @@ HIDE_TAX = data?.hide_tax || false;
 }
 
 function formatMoney(amount) {
-return `${Number(amount).toFixed(2)} ﷼`;
+return Number(amount).toFixed(2) + “ ﷼”;
 }
 
 window.formatMoney = formatMoney;
@@ -89,7 +52,7 @@ window.lastOrder = null;
 window.lastCart = null;
 
 /* ===============================
-Realtime — تغييرات الضريبة
+Realtime - tax changes
 ================================ */
 function listenToTaxChanges() {
 
@@ -115,14 +78,14 @@ filter: “id=eq.1”
   }
 )
 .subscribe((status) => {
-  console.log("📡 TAX REALTIME:", status);
+  console.log("TAX REALTIME:", status);
 });
 ```
 
 }
 
 /* ===============================
-Realtime — تغييرات المنتجات
+Realtime - product changes
 ================================ */
 function listenToProductChanges() {
 
@@ -182,14 +145,14 @@ table: “products”
   }
 )
 .subscribe((status) => {
-  console.log("📡 PRODUCTS REALTIME:", status);
+  console.log("PRODUCTS REALTIME:", status);
 });
 ```
 
 }
 
 /* ===============================
-Realtime — تغييرات يوم العمل
+Realtime - business day changes
 ================================ */
 function listenToBusinessDayChanges() {
 
@@ -207,7 +170,7 @@ updateDayButton();
 }
 )
 .subscribe((status) => {
-console.log(“📡 BUSINESS DAY REALTIME:”, status);
+console.log(“BUSINESS DAY REALTIME:”, status);
 });
 }
 
@@ -221,73 +184,40 @@ extras: p.extras_text
 }
 
 /* ===============================
-تحميل المنتجات (مع Retry و Loading)
+Load products
 ================================ */
-async function loadItems(category = “drinks”) {
+async function loadItems(category) {
+
+if (!category) category = “drinks”;
 
 currentCategory = category;
 
-// عرض رسالة تحميل
-showLoadingItems();
+const { data, error } = await supabase
+.from(“products”)
+.select(”*”)
+.eq(“category”, category)
+.eq(“is_active”, true);
 
-let lastError = null;
-
-// محاولة 3 مرات لو فشل (يحل مشكلة Sleep)
-for (let attempt = 1; attempt <= 3; attempt++) {
-
-```
-try {
-
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("category", category)
-    .eq("is_active", true);
-
-  if (error) {
-    lastError = error;
-    console.warn(`⚠️ Attempt ${attempt}/3 failed:`, error.message);
-
-    // انتظر قبل المحاولة الثانية
-    if (attempt < 3) {
-      await new Promise(r => setTimeout(r, 1500));
-      continue;
-    }
-  } else {
-    // نجح
-    items = (data || []).map(mapProduct);
-    renderItems();
-    return;
-  }
-
-} catch (e) {
-  lastError = e;
-  console.warn(`⚠️ Attempt ${attempt}/3 error:`, e);
-
-  if (attempt < 3) {
-    await new Promise(r => setTimeout(r, 1500));
-  }
-}
-```
-
+if (error) {
+console.error(error);
+return;
 }
 
-// فشلت كل المحاولات
-console.error(“❌ Failed to load items:”, lastError);
-showErrorItems(“ما قدرنا نحمّل الأصناف”);
+items = (data || []).map(mapProduct);
+
+renderItems();
 }
 
-// عشان نقدر نستدعيها من زرار “إعادة المحاولة”
 window.loadItems = loadItems;
 
 /* ===============================
-عرض المنتجات
+Render products
 ================================ */
 function renderItems() {
 const box = document.getElementById(“items”);
 
 if (!box) {
-console.error(“❌ items container مو موجود”);
+console.error(“items container not found”);
 return;
 }
 
@@ -298,19 +228,22 @@ const div = document.createElement(“div”);
 div.className = “item”;
 
 ```
-div.innerHTML = `
-  ${item.image_url ? `
-    <img src="${item.image_url}" class="item-img">
-  ` : ""}
+let imgPart = "";
+if (item.image_url) {
+  imgPart = '<img src="' + item.image_url + '" class="item-img">';
+}
 
-  <div class="item-name">${item.name}</div>
+let pricePart;
+if (item.has_variants) {
+  pricePart = "اختر الحجم";
+} else {
+  pricePart = formatMoney(item.price || 0);
+}
 
-  <div class="item-price">
-    ${item.has_variants
-      ? "اختر الحجم"
-      : formatMoney(item.price || 0)}
-  </div>
-`;
+div.innerHTML =
+  imgPart +
+  '<div class="item-name">' + item.name + '</div>' +
+  '<div class="item-price">' + pricePart + '</div>';
 
 div.onclick = () => handleItem(item);
 
@@ -321,12 +254,12 @@ box.appendChild(div);
 }
 
 /* ===============================
-الضغط على المنتج
+Click on product
 ================================ */
 async function handleItem(item) {
 
 if (!currentShiftId) {
-alert(“❌ لازم تفتح شفت أول”);
+alert(“لازم تفتح شفت أول”);
 return;
 }
 
@@ -345,7 +278,7 @@ const { data: variants, error } = await supabase
 
 if (error) {
   console.error(error);
-  alert("❌ خطأ في تحميل الأحجام");
+  alert("خطأ في تحميل الأحجام");
   return;
 }
 
@@ -367,35 +300,28 @@ product_id: item.id
 }
 
 /* ===============================
-Popup السايز
+Variants popup
 ================================ */
 function showVariantsPopup(item, variants) {
 
 const overlay = document.createElement(“div”);
 overlay.className = “popup-overlay”;
 
-overlay.innerHTML = `
-<div class="popup-box">
-<h3>${item.name}</h3>
+let variantsHtml = “”;
+(variants || []).forEach(v => {
+variantsHtml +=
+‘<button class="variant-btn" onclick="selectVariant(\'' +
+item.id + '\',\'' + item.name + '\',\'' + v.label + '\',' + v.price + ')">’ +
+v.label + ’ - ’ + formatMoney(v.price) +
+‘</button>’;
+});
 
-```
-  ${(variants || []).map(v => `
-    <button class="variant-btn"
-      onclick="selectVariant(
-        '${item.id}',
-        '${item.name}',
-        '${v.label}',
-        ${v.price}
-      )">
-      ${v.label} — ${formatMoney(v.price)}
-    </button>
-  `).join("")}
-
-  <button class="cancel-btn">إلغاء</button>
-</div>
-```
-
-`;
+overlay.innerHTML =
+‘<div class="popup-box">’ +
+‘<h3>’ + item.name + ‘</h3>’ +
+variantsHtml +
+‘<button class="cancel-btn">إلغاء</button>’ +
+‘</div>’;
 
 document.body.appendChild(overlay);
 
@@ -412,14 +338,14 @@ const baseItem = items.find(i => String(i.id) === String(id));
 if (baseItem?.extras && baseItem.extras.length > 0) {
 showExtrasPopup({
 …baseItem,
-name: `${name} (${label})`,
+name: name + “ (” + label + “)”,
 price
 });
 } else {
 addToCart({
 id: id,
 product_id: id,
-name: `${name} (${label})`,
+name: name + “ (” + label + “)”,
 price: price
 }, renderCart);
 }
@@ -428,33 +354,27 @@ document.querySelector(”.popup-overlay”)?.remove();
 };
 
 /* ===============================
-Popup الإضافات
+Extras popup
 ================================ */
 function showExtrasPopup(item) {
 
 const overlay = document.createElement(“div”);
 overlay.className = “popup-overlay”;
 
-overlay.innerHTML = `
-<div class="popup-box">
-<h3>${item.name}</h3>
+let extrasHtml = “”;
+(item.extras || []).forEach(extra => {
+extrasHtml +=
+‘<label><input type="checkbox" value="' + extra + '" checked>’ +
+extra + ‘</label>’;
+});
 
-```
-  <div>
-    ${(item.extras || []).map(extra => `
-      <label>
-        <input type="checkbox" value="${extra}" checked>
-        ${extra}
-      </label>
-    `).join("")}
-  </div>
-
-  <button id="confirmExtras">إضافة</button>
-  <button class="cancel-btn">إلغاء</button>
-</div>
-```
-
-`;
+overlay.innerHTML =
+‘<div class="popup-box">’ +
+‘<h3>’ + item.name + ‘</h3>’ +
+‘<div>’ + extrasHtml + ‘</div>’ +
+‘<button id="confirmExtras">إضافة</button>’ +
+‘<button class="cancel-btn">إلغاء</button>’ +
+‘</div>’;
 
 document.body.appendChild(overlay);
 
@@ -470,7 +390,7 @@ const removed = [...overlay.querySelectorAll("input")]
 let name = item.name;
 
 if (removed.length > 0) {
-  name += ` (بدون: ${removed.join(", ")})`;
+  name += " (بدون: " + removed.join(", ") + ")";
 }
 
 addToCart({
@@ -507,7 +427,7 @@ listenToBusinessDayChanges();
 } catch (err) {
 
 ```
-console.error("🔥 INIT ERROR:", err);
+console.error("INIT ERROR:", err);
 ```
 
 }
@@ -526,7 +446,7 @@ updateDayButton();
 window.completeOrder = async function () {
 
 if (!currentShiftId) {
-alert(“❌ لازم تفتح شفت أول”);
+alert(“لازم تفتح شفت أول”);
 return;
 }
 
@@ -536,7 +456,7 @@ return;
 }
 
 if (TAX_RATE === null || TAX_RATE === undefined) {
-alert(“⚠️ الضريبة ما تحملت”);
+alert(“الضريبة ما تحملت”);
 return;
 }
 
@@ -552,7 +472,7 @@ openPaymentAndSave(total, subtotal, vat);
 };
 
 /* ===============================
-تحديث زر اليوم
+Update day button
 ================================ */
 async function updateDayButton() {
 
@@ -566,10 +486,10 @@ const { data: openDay } = await supabase
 .maybeSingle();
 
 if (openDay) {
-dayBtn.textContent = “📅 إغلاق اليوم”;
+dayBtn.textContent = “إغلاق اليوم”;
 dayBtn.onclick = () => window.closeDay();
 } else {
-dayBtn.textContent = “🌅 فتح يوم جديد”;
+dayBtn.textContent = “فتح يوم جديد”;
 dayBtn.onclick = () => window.openDay();
 }
 }
@@ -577,28 +497,27 @@ dayBtn.onclick = () => window.openDay();
 window.updateDayButton = updateDayButton;
 
 /* ===============================
-فتح يوم جديد
+Open new day
 ================================ */
 window.openDay = async function () {
 
-const pin = prompt(“🔐 أدخل PIN المدير لفتح يوم جديد”);
+const pin = prompt(“أدخل PIN المدير لفتح يوم جديد”);
 
 if (!pin) return;
 
-// 🔐 استدعاء RPC للتحقق من PIN المدير
 const { data: managerArray, error: rpcError } = await supabase
 .rpc(“verify_employee_pin”, { input_pin: pin.trim() });
 
 if (rpcError) {
 console.error(“RPC ERROR:”, rpcError);
-alert(“❌ خطأ في التحقق”);
+alert(“خطأ في التحقق”);
 return;
 }
 
 const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
 
 if (!manager || manager.role !== “manager”) {
-alert(“❌ غير مصرح — هذي العملية للمدير فقط”);
+alert(“غير مصرح - هذي العملية للمدير فقط”);
 return;
 }
 
@@ -609,7 +528,7 @@ const { data: existingDay } = await supabase
 .maybeSingle();
 
 if (existingDay) {
-alert(“⚠️ فيه يوم مفتوح بالفعل”);
+alert(“فيه يوم مفتوح بالفعل”);
 updateDayButton();
 return;
 }
@@ -626,17 +545,17 @@ invoice_counter: 0
 
 if (error) {
 console.error(error);
-alert(“❌ فشل فتح اليوم: “ + error.message);
+alert(“فشل فتح اليوم: “ + error.message);
 return;
 }
 
-alert(`🌅 تم فتح يوم عمل جديد\n👤 بواسطة: ${manager.name}`);
+alert(“تم فتح يوم عمل جديد\nبواسطة: “ + manager.name);
 
 updateDayButton();
 };
 
 /* ===============================
-إغلاق اليوم — يحسب يوم العمل الفعلي + يستثني الملغية
+Close day
 ================================ */
 window.closeDay = async function () {
 
@@ -648,26 +567,26 @@ const { data: day, error: dayErr } = await supabase
 
 if (dayErr) {
 console.error(“DAY FETCH ERROR:”, dayErr);
-alert(“❌ خطأ في قراءة يوم العمل”);
+alert(“خطأ في قراءة يوم العمل”);
 return;
 }
 
 if (!day) {
-alert(“❌ ما فيه يوم مفتوح”);
+alert(“ما فيه يوم مفتوح”);
 updateDayButton();
 return;
 }
 
 const { data: openShifts } = await supabase
 .from(“shifts”)
-.select(`id, employees ( name )`)
+.select(“id, employees ( name )”)
 .eq(“is_open”, true);
 
 if (openShifts && openShifts.length > 0) {
 const names = openShifts
 .map(s => s.employees?.name || “غير معروف”)
 .join(”\n”);
-alert(`❌ فيه شفتات مفتوحة:\n\n${names}\n\nلازم تقفلهم أول`);
+alert(“فيه شفتات مفتوحة:\n\n” + names + “\n\nلازم تقفلهم أول”);
 return;
 }
 
@@ -677,20 +596,17 @@ const { data: activeOrders } = await supabase
 .eq(“status”, “active”);
 
 if (activeOrders && activeOrders.length > 0) {
-alert(“❌ فيه طلبات مفتوحة! لازم تخلصها أول”);
+alert(“فيه طلبات مفتوحة! لازم تخلصها أول”);
 return;
 }
 
-// 🎯 حساب يوم العمل الفعلي:
-// من وقت فتح اليوم لين الوقت الحالي
-// + استثناء الطلبات الملغية
 const { data: orders } = await supabase
 .from(“orders”)
 .select(“total”)
 .eq(“is_paid”, true)
-.neq(“status”, “cancelled”)  // ← استثناء الملغية
-.gte(“created_at”, day.opened_at)  // ← من وقت فتح اليوم
-.lte(“created_at”, new Date().toISOString());  // ← للوقت الحالي
+.neq(“status”, “cancelled”)
+.gte(“created_at”, day.opened_at)
+.lte(“created_at”, new Date().toISOString());
 
 let total = 0;
 (orders || []).forEach(o => {
@@ -699,17 +615,14 @@ total += Number(o.total || 0);
 
 const count = orders?.length || 0;
 
-const ok = confirm(`
-📊 تقرير يوم العمل:
-
-💰 الإجمالي: ${formatMoney(total)}
-🧾 الطلبات: ${count}
-
-ℹ️ من ${new Date(day.opened_at).toLocaleString()}
-إلى الآن
-
-تأكيد الإغلاق؟
-`);
+const ok = confirm(
+“تقرير يوم العمل:\n\n” +
+“الإجمالي: “ + formatMoney(total) + “\n” +
+“الطلبات: “ + count + “\n\n” +
+“من “ + new Date(day.opened_at).toLocaleString() + “\n” +
+“إلى الآن\n\n” +
+“تأكيد الإغلاق؟”
+);
 
 if (!ok) return;
 
@@ -726,16 +639,16 @@ total_orders: count
 
 if (updateErr) {
 console.error(“CLOSE DAY ERROR:”, updateErr);
-alert(“❌ فشل إغلاق اليوم: “ + updateErr.message);
+alert(“فشل إغلاق اليوم: “ + updateErr.message);
 return;
 }
 
 if (!updated || updated.length === 0) {
-alert(“❌ ما تم تحديث اليوم — جرب مرة ثانية”);
+alert(“ما تم تحديث اليوم - جرب مرة ثانية”);
 return;
 }
 
-alert(“📅 تم إغلاق يوم العمل”);
+alert(“تم إغلاق يوم العمل”);
 
 updateDayButton();
 };
@@ -750,14 +663,9 @@ menuBtn.addEventListener(“click”, (e) => {
 ```
 e.stopPropagation();
 
-if (
-  menuDropdown.style.display === "flex"
-) {
-
+if (menuDropdown.style.display === "flex") {
   menuDropdown.style.display = "none";
-
 } else {
-
   menuDropdown.style.display = "flex";
 }
 ```
@@ -765,11 +673,7 @@ if (
 });
 
 document.addEventListener(“click”, () => {
-
-```
-menuDropdown.style.display = "none";
-```
-
+menuDropdown.style.display = “none”;
 });
 
 menuDropdown.addEventListener(“click”, (e) => {
@@ -778,7 +682,7 @@ e.stopPropagation();
 }
 
 /* ===============================
-تبديل التابات (الجارية / الملغية)
+Tabs (active / cancelled)
 ================================ */
 window.showTab = function (tab, btn) {
 
