@@ -485,26 +485,33 @@ window.reprintOrder = async function(orderId) {
   html += '<div class="total">الإجمالي: ' + totalAmount + ' ر.س</div>';
   html += paymentBlock;
   html += '<div class="footer">شكراً لزيارتكم<br><small>هذه نسخة معاد طباعتها من الفاتورة الأصلية</small></div>';
-  html += '<div class="no-print" style="text-align:center; margin-top:20px;">';
-  html += '<button onclick="window.print()" style="padding:10px 30px; font-size:16px; cursor:pointer;">طباعة</button>';
-  html += '<button onclick="window.close()" style="padding:10px 30px; font-size:16px; cursor:pointer; margin-right:10px;">إغلاق</button>';
-  html += '</div>';
   html += '</body>';
   html += '</html>';
 
-  const printWindow = window.open("", "_blank", "width=400,height=600");
-
-  if (!printWindow) {
-    alert("❌ لم تفتح نافذة الطباعة. تأكد من السماح للنوافذ المنبثقة.");
-    return;
+  // إنشاء iframe مخفي للطباعة (يشتغل في الجوال)
+  let printFrame = document.getElementById("reprintFrame");
+  if (printFrame) {
+    printFrame.remove();
   }
 
-  printWindow.document.write(html);
-  printWindow.document.close();
+  printFrame = document.createElement("iframe");
+  printFrame.id = "reprintFrame";
+  printFrame.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:0;";
+  document.body.appendChild(printFrame);
 
-  printWindow.onload = function() {
-    setTimeout(function() {
-      printWindow.print();
-    }, 250);
-  };
+  const doc = printFrame.contentDocument || printFrame.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  // طباعة بعد التحميل
+  setTimeout(function() {
+    try {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    } catch (e) {
+      console.error("Print error:", e);
+      alert("❌ خطأ في الطباعة: " + e.message);
+    }
+  }, 500);
 };
