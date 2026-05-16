@@ -1,13 +1,14 @@
 <!DOCTYPE html>
+
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <title>لوحة الإدارة</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=15">
 
   <style>
-    /* 🔐 شاشة الدخول */
+    /* 🔐 شاشة PIN المدير */
     .login-screen {
       position: fixed;
       inset: 0;
@@ -24,23 +25,92 @@
       border-radius: 12px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.1);
       text-align: center;
-      width: 260px;
+      width: 280px;
     }
 
     .login-box input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin: 10px 0;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+      direction: ltr;
+      text-align: center;
     }
 
     .login-box button {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       background: #6d4c41;
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      font-size: 15px;
+      font-family: inherit;
+    }
+
+    .user-info {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+
+    /* الشريط العلوي */
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: #4a3a2c;
+      color: #fff;
+      margin-bottom: 15px;
+    }
+
+    .top-actions h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .top-actions-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .top-actions button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .logout-btn {
+      background: #f44336;
+      color: #fff;
+    }
+
+    .devices-top-btn {
+      background: #fff;
+      color: #4a3a2c;
+    }
+
+    .auth-loading {
+      position: fixed;
+      inset: 0;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      flex-direction: column;
+      gap: 15px;
     }
   </style>
 
@@ -48,181 +118,225 @@
 
 <body>
 
-<!-- 🔐 LOGIN -->
-<div id="loginScreen" class="login-screen">
+<!-- ⏳ جاري التحقق من تسجيل الدخول -->
+
+<div id="authLoading" class="auth-loading">
+  <div style="font-size:48px;">⏳</div>
+  <div>جاري التحقق...</div>
+</div>
+
+<!-- 🔐 شاشة PIN المدير -->
+
+<div id="loginScreen" class="login-screen" style="display:none;">
 
   <div class="login-box">
     <h2>🔐 دخول الإدارة</h2>
 
-    <input id="loginPin" placeholder="أدخل PIN" type="password">
+```
+<div id="userInfo" class="user-info">
+  📧 مسجل دخول كـ: <span id="userEmail"></span>
+</div>
 
-    <button onclick="login()">دخول</button>
+<p style="color:#666;font-size:13px;margin:10px 0;">أدخل PIN المدير للمتابعة</p>
 
-    <p id="loginError" style="color:red; display:none;"></p>
+<input id="loginPin" placeholder="PIN" type="password" inputmode="numeric">
+
+<button onclick="login()">دخول</button>
+
+<button onclick="logout()" style="background:#f44336;margin-top:8px;">
+  🚪 تسجيل خروج كامل
+</button>
+
+<p id="loginError" style="color:red; display:none; margin-top:10px;"></p>
+```
+
   </div>
 
 </div>
 
 <!-- 🧠 ADMIN APP -->
+
 <div id="adminApp" style="display:none;">
 
-  <h2 style="text-align:center">⚙️ لوحة الإدارة</h2>
+  <!-- الشريط العلوي -->
+
+  <div class="top-actions">
+    <h2>⚙️ لوحة الإدارة</h2>
+    <div class="top-actions-buttons">
+      <button class="devices-top-btn" onclick="showDevices()">📱 الأجهزة</button>
+      <button class="logout-btn" onclick="logout()">🚪 خروج</button>
+    </div>
+  </div>
+
   <div id="openShiftsWarning" style="text-align:center; color:red; margin-bottom:10px;"></div>
-  
 
   <!-- 🔘 التبويبات -->
+
   <div class="admin-tabs">
-  <button class="tab active" data-tab="products" onclick="showAdminTab('products')">📦 الأصناف</button>
-  <button class="tab" data-tab="employees" onclick="showAdminTab('employees')">👥 الموظفين</button>
-  <button class="tab" data-tab="sales" onclick="showAdminTab('sales')">💰 المبيعات</button>
-  <button class="tab" data-tab="shifts" onclick="showAdminTab('shifts')">🟢 الشفتات</button>
-  <button class="tab" data-tab="inventory" onclick="showAdminTab('inventory')">📦 المواد</button>
-<button class="tab" data-tab="customers" onclick="showAdminTab('customers')">
-  👥 العملاء
-</button>
+    <button class="tab active" data-tab="products" onclick="showAdminTab('products')">📦 الأصناف</button>
+    <button class="tab" data-tab="employees" onclick="showAdminTab('employees')">👥 الموظفين</button>
+    <button class="tab" data-tab="sales" onclick="showAdminTab('sales')">💰 المبيعات</button>
+    <button class="tab" data-tab="shifts" onclick="showAdminTab('shifts')">🟢 الشفتات</button>
+    <button class="tab" data-tab="inventory" onclick="showAdminTab('inventory')">📦 المواد</button>
+    <button class="tab" data-tab="customers" onclick="showAdminTab('customers')">👥 العملاء</button>
+    <button class="tab" data-tab="settings" onclick="showAdminTab('settings')">⚙️ الإدارة</button>
+  </div>
 
-<button
-  class="tab"
-  data-tab="settings"
-  onclick="showAdminTab('settings')">
-
-  ⚙️ الإدارة
-
-</button>
-
-</div>
   <!-- 📦 الأصناف -->
+
   <div id="productsTab" class="admin-section">
     <iframe 
       src="products.html" 
       style="width:100%; height:650px; border:none; border-radius:10px;">
     </iframe>
   </div>
-  
+
   <!-- 📦 المواد الاستهلاكية -->
-<div id="inventoryTab" class="admin-section" style="display:none;">
 
-  <iframe 
-    src="inventory.html" 
-    style="width:100%; height:650px; border:none; border-radius:10px;">
-  </iframe>
-
-</div>
+  <div id="inventoryTab" class="admin-section" style="display:none;">
+    <iframe 
+      src="inventory.html" 
+      style="width:100%; height:650px; border:none; border-radius:10px;">
+    </iframe>
+  </div>
 
   <!-- 👥 الموظفين -->
+
   <div id="employeesTab" class="admin-section" style="display:none;">
 
-    <h3>➕ إضافة موظف</h3>
+```
+<h3>➕ إضافة موظف</h3>
 
-    <input id="empName" placeholder="اسم الموظف"><br><br>
+<input id="empName" placeholder="اسم الموظف"><br><br>
 
-    <input id="empPin" placeholder="PIN"><br><br>
+<input id="empPin" placeholder="PIN"><br><br>
 
-    <select id="empRole">
-      <option value="employee">موظف</option>
-      <option value="manager">مدير</option>
-    </select><br><br>
+<select id="empRole">
+  <option value="employee">موظف</option>
+  <option value="manager">مدير</option>
+</select><br><br>
 
-    <button onclick="addEmployee()">➕ إضافة</button>
+<button onclick="addEmployee()">➕ إضافة</button>
 
-    <hr>
+<hr>
 
-    <h3>👥 قائمة الموظفين</h3>
-    <div id="employeesList"></div>
+<h3>👥 قائمة الموظفين</h3>
+<div id="employeesList"></div>
+```
+
+  </div>
+
+  <!-- 💰 المبيعات -->
+
+  <div id="salesTab" class="admin-section" style="display:none;">
+
+```
+<h3>💰 المبيعات</h3>
+
+<div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+  
+  <select id="salesMode" onchange="handleSalesFilter()">
+    <option value="today">📅 اليوم</option>
+    <option value="month">🗓 هذا الشهر</option>
+    <option value="range">📆 تحديد تاريخ</option>
+  </select>
+
+  <div id="dateRange" style="display:none;">
+    من: <input type="date" id="salesFromDate">
+    إلى: <input type="date" id="salesToDate">
+    <button onclick="loadSales()">عرض</button>
+  </div>
+
+</div>
+<div class="stats-grid" id="salesStats"></div>
+<div id="salesBox"></div>
+```
 
   </div>
 
-<div id="salesTab" class="admin-section" style="display:none;">
+  <!-- 🟢 الشفتات -->
 
-  <h3>💰 المبيعات</h3>
+  <div id="shiftsTab" class="admin-section" style="display:none;">
 
-  <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
-    
-    <select id="salesMode" onchange="handleSalesFilter()">
-      <option value="today">📅 اليوم</option>
-      <option value="month">🗓 هذا الشهر</option>
-      <option value="range">📆 تحديد تاريخ</option>
-    </select>
+```
+<h3>🟢 الشفتات المفتوحة</h3>
 
-    <div id="dateRange" style="display:none;">
-      من: <input type="date" id="salesFromDate">
-      إلى: <input type="date" id="salesToDate">
-      <button onclick="loadSales()">عرض</button>
-    </div>
+<div id="adminShifts"></div>
+```
 
   </div>
-  <div class="stats-grid" id="salesStats"></div>
-  <div id="salesBox"></div>
 
-</div>
+  <!-- 👥 العملاء -->
 
-<!-- 🟢 الشفتات -->
-<div id="shiftsTab" class="admin-section" style="display:none;">
+  <div id="customersTab" class="admin-section" style="display:none;">
 
-  <h3>🟢 الشفتات المفتوحة</h3>
+```
+<h3>👥 العملاء</h3>
 
-  <div id="adminShifts"></div>
+<iframe 
+  src="customers.html" 
+  style="width:100%; height:650px; border:none; border-radius:10px;">
+</iframe>
+```
 
-</div>
-
-<!-- 👥 العملاء -->
-<div id="customersTab" class="admin-section" style="display:none;">
-
-  <h3>👥 العملاء</h3>
-
-  <iframe 
-    src="customers.html" 
-    style="width:100%; height:650px; border:none; border-radius:10px;">
-  </iframe>
-
-</div>
-
+  </div>
 
   <!-- ⚙️ الإدارة -->
-<div
-  id="settingsTab"
-  class="admin-section"
-  style="display:none;">
 
-  <h3>⚙️ إعدادات النظام</h3>
+  <div id="settingsTab" class="admin-section" style="display:none;">
+
+```
+<h3>⚙️ إعدادات النظام</h3>
 
 <div class="settings-card">
-
   <div class="settings-left">
-
-    <div class="settings-icon">
-      💸
-    </div>
-
+    <div class="settings-icon">💸</div>
     <div>
-
-      <div class="settings-title">
-        إخفاء الضريبة
-      </div>
-
-      <div class="settings-sub">
-        إخفاء الضريبة من الكاشير والفاتورة والواتساب
-      </div>
-
+      <div class="settings-title">إخفاء الضريبة</div>
+      <div class="settings-sub">إخفاء الضريبة من الكاشير والفاتورة والواتساب</div>
     </div>
-
   </div>
 
   <label class="switch">
-
-    <input
-      type="checkbox"
-      id="hideTaxToggle"
-    >
-
+    <input type="checkbox" id="hideTaxToggle">
     <span class="slider"></span>
-
   </label>
+</div>
+```
+
+  </div>
 
 </div>
 
+<!-- 🔐 التحقق من تسجيل الدخول قبل تحميل الصفحة -->
+
+<script type="module">
+  import { supabase } from "./supabase.js";
+
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  if (error || !session) {
+    window.location.href = "login.html";
+  } else {
+    // أظهر شاشة PIN
+    document.getElementById("authLoading").style.display = "none";
+    document.getElementById("loginScreen").style.display = "flex";
+    document.getElementById("userEmail").textContent = session.user.email;
+    document.getElementById("loginPin").focus();
+  }
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_OUT" || !session) {
+      window.location.href = "login.html";
+    }
+  });
+</script>
+
 <!-- 🔥 JS -->
-<script type="module" src="admin.js"></script>
+
+<script type="module" src="auth.js?v=15"></script>
+
+<script type="module" src="admin.js?v=15"></script>
 
 </body>
 </html>
