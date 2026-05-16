@@ -1,710 +1,725 @@
-import { supabase } from “./supabase.js”;
+import { supabase } from "./supabase.js";
 
-let currentAdminTab = “products”;
+let currentAdminTab = "products";
+const SESSION_TIMEOUT = 30 * 60 * 1000;
 
 let adminRealtimeStarted = false;
 
 /* ===============================
-تسجيل دخول الأدمن بـ PIN
-(المستخدم بالفعل سجّل دخول بالإيميل في login.html)
+   الجلسة
 ================================ */
+
+function updateLastActivity() {
+  localStorage.setItem("lastActivity", Date.now());
+}
+
+function isSessionValid() {
+  const last = localStorage.getItem("lastActivity");
+  if (!last) return false;
+
+  return Date.now() - Number(last) < SESSION_TIMEOUT;
+}
+
+window.addEventListener("load", () => {
+  if (localStorage.getItem("admin") === "true" && isSessionValid()) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminApp").style.display = "block";
+    updateLastActivity();
+
+    showAdminTab("products");
+    startAdminRealtime();
+  } else {
+    localStorage.removeItem("admin");
+  }
+});
+
 window.login = async function () {
-const pin = document.getElementById(“loginPin”).value.trim();
-const errorBox = document.getElementById(“loginError”);
+  const pin = document.getElementById("loginPin").value.trim();
+  const errorBox = document.getElementById("loginError");
 
-if (!pin) {
-errorBox.textContent = “❌ أدخل PIN”;
-errorBox.style.display = “block”;
-return;
-}
+  if (!pin) {
+    errorBox.textContent = "❌ أدخل PIN";
+    errorBox.style.display = "block";
+    return;
+  }
 
-// 🔐 التحقق من PIN المدير عبر RPC
-const { data: managerArray, error: rpcError } = await supabase
-.rpc(“verify_employee_pin”, { input_pin: pin });
+  // 🔐 استدعاء RPC للتحقق من PIN المدير
+  const { data: managerArray, error: rpcError } = await supabase
+    .rpc("verify_employee_pin", { input_pin: pin });
 
-if (rpcError) {
-console.error(“RPC ERROR:”, rpcError);
-errorBox.textContent = “❌ خطأ في التحقق”;
-errorBox.style.display = “block”;
-return;
-}
+  if (rpcError) {
+    console.error("RPC ERROR:", rpcError);
+    errorBox.textContent = "❌ خطأ في التحقق";
+    errorBox.style.display = "block";
+    return;
+  }
 
-const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
+  const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
 
-if (!manager || manager.role !== “manager”) {
-errorBox.textContent = “❌ PIN خطأ أو ليس مدير”;
-errorBox.style.display = “block”;
-return;
-}
+  if (!manager || manager.role !== "manager") {
+    errorBox.textContent = "❌ PIN خطأ أو ليس مدير";
+    errorBox.style.display = "block";
+    return;
+  }
 
-document.getElementById(“loginScreen”).style.display = “none”;
-document.getElementById(“adminApp”).style.display = “block”;
+  localStorage.setItem("admin", "true");
+  updateLastActivity();
 
-showAdminTab(“products”);
-startAdminRealtime();
-errorBox.style.display = “none”;
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("adminApp").style.display = "block";
+
+  showAdminTab("products");
+  startAdminRealtime();
+  errorBox.style.display = "none";
 };
 
-// Enter للدخول
-window.addEventListener(“load”, () => {
-const pinInput = document.getElementById(“loginPin”);
-if (pinInput) {
-pinInput.addEventListener(“keypress”, (e) => {
-if (e.key === “Enter”) {
-window.login();
-}
-});
-}
-});
-
 /* ===============================
-التبويبات
+   التبويبات
 ================================ */
 
 window.showAdminTab = function (type) {
-currentAdminTab = type;
+  currentAdminTab = type;
 
-const sections = {
-products: document.getElementById(“productsTab”),
-employees: document.getElementById(“employeesTab”),
-sales: document.getElementById(“salesTab”),
-shifts: document.getElementById(“shiftsTab”),
-inventory: document.getElementById(“inventoryTab”),
-customers: document.getElementById(“customersTab”),
-settings: document.getElementById(“settingsTab”),
-};
+  const sections = {
+    products: document.getElementById("productsTab"),
+    employees: document.getElementById("employeesTab"),
+    sales: document.getElementById("salesTab"),
+    shifts: document.getElementById("shiftsTab"),
+    inventory: document.getElementById("inventoryTab"),
+    customers: document.getElementById("customersTab"),
+    settings: document.getElementById("settingsTab"),
+  };
 
-document.querySelectorAll(”.admin-section”).forEach(s => s.style.display = “none”);
-document.querySelectorAll(”.tab”).forEach(t => t.classList.remove(“active”));
+  document.querySelectorAll(".admin-section").forEach(s => s.style.display = "none");
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
 
-if (sections[type]) sections[type].style.display = “block”;
+  if (sections[type]) sections[type].style.display = "block";
 
-document.querySelectorAll(”.tab”).forEach(btn => {
-if (btn.dataset.tab === type) btn.classList.add(“active”);
-});
+  document.querySelectorAll(".tab").forEach(btn => {
+    if (btn.dataset.tab === type) btn.classList.add("active");
+  });
 
-if (type === “sales”) {
-ensureBusinessDayOption();
-loadSales();
-}
-if (type === “employees”) loadEmployees();
-if (type === “shifts”) loadAdminShifts();
-if (type === “inventory”) {
-// صفحة المخزون لها ملف مستقل
-}
+  if (type === "sales") {
+    ensureBusinessDayOption();
+    loadSales();
+  }
+  if (type === "employees") loadEmployees();
+  if (type === "shifts") loadAdminShifts();
+  if (type === "inventory") {
+    // صفحة المخزون لها ملف مستقل
+  }
 };
 
 /* ===============================
-إضافة خيار “يوم العمل الحالي” في القائمة المنسدلة
+   إضافة خيار "يوم العمل الحالي" في القائمة المنسدلة
 ================================ */
 function ensureBusinessDayOption() {
-const select = document.getElementById(“salesMode”);
-if (!select) return;
+  const select = document.getElementById("salesMode");
+  if (!select) return;
 
-// تحقق لو الخيار موجود مسبقاً
-const exists = […select.options].some(opt => opt.value === “business_day”);
-if (exists) return;
+  // تحقق لو الخيار موجود مسبقاً
+  const exists = [...select.options].some(opt => opt.value === "business_day");
+  if (exists) return;
 
-// إضافة الخيار في البداية
-const opt = document.createElement(“option”);
-opt.value = “business_day”;
-opt.textContent = “🟢 يوم العمل الحالي”;
-select.insertBefore(opt, select.firstChild);
+  // إضافة الخيار في البداية
+  const opt = document.createElement("option");
+  opt.value = "business_day";
+  opt.textContent = "🟢 يوم العمل الحالي";
+  select.insertBefore(opt, select.firstChild);
 
-// اجعله الخيار الافتراضي
-select.value = “business_day”;
+  // اجعله الخيار الافتراضي
+  select.value = "business_day";
 }
 
 /* ===============================
-الموظفين
+   الموظفين
 ================================ */
 
 window.addEmployee = async function () {
-const name = document.getElementById(“empName”).value.trim();
-const pin = document.getElementById(“empPin”).value.trim();
-const role = document.getElementById(“empRole”).value;
+  const name = document.getElementById("empName").value.trim();
+  const pin = document.getElementById("empPin").value.trim();
+  const role = document.getElementById("empRole").value;
 
-if (!name || !pin) {
-alert(“❌ اكتب الاسم و PIN”);
-return;
-}
+  if (!name || !pin) {
+    alert("❌ اكتب الاسم و PIN");
+    return;
+  }
 
-// 🔐 استخدام RPC لتشفير PIN وحفظ الموظف
-const { data, error } = await supabase
-.rpc(“add_employee_with_pin_hash”, {
-p_name: name,
-p_pin: pin,
-p_role: role
-});
+  // 🔐 استخدام RPC لتشفير PIN وحفظ الموظف
+  const { data, error } = await supabase
+    .rpc("add_employee_with_pin_hash", { 
+      p_name: name,
+      p_pin: pin,
+      p_role: role
+    });
 
-if (error) {
-console.error(error);
-alert(“❌ “ + error.message);
-return;
-}
+  if (error) {
+    console.error(error);
+    alert("❌ " + error.message);
+    return;
+  }
 
-alert(“✅ تم إضافة الموظف”);
+  alert("✅ تم إضافة الموظف");
 
-document.getElementById(“empName”).value = “”;
-document.getElementById(“empPin”).value = “”;
-
-// إعادة تحميل قائمة الموظفين
-loadEmployees();
+  document.getElementById("empName").value = "";
+  document.getElementById("empPin").value = "";
+  
+  // إعادة تحميل قائمة الموظفين
+  loadEmployees();
 };
 
 async function loadEmployees() {
-const { data } = await supabase.from(“employees”).select(”*”);
+  const { data } = await supabase.from("employees").select("*");
 
-const box = document.getElementById(“employeesList”);
-if (!box) return;
+  const box = document.getElementById("employeesList");
+  if (!box) return;
 
-box.innerHTML = “”;
+  box.innerHTML = "";
 
-(data || []).forEach(e => {
-box.innerHTML += `<div style="margin-bottom:8px"> 👤 ${e.name} (${e.role}) <button onclick="deleteEmployee('${e.id}')">🗑</button> </div>`;
-});
+  (data || []).forEach(e => {
+    box.innerHTML += `
+      <div style="margin-bottom:8px">
+        👤 ${e.name} (${e.role})
+        <button onclick="deleteEmployee('${e.id}')">🗑</button>
+      </div>
+    `;
+  });
 }
 
 window.deleteEmployee = async function (id) {
 
-const pin = prompt(“🔐 أدخل رقم المدير”);
-if (!pin) return;
+  const pin = prompt("🔐 أدخل رقم المدير");
+  if (!pin) return;
 
-// 🔐 استدعاء RPC للتحقق من PIN المدير
-const { data: managerArray, error: rpcError } = await supabase
-.rpc(“verify_employee_pin”, { input_pin: pin });
+  // 🔐 استدعاء RPC للتحقق من PIN المدير
+  const { data: managerArray, error: rpcError } = await supabase
+    .rpc("verify_employee_pin", { input_pin: pin });
 
-if (rpcError) {
-console.error(“RPC ERROR:”, rpcError);
-alert(“❌ خطأ في التحقق”);
-return;
-}
+  if (rpcError) {
+    console.error("RPC ERROR:", rpcError);
+    alert("❌ خطأ في التحقق");
+    return;
+  }
 
-const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
+  const manager = managerArray && managerArray.length > 0 ? managerArray[0] : null;
 
-if (!manager || manager.role !== “manager”) {
-alert(“❌ غير مصرح”);
-return;
-}
+  if (!manager || manager.role !== "manager") {
+    alert("❌ غير مصرح");
+    return;
+  }
 
-if (!confirm(“حذف الموظف؟”)) return;
+  if (!confirm("حذف الموظف؟")) return;
 
-const { error } = await supabase
-.from(“employees”)
-.delete()
-.eq(“id”, id);
+  const { error } = await supabase
+    .from("employees")
+    .delete()
+    .eq("id", id);
 
-if (error) {
-alert(“❌ فشل الحذف”);
-return;
-}
+  if (error) {
+    alert("❌ فشل الحذف");
+    return;
+  }
 
-alert(“✅ تم حذف الموظف”);
+  alert("✅ تم حذف الموظف");
 };
 
 /* ===============================
-المبيعات (مع استثناء الملغية + خيار يوم العمل)
+   المبيعات (مع استثناء الملغية + خيار يوم العمل)
 ================================ */
 
 function money(val) {
-return Number(val || 0).toFixed(2) + “ ر.س”;
+  return Number(val || 0).toFixed(2) + " ر.س";
 }
 
 window.loadSales = async function () {
 
-const mode = document.getElementById(“salesMode”)?.value || “business_day”;
+  const mode = document.getElementById("salesMode")?.value || "business_day";
 
-// 🟢 يوم العمل الحالي — يحسب من فتح اليوم للوقت الحالي
-let businessDayStart = null;
+  // 🟢 يوم العمل الحالي — يحسب من فتح اليوم للوقت الحالي
+  let businessDayStart = null;
 
-if (mode === “business_day”) {
+  if (mode === "business_day") {
 
-```
-const { data: openDay } = await supabase
-  .from("business_days")
-  .select("opened_at")
-  .eq("is_open", true)
-  .maybeSingle();
+    const { data: openDay } = await supabase
+      .from("business_days")
+      .select("opened_at")
+      .eq("is_open", true)
+      .maybeSingle();
 
-if (!openDay) {
-  // ما فيه يوم مفتوح
-  showEmptySales("❌ لا يوجد يوم عمل مفتوح حالياً");
-  return;
-}
+    if (!openDay) {
+      // ما فيه يوم مفتوح
+      showEmptySales("❌ لا يوجد يوم عمل مفتوح حالياً");
+      return;
+    }
 
-businessDayStart = openDay.opened_at;
-```
+    businessDayStart = openDay.opened_at;
+  }
 
-}
+  // بناء استعلام الطلبات
+  let query = supabase
+    .from("orders")
+    .select(`
+      total,
+      cash_amount,
+      card_amount,
+      created_at
+    `)
+    .eq("is_paid", true)
+    .neq("status", "cancelled");  // ← استثناء الملغية
 
-// بناء استعلام الطلبات
-let query = supabase
-.from(“orders”)
-.select(`total, cash_amount, card_amount, created_at`)
-.eq(“is_paid”, true)
-.neq(“status”, “cancelled”);  // ← استثناء الملغية
+  if (mode === "business_day") {
+    query = query
+      .gte("created_at", businessDayStart)
+      .lte("created_at", new Date().toISOString());
+  }
 
-if (mode === “business_day”) {
-query = query
-.gte(“created_at”, businessDayStart)
-.lte(“created_at”, new Date().toISOString());
-}
+  if (mode === "today") {
+    const start = new Date(); start.setHours(0,0,0,0);
+    const end = new Date(); end.setHours(23,59,59,999);
 
-if (mode === “today”) {
-const start = new Date(); start.setHours(0,0,0,0);
-const end = new Date(); end.setHours(23,59,59,999);
+    query = query
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
+  }
 
-```
-query = query
-  .gte("created_at", start.toISOString())
-  .lte("created_at", end.toISOString());
-```
+  if (mode === "month") {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0,0,0,0);
 
-}
+    query = query.gte("created_at", start.toISOString());
+  }
 
-if (mode === “month”) {
-const start = new Date();
-start.setDate(1);
-start.setHours(0,0,0,0);
+  if (mode === "range") {
+    const from = document.getElementById("salesFromDate").value;
+    const to = document.getElementById("salesToDate").value;
 
-```
-query = query.gte("created_at", start.toISOString());
-```
+    if (!from || !to) {
+      alert("حدد التاريخ");
+      return;
+    }
 
-}
+    query = query
+      .gte("created_at", from + " 00:00:00")
+      .lte("created_at", to + " 23:59:59");
+  }
 
-if (mode === “range”) {
-const from = document.getElementById(“salesFromDate”).value;
-const to = document.getElementById(“salesToDate”).value;
+  const { data = [] } = await query;
 
-```
-if (!from || !to) {
-  alert("حدد التاريخ");
-  return;
-}
+  let total = 0, cash = 0, card = 0;
 
-query = query
-  .gte("created_at", from + " 00:00:00")
-  .lte("created_at", to + " 23:59:59");
-```
+  data.forEach(o => {
+    total += Number(o.total || 0);
+    cash += Number(o.cash_amount || 0);
+    card += Number(o.card_amount || 0);
+  });
 
-}
+  // ===== استعلام الأصناف =====
+  let itemsQuery = supabase
+    .from("order_items")
+    .select(`
+      item_name,
+      qty,
+      price,
+      orders!inner (
+        created_at,
+        is_paid,
+        status
+      )
+    `)
+    .eq("orders.is_paid", true)
+    .neq("orders.status", "cancelled");
 
-const { data = [] } = await query;
+  if (mode === "business_day") {
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", businessDayStart)
+      .lte("orders.created_at", new Date().toISOString());
+  }
 
-let total = 0, cash = 0, card = 0;
+  if (mode === "today") {
+    const start = new Date(); start.setHours(0,0,0,0);
+    const end = new Date(); end.setHours(23,59,59,999);
 
-data.forEach(o => {
-total += Number(o.total || 0);
-cash += Number(o.cash_amount || 0);
-card += Number(o.card_amount || 0);
-});
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", start.toISOString())
+      .lte("orders.created_at", end.toISOString());
+  }
 
-// ===== استعلام الأصناف =====
-let itemsQuery = supabase
-.from(“order_items”)
-.select(`item_name, qty, price, orders!inner ( created_at, is_paid, status )`)
-.eq(“orders.is_paid”, true)
-.neq(“orders.status”, “cancelled”);
+  if (mode === "month") {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0,0,0,0);
 
-if (mode === “business_day”) {
-itemsQuery = itemsQuery
-.gte(“orders.created_at”, businessDayStart)
-.lte(“orders.created_at”, new Date().toISOString());
-}
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", start.toISOString());
+  }
 
-if (mode === “today”) {
-const start = new Date(); start.setHours(0,0,0,0);
-const end = new Date(); end.setHours(23,59,59,999);
+  if (mode === "range") {
+    const from = document.getElementById("salesFromDate").value;
+    const to = document.getElementById("salesToDate").value;
 
-```
-itemsQuery = itemsQuery
-  .gte("orders.created_at", start.toISOString())
-  .lte("orders.created_at", end.toISOString());
-```
+    itemsQuery = itemsQuery
+      .gte("orders.created_at", from + " 00:00:00")
+      .lte("orders.created_at", to + " 23:59:59");
+  }
 
-}
+  const { data: items } = await itemsQuery;
+  const safeItems = items || [];
 
-if (mode === “month”) {
-const start = new Date();
-start.setDate(1);
-start.setHours(0,0,0,0);
+  const map = {};
 
-```
-itemsQuery = itemsQuery
-  .gte("orders.created_at", start.toISOString());
-```
+  safeItems.forEach(i => {
+    if (!map[i.item_name]) {
+      map[i.item_name] = { qty: 0, total: 0 };
+    }
 
-}
+    map[i.item_name].qty += i.qty;
+    map[i.item_name].total += i.qty * i.price;
+  });
 
-if (mode === “range”) {
-const from = document.getElementById(“salesFromDate”).value;
-const to = document.getElementById(“salesToDate”).value;
+  const products = Object.entries(map).map(([name, val]) => ({
+    name,
+    qty: val.qty,
+    total: val.total
+  }));
 
-```
-itemsQuery = itemsQuery
-  .gte("orders.created_at", from + " 00:00:00")
-  .lte("orders.created_at", to + " 23:59:59");
-```
+  products.sort((a, b) => b.qty - a.qty);
 
-}
+  const bestProduct = products[0] || null;
+  const totalQty = products.length
+    ? products.reduce((sum, p) => sum + p.qty, 0)
+    : 0;
 
-const { data: items } = await itemsQuery;
-const safeItems = items || [];
+  const statsEl = document.getElementById("salesStats");
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-box">
+        <span>💰 الإجمالي</span>
+        <strong>${money(total)}</strong>
+      </div>
 
-const map = {};
+      <div class="stat-box">
+        <span>💵 كاش</span>
+        <strong>${money(cash)}</strong>
+      </div>
 
-safeItems.forEach(i => {
-if (!map[i.item_name]) {
-map[i.item_name] = { qty: 0, total: 0 };
-}
+      <div class="stat-box">
+        <span>💳 بطاقة</span>
+        <strong>${money(card)}</strong>
+      </div>
 
-```
-map[i.item_name].qty += i.qty;
-map[i.item_name].total += i.qty * i.price;
-```
+      <div class="stat-box">
+        <span>🧾 الطلبات</span>
+        <strong>${data.length}</strong>
+      </div>
+    `;
+  }
 
-});
+  const salesBox = document.getElementById("salesBox");
+  if (salesBox) {
+    salesBox.innerHTML = `
 
-const products = Object.entries(map).map(([name, val]) => ({
-name,
-qty: val.qty,
-total: val.total
-}));
+    <div class="card">
+      🏆 الأكثر مبيعاً<br><br>
+      <strong style="font-size:18px">
+        ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
+      </strong>
+    </div>
 
-products.sort((a, b) => b.qty - a.qty);
+    <div class="card">
+      <h3>📊 تفاصيل الأصناف</h3>
 
-const bestProduct = products[0] || null;
-const totalQty = products.length
-? products.reduce((sum, p) => sum + p.qty, 0)
-: 0;
+      <table style="width:100%; text-align:center;">
+        <tr>
+          <th>الصنف</th>
+          <th>الكمية</th>
+          <th>الإجمالي</th>
+          <th>%</th>
+        </tr>
 
-const statsEl = document.getElementById(“salesStats”);
-if (statsEl) {
-statsEl.innerHTML = `
-<div class="stat-box">
-<span>💰 الإجمالي</span>
-<strong>${money(total)}</strong>
-</div>
+        ${products.length === 0 ? `
+          <tr><td colspan="4">❌ لا يوجد مبيعات</td></tr>
+        ` : products.map(p => `
+          <tr>
+            <td>${p.name}</td>
+            <td>${p.qty}</td>
+            <td>${money(p.total)}</td>
+            <td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
+          </tr>
+        `).join("")}
 
-```
-  <div class="stat-box">
-    <span>💵 كاش</span>
-    <strong>${money(cash)}</strong>
-  </div>
-
-  <div class="stat-box">
-    <span>💳 بطاقة</span>
-    <strong>${money(card)}</strong>
-  </div>
-
-  <div class="stat-box">
-    <span>🧾 الطلبات</span>
-    <strong>${data.length}</strong>
-  </div>
-`;
-```
-
-}
-
-const salesBox = document.getElementById(“salesBox”);
-if (salesBox) {
-salesBox.innerHTML = `
-
-```
-<div class="card">
-  🏆 الأكثر مبيعاً<br><br>
-  <strong style="font-size:18px">
-    ${bestProduct ? `${bestProduct.name} (${bestProduct.qty})` : "-"}
-  </strong>
-</div>
-
-<div class="card">
-  <h3>📊 تفاصيل الأصناف</h3>
-
-  <table style="width:100%; text-align:center;">
-    <tr>
-      <th>الصنف</th>
-      <th>الكمية</th>
-      <th>الإجمالي</th>
-      <th>%</th>
-    </tr>
-
-    ${products.length === 0 ? `
-      <tr><td colspan="4">❌ لا يوجد مبيعات</td></tr>
-    ` : products.map(p => `
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.qty}</td>
-        <td>${money(p.total)}</td>
-        <td>${totalQty ? ((p.qty / totalQty) * 100).toFixed(1) : 0}%</td>
-      </tr>
-    `).join("")}
-
-  </table>
-</div>
-`;
-```
-
-}
+      </table>
+    </div>
+    `;
+  }
 };
 
 /* ===============================
-عرض إحصائيات فاضية مع رسالة
+   عرض إحصائيات فاضية مع رسالة
 ================================ */
 function showEmptySales(message) {
 
-const statsEl = document.getElementById(“salesStats”);
-if (statsEl) {
-statsEl.innerHTML = `
-<div class="stat-box">
-<span>💰 الإجمالي</span>
-<strong>${money(0)}</strong>
-</div>
+  const statsEl = document.getElementById("salesStats");
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-box">
+        <span>💰 الإجمالي</span>
+        <strong>${money(0)}</strong>
+      </div>
 
-```
-  <div class="stat-box">
-    <span>💵 كاش</span>
-    <strong>${money(0)}</strong>
-  </div>
+      <div class="stat-box">
+        <span>💵 كاش</span>
+        <strong>${money(0)}</strong>
+      </div>
 
-  <div class="stat-box">
-    <span>💳 بطاقة</span>
-    <strong>${money(0)}</strong>
-  </div>
+      <div class="stat-box">
+        <span>💳 بطاقة</span>
+        <strong>${money(0)}</strong>
+      </div>
 
-  <div class="stat-box">
-    <span>🧾 الطلبات</span>
-    <strong>0</strong>
-  </div>
-`;
-```
+      <div class="stat-box">
+        <span>🧾 الطلبات</span>
+        <strong>0</strong>
+      </div>
+    `;
+  }
 
-}
-
-const salesBox = document.getElementById(“salesBox”);
-if (salesBox) {
-salesBox.innerHTML = `<div class="card" style="text-align:center; padding:30px;"> ${message} </div>`;
-}
+  const salesBox = document.getElementById("salesBox");
+  if (salesBox) {
+    salesBox.innerHTML = `
+      <div class="card" style="text-align:center; padding:30px;">
+        ${message}
+      </div>
+    `;
+  }
 }
 
 /* ===============================
-الشفتات
+   الشفتات
 ================================ */
 
 window.loadAdminShifts = async function () {
-const { data: shifts } = await supabase
-.from(“shifts”)
-.select(`id, opened_at, employees ( name )`)
-.eq(“is_open”, true);
+  const { data: shifts } = await supabase
+    .from("shifts")
+    .select(`
+      id,
+      opened_at,
+      employees ( name )
+    `)
+    .eq("is_open", true);
 
-const box = document.getElementById(“adminShifts”);
-if (!box) return;
+  const box = document.getElementById("adminShifts");
+  if (!box) return;
 
-if (!shifts || shifts.length === 0) {
-box.innerHTML = “❌ لا يوجد شفتات”;
-return;
-}
+  if (!shifts || shifts.length === 0) {
+    box.innerHTML = "❌ لا يوجد شفتات";
+    return;
+  }
 
-const shiftIds = shifts.map(s => s.id);
+  const shiftIds = shifts.map(s => s.id);
 
-const { data: orders } = await supabase
-.from(“orders”)
-.select(“shift_id, total”)
-.in(“shift_id”, shiftIds)
-.eq(“is_paid”, true)
-.neq(“status”, “cancelled”);  // ← استثناء الملغية
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("shift_id, total")
+    .in("shift_id", shiftIds)
+    .eq("is_paid", true)
+    .neq("status", "cancelled");  // ← استثناء الملغية
 
-const map = {};
+  const map = {};
 
-(orders || []).forEach(o => {
-if (!map[o.shift_id]) map[o.shift_id] = 0;
-map[o.shift_id] += Number(o.total || 0);
-});
+  (orders || []).forEach(o => {
+    if (!map[o.shift_id]) map[o.shift_id] = 0;
+    map[o.shift_id] += Number(o.total || 0);
+  });
 
-let html = “”;
+  let html = "";
 
-shifts.forEach(s => {
-html += `
-
+  shifts.forEach(s => {
+    html += `
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
 
-```
-  <div>
-    <strong>👤 ${s.employees?.name || "غير معروف"}</strong><br>
-    <small style="color:#666">شفت مفتوح</small>
-  </div>
+      <div>
+        <strong>👤 ${s.employees?.name || "غير معروف"}</strong><br>
+        <small style="color:#666">شفت مفتوح</small>
+      </div>
 
-  <div style="font-weight:bold; font-size:16px; color:#4caf50">
-    ${money(map[s.id])}
-  </div>
+      <div style="font-weight:bold; font-size:16px; color:#4caf50">
+        ${money(map[s.id])}
+      </div>
 
-</div>
-```
-
+    </div>
   </div>
 `;
   });
 
-box.innerHTML = html;
+  box.innerHTML = html;
 };
 
 /* ===============================
-Realtime
+   Realtime
 ================================ */
 function startAdminRealtime() {
 
-if (adminRealtimeStarted) return;
-adminRealtimeStarted = true;
+  if (adminRealtimeStarted) return;
+  adminRealtimeStarted = true;
 
-let salesReloadTimer = null;
-let shiftsReloadTimer = null;
+  let salesReloadTimer = null;
+  let shiftsReloadTimer = null;
 
-function scheduleSalesReload() {
-if (salesReloadTimer) return;
-salesReloadTimer = setTimeout(() => {
-salesReloadTimer = null;
-if (currentAdminTab === “sales”) loadSales();
-}, 500);
-}
+  function scheduleSalesReload() {
+    if (salesReloadTimer) return;
+    salesReloadTimer = setTimeout(() => {
+      salesReloadTimer = null;
+      if (currentAdminTab === "sales") loadSales();
+    }, 500);
+  }
 
-function scheduleShiftsReload() {
-if (shiftsReloadTimer) return;
-shiftsReloadTimer = setTimeout(() => {
-shiftsReloadTimer = null;
-if (currentAdminTab === “shifts”) loadAdminShifts();
-}, 500);
-}
+  function scheduleShiftsReload() {
+    if (shiftsReloadTimer) return;
+    shiftsReloadTimer = setTimeout(() => {
+      shiftsReloadTimer = null;
+      if (currentAdminTab === "shifts") loadAdminShifts();
+    }, 500);
+  }
 
-supabase
-.channel(“admin-orders-live”)
-.on(
-“postgres_changes”,
-{
-event: “*”,
-schema: “public”,
-table: “orders”
-},
-() => {
-scheduleSalesReload();
-scheduleShiftsReload();
-}
-)
-.subscribe((status) => {
-console.log(“📡 ADMIN ORDERS REALTIME:”, status);
-});
+  supabase
+    .channel("admin-orders-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders"
+      },
+      () => {
+        scheduleSalesReload();
+        scheduleShiftsReload();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN ORDERS REALTIME:", status);
+    });
 
-supabase
-.channel(“admin-shifts-live”)
-.on(
-“postgres_changes”,
-{
-event: “*”,
-schema: “public”,
-table: “shifts”
-},
-() => {
-scheduleShiftsReload();
-}
-)
-.subscribe((status) => {
-console.log(“📡 ADMIN SHIFTS REALTIME:”, status);
-});
+  supabase
+    .channel("admin-shifts-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "shifts"
+      },
+      () => {
+        scheduleShiftsReload();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN SHIFTS REALTIME:", status);
+    });
 
-supabase
-.channel(“admin-employees-live”)
-.on(
-“postgres_changes”,
-{
-event: “*”,
-schema: “public”,
-table: “employees”
-},
-() => {
-if (currentAdminTab === “employees”) loadEmployees();
-}
-)
-.subscribe((status) => {
-console.log(“📡 ADMIN EMPLOYEES REALTIME:”, status);
-});
+  supabase
+    .channel("admin-employees-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "employees"
+      },
+      () => {
+        if (currentAdminTab === "employees") loadEmployees();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN EMPLOYEES REALTIME:", status);
+    });
 
-// Realtime على business_days لتحديث المبيعات لما يفتح/يقفل يوم
-supabase
-.channel(“admin-business-days-live”)
-.on(
-“postgres_changes”,
-{
-event: “*”,
-schema: “public”,
-table: “business_days”
-},
-() => {
-scheduleSalesReload();
-}
-)
-.subscribe((status) => {
-console.log(“📡 ADMIN BUSINESS DAYS REALTIME:”, status);
-});
+  // Realtime على business_days لتحديث المبيعات لما يفتح/يقفل يوم
+  supabase
+    .channel("admin-business-days-live")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "business_days"
+      },
+      () => {
+        scheduleSalesReload();
+      }
+    )
+    .subscribe((status) => {
+      console.log("📡 ADMIN BUSINESS DAYS REALTIME:", status);
+    });
 }
 
 /* ===============================
-فلتر المبيعات
+   نشاط المستخدم
 ================================ */
 
-window.handleSalesFilter = function () {
-const mode = document.getElementById(“salesMode”).value;
-const box = document.getElementById(“dateRange”);
+["click", "mousemove", "keydown", "touchstart"].forEach(e => {
+  document.addEventListener(e, updateLastActivity);
+});
 
-if (mode === “range”) {
-box.style.display = “block”;
-} else {
-box.style.display = “none”;
-loadSales();
-}
+setInterval(() => {
+  if (!isSessionValid()) {
+    alert("🔒 انتهت الجلسة");
+    localStorage.removeItem("admin");
+    location.reload();
+  }
+}, 60000);
+
+window.handleSalesFilter = function () {
+  const mode = document.getElementById("salesMode").value;
+  const box = document.getElementById("dateRange");
+
+  if (mode === "range") {
+    box.style.display = "block";
+  } else {
+    box.style.display = "none";
+    loadSales();
+  }
 };
 
 /* ===============================
-إعدادات النظام
+   إعدادات النظام
 ================================ */
 
 async function loadSettings() {
 
-const { data } = await supabase
-.from(“settings”)
-.select(“hide_tax”)
-.eq(“id”, 1)
-.single();
+  const { data } = await supabase
+    .from("settings")
+    .select("hide_tax")
+    .eq("id", 1)
+    .single();
 
-const toggle =
-document.getElementById(“hideTaxToggle”);
+  const toggle =
+    document.getElementById("hideTaxToggle");
 
-if (toggle) {
-toggle.checked = data?.hide_tax || false;
+  if (toggle) {
+    toggle.checked = data?.hide_tax || false;
+  }
 }
-}
 
-window.addEventListener(“load”, () => {
+window.addEventListener("load", () => {
 
-loadSettings();
+  loadSettings();
 
-const toggle =
-document.getElementById(“hideTaxToggle”);
+  const toggle =
+    document.getElementById("hideTaxToggle");
 
-if (!toggle) return;
+  if (!toggle) return;
 
-toggle.addEventListener(“change”, async () => {
+  toggle.addEventListener("change", async () => {
 
-```
-await supabase
-  .from("settings")
-  .update({
-    hide_tax: toggle.checked
-  })
-  .eq("id", 1);
+    await supabase
+      .from("settings")
+      .update({
+        hide_tax: toggle.checked
+      })
+      .eq("id", 1);
 
-alert("✅ تم حفظ الإعداد");
-```
-
-});
+    alert("✅ تم حفظ الإعداد");
+  });
 });
