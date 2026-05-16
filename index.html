@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
@@ -7,12 +8,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827">
 
-<link rel="stylesheet" href="style.css?v=13" />
+<link rel="stylesheet" href="style.css?v=15" />
 </head>
 
 <body>
 
 <!-- ===== Top Bar ===== -->
+
 <header class="topbar">
   <div class="topbar-title">☕ سكوب لاب </div>
 
@@ -41,6 +43,14 @@
   📅 إغلاق اليوم
 </button>
 
+<button onclick="showDevices()" style="margin-top:5px;">
+  📱 الأجهزة المسجلة
+</button>
+
+<button onclick="logout()" style="margin-top:5px;background:#f44336;color:#fff;">
+  🚪 تسجيل خروج
+</button>
+
 </div>
   </div>
 </header>
@@ -48,39 +58,46 @@
 <main class="cashier-layout">
 
  <!-- الأصناف -->
+
 <section class="card products-card">
     <h2>الأصناف</h2>
 
-    <div class="categories">
-      <button class="cat active" onclick="filterCategory('drinks', this)">🥤 مشروبات</button>
-      <button class="cat" onclick="filterCategory('food', this)"> ايس كريم</button>
-    </div>
+```
+<div class="categories">
+  <button class="cat active" onclick="filterCategory('drinks', this)">🥤 مشروبات</button>
+  <button class="cat" onclick="filterCategory('food', this)"> ايس كريم</button>
+</div>
 
-    <div id="items" class="items-grid"></div>
+<div id="items" class="items-grid"></div>
+```
+
   </section>
 
  <!-- الفاتورة -->
+
 <section class="card invoice-card">
     <h2>الفاتورة</h2>
 
-    <table class="invoice-table">
-      <thead>
-        <tr>
-          <th>الصنف</th>
-          <th>الكمية</th>
-          <th>المجموع</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="cart"></tbody>
-    </table>
+```
+<table class="invoice-table">
+  <thead>
+    <tr>
+      <th>الصنف</th>
+      <th>الكمية</th>
+      <th>المجموع</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="cart"></tbody>
+</table>
+```
 
 <div class="total-box">
   الإجمالي: <span id="total">0.00 ر.س</span>
 </div>
 
-
 <!-- زر الدفع -->
+
 <button onclick="completeOrder()" class="btn success">
   إتمام الطلب
 </button>
@@ -88,28 +105,32 @@
   </section>
 
   <!-- الطلبات الجارية -->
+
 <section class="card orders-card">
 
   <!-- التبويبات -->
+
   <div class="tabs">
     <button class="tab active" onclick="showTab('active')">🟡 الجارية</button>
     <button class="tab" onclick="showTab('cancelled')">❌ الملغية</button>
   </div>
 
   <!-- الطلبات الجارية -->
+
   <div id="activeOrders" class="orders-list"></div>
 
   <!-- الطلبات الملغية -->
+
   <div id="cancelledOrders" class="orders-list" style="display:none;"></div>
 
 </section>
 
 </main>
 
-
 <!-- ===============================
    🧾 الفاتورة
 ================================ -->
+
 <div id="printArea" class="receipt">
 
   <div class="sub">
@@ -171,8 +192,11 @@
 
 </div>
 
-<script type="module" src="app.js?v=13"></script>
-<script type="module" src="customers.js?v=13"></script>
+<script type="module" src="auth.js?v=15"></script>
+
+<script type="module" src="app.js?v=15"></script>
+
+<script type="module" src="customers.js?v=15"></script>
 
 <script defer src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
 
@@ -180,19 +204,24 @@
 
   <div style="background:#fff;padding:20px;border-radius:10px;text-align:center; width:300px">
 
-    <h3>🔐 فتح الشفت</h3>
+```
+<h3>🔐 فتح الشفت</h3>
 
-    <input 
-  type="password"
-  id="shiftPin" 
-      placeholder="أدخل PIN" 
-      style="width:100%;padding:10px;margin:10px 0;border-radius:8px;border:1px solid #ccc"
-    >
+<input 
+```
 
-    <div id="shiftError" style="color:red;display:none;margin-bottom:10px;"></div>
+type=“password”
+id=“shiftPin”
+placeholder=“أدخل PIN”
+style=“width:100%;padding:10px;margin:10px 0;border-radius:8px;border:1px solid #ccc”
+>
 
-    <button onclick="confirmOpenShift()" style="margin:5px">فتح</button>
-    <button onclick="closeShiftPopup()" class="cancel-btn">إلغاء</button>
+```
+<div id="shiftError" style="color:red;display:none;margin-bottom:10px;"></div>
+
+<button onclick="confirmOpenShift()" style="margin:5px">فتح</button>
+<button onclick="closeShiftPopup()" class="cancel-btn">إلغاء</button>
+```
 
   </div>
 
