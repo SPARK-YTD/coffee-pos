@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <title>لوحة الإدارة</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css">
 
   <style>
-    /* 🔐 شاشة PIN المدير */
     .login-screen {
       position: fixed;
       inset: 0;
@@ -32,12 +30,12 @@
       width: 100%;
       padding: 12px;
       margin: 10px 0;
+      box-sizing: border-box;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
       direction: ltr;
       text-align: center;
+      font-size: 16px;
     }
 
     .login-box button {
@@ -49,10 +47,10 @@
       border-radius: 8px;
       cursor: pointer;
       font-size: 15px;
-      font-family: inherit;
+      box-sizing: border-box;
     }
 
-    .user-info {
+    .user-badge {
       background: #e8f5e9;
       color: #2e7d32;
       padding: 10px;
@@ -61,8 +59,7 @@
       font-size: 13px;
     }
 
-    /* الشريط العلوي */
-    .top-actions {
+    .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -72,271 +69,229 @@
       margin-bottom: 15px;
     }
 
-    .top-actions h2 {
-      margin: 0;
-      font-size: 18px;
-    }
+    .top-bar h2 { margin: 0; font-size: 18px; }
 
-    .top-actions-buttons {
-      display: flex;
-      gap: 8px;
-    }
+    .top-bar-btns { display: flex; gap: 8px; }
 
-    .top-actions button {
+    .top-bar-btns button {
       padding: 8px 15px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      font-family: inherit;
     }
 
-    .logout-btn {
-      background: #f44336;
-      color: #fff;
-    }
-
-    .devices-top-btn {
-      background: #fff;
-      color: #4a3a2c;
-    }
-
-    .auth-loading {
-      position: fixed;
-      inset: 0;
-      background: #f5f5f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      flex-direction: column;
-      gap: 15px;
-    }
+    .btn-logout { background: #f44336; color: #fff; }
+    .btn-devices { background: #fff; color: #4a3a2c; }
   </style>
 
 </head>
 
 <body>
 
-<!-- ⏳ جاري التحقق من تسجيل الدخول -->
-
-<div id="authLoading" class="auth-loading">
+<div id="authLoading" style="position:fixed;inset:0;background:#f5f5f5;display:flex;justify-content:center;align-items:center;z-index:9999;flex-direction:column;gap:15px;">
   <div style="font-size:48px;">⏳</div>
   <div>جاري التحقق...</div>
 </div>
 
-<!-- 🔐 شاشة PIN المدير -->
-
 <div id="loginScreen" class="login-screen" style="display:none;">
-
   <div class="login-box">
-    <h2>🔐 دخول الإدارة</h2>
-
-```
-<div id="userInfo" class="user-info">
-  📧 مسجل دخول كـ: <span id="userEmail"></span>
-</div>
-
-<p style="color:#666;font-size:13px;margin:10px 0;">أدخل PIN المدير للمتابعة</p>
-
-<input id="loginPin" placeholder="PIN" type="password" inputmode="numeric">
-
-<button onclick="login()">دخول</button>
-
-<button onclick="logout()" style="background:#f44336;margin-top:8px;">
-  🚪 تسجيل خروج كامل
-</button>
-
-<p id="loginError" style="color:red; display:none; margin-top:10px;"></p>
-```
-
+    <h2>دخول الإدارة</h2>
+    <div id="userBadge" class="user-badge"></div>
+    <p style="color:#666;font-size:13px;">أدخل PIN المدير للمتابعة</p>
+    <input id="loginPin" placeholder="PIN" type="password" inputmode="numeric">
+    <button onclick="login()">دخول</button>
+    <button onclick="logoutFull()" style="background:#f44336;margin-top:8px;">تسجيل خروج كامل</button>
+    <p id="loginError" style="color:red; display:none; margin-top:10px;"></p>
   </div>
-
 </div>
-
-<!-- 🧠 ADMIN APP -->
 
 <div id="adminApp" style="display:none;">
 
-  <!-- الشريط العلوي -->
-
-  <div class="top-actions">
-    <h2>⚙️ لوحة الإدارة</h2>
-    <div class="top-actions-buttons">
-      <button class="devices-top-btn" onclick="showDevices()">📱 الأجهزة</button>
-      <button class="logout-btn" onclick="logout()">🚪 خروج</button>
+  <div class="top-bar">
+    <h2>لوحة الإدارة</h2>
+    <div class="top-bar-btns">
+      <button class="btn-devices" onclick="showDevices()">الأجهزة</button>
+      <button class="btn-logout" onclick="logoutFull()">خروج</button>
     </div>
   </div>
 
   <div id="openShiftsWarning" style="text-align:center; color:red; margin-bottom:10px;"></div>
 
-  <!-- 🔘 التبويبات -->
-
   <div class="admin-tabs">
-    <button class="tab active" data-tab="products" onclick="showAdminTab('products')">📦 الأصناف</button>
-    <button class="tab" data-tab="employees" onclick="showAdminTab('employees')">👥 الموظفين</button>
-    <button class="tab" data-tab="sales" onclick="showAdminTab('sales')">💰 المبيعات</button>
-    <button class="tab" data-tab="shifts" onclick="showAdminTab('shifts')">🟢 الشفتات</button>
-    <button class="tab" data-tab="inventory" onclick="showAdminTab('inventory')">📦 المواد</button>
-    <button class="tab" data-tab="customers" onclick="showAdminTab('customers')">👥 العملاء</button>
-    <button class="tab" data-tab="settings" onclick="showAdminTab('settings')">⚙️ الإدارة</button>
+    <button class="tab active" data-tab="products" onclick="showAdminTab('products')">الأصناف</button>
+    <button class="tab" data-tab="employees" onclick="showAdminTab('employees')">الموظفين</button>
+    <button class="tab" data-tab="sales" onclick="showAdminTab('sales')">المبيعات</button>
+    <button class="tab" data-tab="shifts" onclick="showAdminTab('shifts')">الشفتات</button>
+    <button class="tab" data-tab="inventory" onclick="showAdminTab('inventory')">المواد</button>
+    <button class="tab" data-tab="customers" onclick="showAdminTab('customers')">العملاء</button>
+    <button class="tab" data-tab="settings" onclick="showAdminTab('settings')">الإدارة</button>
   </div>
-
-  <!-- 📦 الأصناف -->
 
   <div id="productsTab" class="admin-section">
-    <iframe 
-      src="products.html" 
-      style="width:100%; height:650px; border:none; border-radius:10px;">
-    </iframe>
+    <iframe src="products.html" style="width:100%; height:650px; border:none; border-radius:10px;"></iframe>
   </div>
-
-  <!-- 📦 المواد الاستهلاكية -->
 
   <div id="inventoryTab" class="admin-section" style="display:none;">
-    <iframe 
-      src="inventory.html" 
-      style="width:100%; height:650px; border:none; border-radius:10px;">
-    </iframe>
+    <iframe src="inventory.html" style="width:100%; height:650px; border:none; border-radius:10px;"></iframe>
   </div>
-
-  <!-- 👥 الموظفين -->
 
   <div id="employeesTab" class="admin-section" style="display:none;">
-
-```
-<h3>➕ إضافة موظف</h3>
-
-<input id="empName" placeholder="اسم الموظف"><br><br>
-
-<input id="empPin" placeholder="PIN"><br><br>
-
-<select id="empRole">
-  <option value="employee">موظف</option>
-  <option value="manager">مدير</option>
-</select><br><br>
-
-<button onclick="addEmployee()">➕ إضافة</button>
-
-<hr>
-
-<h3>👥 قائمة الموظفين</h3>
-<div id="employeesList"></div>
-```
-
+    <h3>إضافة موظف</h3>
+    <input id="empName" placeholder="اسم الموظف"><br><br>
+    <input id="empPin" placeholder="PIN"><br><br>
+    <select id="empRole">
+      <option value="employee">موظف</option>
+      <option value="manager">مدير</option>
+    </select><br><br>
+    <button onclick="addEmployee()">إضافة</button>
+    <hr>
+    <h3>قائمة الموظفين</h3>
+    <div id="employeesList"></div>
   </div>
-
-  <!-- 💰 المبيعات -->
 
   <div id="salesTab" class="admin-section" style="display:none;">
-
-```
-<h3>💰 المبيعات</h3>
-
-<div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
-  
-  <select id="salesMode" onchange="handleSalesFilter()">
-    <option value="today">📅 اليوم</option>
-    <option value="month">🗓 هذا الشهر</option>
-    <option value="range">📆 تحديد تاريخ</option>
-  </select>
-
-  <div id="dateRange" style="display:none;">
-    من: <input type="date" id="salesFromDate">
-    إلى: <input type="date" id="salesToDate">
-    <button onclick="loadSales()">عرض</button>
+    <h3>المبيعات</h3>
+    <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+      <select id="salesMode" onchange="handleSalesFilter()">
+        <option value="today">اليوم</option>
+        <option value="month">هذا الشهر</option>
+        <option value="range">تحديد تاريخ</option>
+      </select>
+      <div id="dateRange" style="display:none;">
+        من: <input type="date" id="salesFromDate">
+        إلى: <input type="date" id="salesToDate">
+        <button onclick="loadSales()">عرض</button>
+      </div>
+    </div>
+    <div class="stats-grid" id="salesStats"></div>
+    <div id="salesBox"></div>
   </div>
-
-</div>
-<div class="stats-grid" id="salesStats"></div>
-<div id="salesBox"></div>
-```
-
-  </div>
-
-  <!-- 🟢 الشفتات -->
 
   <div id="shiftsTab" class="admin-section" style="display:none;">
-
-```
-<h3>🟢 الشفتات المفتوحة</h3>
-
-<div id="adminShifts"></div>
-```
-
+    <h3>الشفتات المفتوحة</h3>
+    <div id="adminShifts"></div>
   </div>
-
-  <!-- 👥 العملاء -->
 
   <div id="customersTab" class="admin-section" style="display:none;">
-
-```
-<h3>👥 العملاء</h3>
-
-<iframe 
-  src="customers.html" 
-  style="width:100%; height:650px; border:none; border-radius:10px;">
-</iframe>
-```
-
+    <h3>العملاء</h3>
+    <iframe src="customers.html" style="width:100%; height:650px; border:none; border-radius:10px;"></iframe>
   </div>
 
-  <!-- ⚙️ الإدارة -->
-
   <div id="settingsTab" class="admin-section" style="display:none;">
-
-```
-<h3>⚙️ إعدادات النظام</h3>
-
-<div class="settings-card">
-  <div class="settings-left">
-    <div class="settings-icon">💸</div>
-    <div>
-      <div class="settings-title">إخفاء الضريبة</div>
-      <div class="settings-sub">إخفاء الضريبة من الكاشير والفاتورة والواتساب</div>
+    <h3>إعدادات النظام</h3>
+    <div class="settings-card">
+      <div class="settings-left">
+        <div class="settings-icon">💸</div>
+        <div>
+          <div class="settings-title">إخفاء الضريبة</div>
+          <div class="settings-sub">إخفاء الضريبة من الكاشير والفاتورة والواتساب</div>
+        </div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="hideTaxToggle">
+        <span class="slider"></span>
+      </label>
     </div>
   </div>
 
-  <label class="switch">
-    <input type="checkbox" id="hideTaxToggle">
-    <span class="slider"></span>
-  </label>
 </div>
-```
-
-  </div>
-
-</div>
-
-<!-- 🔐 التحقق من تسجيل الدخول قبل تحميل الصفحة -->
 
 <script type="module">
-  import { supabase } from "./supabase.js";
+import { supabase } from "./supabase.js";
 
-  const { data: { session }, error } = await supabase.auth.getSession();
+const sessionResult = await supabase.auth.getSession();
 
-  if (error || !session) {
-    window.location.href = "login.html";
-  } else {
-    // أظهر شاشة PIN
-    document.getElementById("authLoading").style.display = "none";
-    document.getElementById("loginScreen").style.display = "flex";
-    document.getElementById("userEmail").textContent = session.user.email;
-    document.getElementById("loginPin").focus();
+if (!sessionResult.data.session) {
+  window.location.href = "login.html?target=admin.html";
+} else {
+  document.getElementById("authLoading").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("userBadge").textContent = "مسجل دخول: " + sessionResult.data.session.user.email;
+  setTimeout(function() {
+    const pin = document.getElementById("loginPin");
+    if (pin) pin.focus();
+  }, 100);
+}
+
+supabase.auth.onAuthStateChange(function(event, session) {
+  if (event === "SIGNED_OUT" || !session) {
+    window.location.href = "login.html?target=admin.html";
+  }
+});
+
+window.logoutFull = async function() {
+  if (!confirm("تأكيد تسجيل الخروج؟")) return;
+
+  const devId = localStorage.getItem("device_id");
+  if (devId) {
+    try {
+      await supabase.from("user_devices").delete().eq("id", devId);
+    } catch (e) {}
   }
 
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_OUT" || !session) {
-      window.location.href = "login.html";
-    }
+  localStorage.removeItem("device_id");
+  await supabase.auth.signOut();
+  window.location.href = "login.html?target=admin.html";
+};
+
+window.showDevices = async function() {
+  const result = await supabase
+    .from("user_devices")
+    .select("*")
+    .order("last_seen", { ascending: false });
+
+  const devices = result.data || [];
+  const currentId = localStorage.getItem("device_id");
+
+  function formatTime(s) {
+    if (!s) return "-";
+    const d = new Date(s);
+    const diff = Math.floor((new Date() - d) / 60000);
+    if (diff < 1) return "الآن";
+    if (diff < 60) return "قبل " + diff + " دقيقة";
+    if (diff < 1440) return "قبل " + Math.floor(diff/60) + " ساعة";
+    return "قبل " + Math.floor(diff/1440) + " يوم";
+  }
+
+  let html = "";
+  devices.forEach(function(d) {
+    const isCur = d.id === currentId;
+    const bg = isCur ? "#f1f8e9" : "#fff";
+    const badge = isCur ? ' <span style="background:#4caf50;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">الجهاز الحالي</span>' : '';
+    const btn = isCur
+      ? '<button onclick="logoutFull()" style="background:#f44336;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">خروج</button>'
+      : '<button onclick="kickDevice(\'' + d.id + '\')" style="background:#ff9800;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">طرد</button>';
+
+    html += '<div style="border:1px solid #e0e0e0;border-radius:10px;padding:15px;margin-bottom:10px;background:' + bg + ';">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div><div style="font-size:15px;font-weight:bold;">' + (d.device_name || "جهاز") + badge + '</div>';
+    html += '<div style="color:#888;font-size:13px;margin-top:5px;">آخر نشاط: ' + formatTime(d.last_seen) + '</div></div>';
+    html += btn + '</div></div>';
   });
+
+  if (devices.length === 0) {
+    html = '<div style="text-align:center;padding:30px;color:#888;">لا توجد أجهزة</div>';
+  }
+
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:99999;padding:20px;";
+  overlay.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;direction:rtl;"><div style="background:#4a3a2c;color:#fff;padding:15px 20px;border-radius:12px 12px 0 0;"><h3 style="margin:0;text-align:center;">الأجهزة المسجلة</h3></div><div style="padding:20px;">' + html + '<button id="closeDevBtn" style="width:100%;padding:12px;background:#4a3a2c;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-top:15px;">إغلاق</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector("#closeDevBtn").onclick = function() { overlay.remove(); };
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+};
+
+window.kickDevice = async function(id) {
+  if (!confirm("طرد هذا الجهاز؟")) return;
+  await supabase.from("user_devices").delete().eq("id", id);
+  alert("تم الطرد");
+  document.querySelectorAll("[style*='z-index:99999']").forEach(function(el) { el.remove(); });
+  showDevices();
+};
 </script>
 
-<!-- 🔥 JS -->
-
-<script type="module" src="auth.js?v=15"></script>
-
-<script type="module" src="admin.js?v=15"></script>
+<script type="module" src="admin.js"></script>
 
 </body>
 </html>
