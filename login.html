@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>تسجيل الدخول - سكوب لاب</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#4a3a2c">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #4a3a2c 0%, #2c1810 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 24px;
+      color: #4a3a2c;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+      font-family: inherit;
+      direction: ltr;
+      text-align: left;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #4a3a2c;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .checkbox-group input {
+      width: auto;
+      margin-left: 8px;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: #4a3a2c;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-family: inherit;
+    }
+
+    .login-btn:hover {
+      background: #2c1810;
+    }
+
+    .login-btn:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+
+    .error-box {
+      background: #ffebee;
+      color: #c62828;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+      text-align: center;
+    }
+
+    .loading {
+      text-align: center;
+      color: #4a3a2c;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 25px;
+      color: #999;
+      font-size: 13px;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div class="login-card">
+
+```
+<div class="logo">☕</div>
+<div class="title">سكوب لاب</div>
+<div class="subtitle">تسجيل الدخول لإدارة الكاشير</div>
+
+<div id="errorBox" class="error-box"></div>
+
+<div class="form-group">
+  <label for="email">📧 البريد الإلكتروني</label>
+  <input
+    type="email"
+    id="email"
+    placeholder="admin@scooplab.com"
+    autocomplete="email"
+  />
+</div>
+
+<div class="form-group">
+  <label for="password">🔒 كلمة المرور</label>
+  <input
+    type="password"
+    id="password"
+    placeholder="••••••••"
+    autocomplete="current-password"
+  />
+</div>
+
+<button id="loginBtn" class="login-btn" onclick="handleLogin()">
+  🚀 تسجيل الدخول
+</button>
+
+<div id="loading" class="loading">⏳ جاري التحقق...</div>
+
+<div class="footer">
+  © 2026 Scoop Lab
+</div>
+```
+
+  </div>
+
+  <script type="module">
+    import { supabase } from "./supabase.js";
+
+    // لو المستخدم مسجل دخول بالفعل، روح للموقع
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      window.location.href = "index.html";
+    }
+
+    // معلومات الجهاز
+    function getDeviceInfo() {
+      const ua = navigator.userAgent;
+      let device = "جهاز غير معروف";
+
+      if (/iPhone/.test(ua)) device = "📱 iPhone";
+      else if (/iPad/.test(ua)) device = "📱 iPad";
+      else if (/Android/.test(ua)) device = "📱 Android";
+      else if (/Mac/.test(ua)) device = "💻 Mac";
+      else if (/Windows/.test(ua)) device = "💻 Windows";
+      else if (/Linux/.test(ua)) device = "💻 Linux";
+
+      let browser = "متصفح";
+      if (/Chrome/.test(ua) && !/Edge/.test(ua)) browser = "Chrome";
+      else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = "Safari";
+      else if (/Firefox/.test(ua)) browser = "Firefox";
+      else if (/Edge/.test(ua)) browser = "Edge";
+
+      return device + " - " + browser;
+    }
+
+    window.handleLogin = async function() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const errorBox = document.getElementById("errorBox");
+      const loginBtn = document.getElementById("loginBtn");
+      const loading = document.getElementById("loading");
+
+      errorBox.style.display = "none";
+
+      if (!email || !password) {
+        errorBox.textContent = "❌ ادخل البريد وكلمة المرور";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loading.style.display = "block";
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.user) {
+          // تسجيل الجهاز
+          const deviceInfo = getDeviceInfo();
+          const deviceName = deviceInfo;
+
+          try {
+            const { data: deviceId } = await supabase.rpc("register_device", {
+              p_device_name: deviceName,
+              p_device_info: navigator.userAgent
+            });
+
+            if (deviceId) {
+              localStorage.setItem("device_id", deviceId);
+            }
+          } catch (devErr) {
+            console.warn("Failed to register device:", devErr);
+          }
+
+          // نجح! روح للموقع
+          window.location.href = "index.html";
+        }
+
+      } catch (err) {
+        console.error("Login error:", err);
+
+        let errorMsg = "❌ خطأ في تسجيل الدخول";
+
+        if (err.message) {
+          if (err.message.includes("Invalid login credentials")) {
+            errorMsg = "❌ البريد أو كلمة المرور غير صحيحة";
+          } else if (err.message.includes("Email not confirmed")) {
+            errorMsg = "❌ البريد غير مؤكد. تواصل مع المدير";
+          } else {
+            errorMsg = "❌ " + err.message;
+          }
+        }
+
+        errorBox.textContent = errorMsg;
+        errorBox.style.display = "block";
+
+        loginBtn.disabled = false;
+        loading.style.display = "none";
+      }
+    };
+
+    // Enter key للدخول
+    document.getElementById("password").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        handleLogin();
+      }
+    });
+
+    document.getElementById("email").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        document.getElementById("password").focus();
+      }
+    });
+  </script>
+
+</body>
+</html>
